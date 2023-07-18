@@ -1,0 +1,50 @@
+<div class="w3-card-4 w3-round light theme-light w3-border theme-border-light">
+    <div class="w3-container scaffold-green w3-round user-title">
+        <h4>Users</h4>
+        <input id="search" class="w3-input w3-round search-bar light theme-light" type="text" name="search" placeholder="Search Users" oninput="render()">
+    </div>
+    <table class="w3-table w3-bordered light w3-border theme-border-light" id="users-table">
+        <tr>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Username</span>
+            </th>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Email</span>
+            </th>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Given Name</span>
+            </th>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Family Name</span>
+            </th>
+            <th></th>
+            <th>
+                {{ if .is_admin }}
+                <div class="w3-round w3-button scaffold-green" onclick="openModal('users-add-modal')">Create New</div>
+                {{ end }}
+            </th>
+        </tr>
+        {{ range .users }}
+            <tr>
+                <td>{{ .Username }}</td>
+                <td>{{ .Email }}</td>
+                <td>{{ .GivenName }}</td>
+                <td>{{ .FamilyName }}</td>
+                <td class="table-link-cell">
+                    <a href="/ui/user/{{ .Username }}" class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;">
+                        <i class="fa-solid fa-pencil"></i>
+                    </a>
+                </td>
+                <td class="table-link-cell">
+                    {{ if $.is_admin }}
+                    {{ if not (eq .Username $.admin_username)}}
+                    <div class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;">
+                        <i class="fa-solid fa-trash pointer-cursor" onclick="openDeleteModal('{{ .Username }}')"></i>
+                    </div>
+                    {{ end }}
+                    {{ end }}
+                </td>
+            </tr>
+        {{ end }}
+    </table>
+</div>

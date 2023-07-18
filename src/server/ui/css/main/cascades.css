@@ -1,0 +1,19 @@
+/* import material.css */
+/* import scaffold.css */
+/* import sidebar.css */
+/* import dark.css */
+/* import light.css */
+/* import layout.css */
+/* import table.css */
+/* import search-bar.css */
+/* import appearance.css */
+
+.cascade-title {
+    display:flex;
+    padding-top:5px;
+    padding-bottom:5px;
+}
+
+.cascade-tag {
+    padding-left: 5px;
+}

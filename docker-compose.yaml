@@ -1,0 +1,28 @@
+version: "3.9"
+services:
+  scaffold:
+    image: "scaffold"
+    ports:
+      - "127.0.0.1:2997:2997"
+    environment:
+      SCAFFOLD_SLEEP: "5"
+      SCAFFOLD_DB: |
+        {
+          "username": "myCoolMongoDBUsername",
+          "password": "myCoolMongoDBPassword",
+          "name": "scaffold",
+          "host": "mongodb",
+          "port": 27017
+        }
+    depends_on:
+      - "mongodb"
+    tty: true
+  mongodb:
+    image: centos/mongodb-36-centos7:1
+    ports:
+      - "127.0.0.1:27017:27017"
+    environment:
+      MONGODB_DATABASE: scaffold
+      MONGODB_ADMIN_PASSWORD: myCoolAdminPassword
+      MONGODB_USER: myCoolMongoDBUsername
+      MONGODB_PASSWORD: myCoolMongoDBPassword

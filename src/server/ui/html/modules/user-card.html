@@ -1,0 +1,29 @@
+<div class="w3-card-4 w3-round light theme-base w3-border theme-border-light">
+    <div class="w3-container scaffold-green w3-round user-title">
+        <div class="w3-container scaffold-green w3-round user-title">
+            <div class="card-title-bar">
+                <div class="icon" style="margin-top:10px;">
+                    <i class="fa-solid fa-floppy-disk w3-large pointer-cursor" onclick="saveUser()"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <div class="user-card">
+        <div class="w3-card-4 w3-round w3-border theme-border-light theme-light light">
+            <div class="user-card">
+                <label>Username</label>
+                <input class="w3-input" type="text" id="users-add-username" value="{{ .user.Username }}" disabled>
+                <label>Password</label>
+                <input class="w3-input" type="password" id="users-add-password" value="{{ .user.Password }}">
+                <label>Given Name</label>
+                <input class="w3-input" type="text" id="users-add-given-name" value="{{ .user.GivenName }}">
+                <label>Family Name</label>
+                <input class="w3-input" type="text" id="users-add-family-name" value="{{ .user.FamilyName }}">
+                <label>Email</label>
+                <input class="w3-input" type="text" id="users-add-email" value="{{ .user.Email }}">
+            </div>
+        </div>
+        <br>
+    </div>
+</div>

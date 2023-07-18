@@ -1,0 +1,18 @@
+/* theme STYLING */
+
+.light.theme-text,.light.theme-text:hover{color:#2E3440!important;}
+
+/* neutral colors */
+.light.theme-dark,.light.theme-hover-dark:hover{color:#2E3440!important;background-color:#c0c6c3!important;}
+.light.theme-base,.light.theme-hover-base:hover{color:#2E3440!important;background-color:#e1e7e4!important;}
+.light.theme-light,.light.theme-hover-light:hover{color:#2E3440!important;background-color:#ffffff!important;}
+
+/* neutral color text */
+.light.theme-text-dark,.light.theme-hover-text-dark:hover{color:#c0c6c3!important;}
+.light.theme-text-base,.light.theme-hover-text-base:hover{color:#e1e7e4!important;}
+.light.theme-text-light,.light.theme-hover-text-light:hover{color:#ffffff!important;}
+
+/* neutral color border */
+.light.theme-border-dark,.light.theme-hover-border-dark:hover{border-color:#c0c6c3!important;}
+.light.theme-border-base,.light.theme-hover-border-base:hover{border-color:#e1e7e4!important;}
+.light.theme-border-light,.light.theme-hover-border-light:hover{border-color:#ffffff!important;}

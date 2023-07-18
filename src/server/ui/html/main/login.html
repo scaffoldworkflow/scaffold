@@ -1,0 +1,54 @@
+<!doctype html>
+<html style="height:100%;min-height:100%;">
+
+<head>
+	<!-- import head.html -->
+	<!-- add custom css -->
+	<link rel="stylesheet" type="text/css" href="/static/css/login.css">
+</head>
+
+<body class="light theme-base">
+	<div class="modal-content animate w3-border w3-border-black w3-card w3-round">
+		<div class="w3-container scaffold-green w3-round">
+			<div class="w3-center">
+				<h1 class="header-text"><b>Scaffold</b></h1>
+			</div>
+		</div>
+		<br>
+		<form class="w3-container" action="/auth/login" id="login_form" method="POST">
+			<div class="form-group">
+				<label for="username" class="label-text">Username</label>
+				<input type="text" class="form-control w3-round" id="username" name="username" placeholder="Username">
+			</div>
+			<div class="form-group">
+				<label for="password" class="label-text">Password</label>
+				<input type="password" class="form-control w3-round" id="password" name="password"
+					placeholder="Password">
+			</div>
+			<br>
+			<p class="w3-text-red">
+				{{ if .ErrorTitle}}
+				{{.ErrorTitle}}: {{.ErrorMessage}}
+				{{end}}
+			</p>
+			<br>
+			<label class="container">Remember Me
+				<input type="checkbox" id="remember_me" name="remember_me" >
+				<span class="checkmark"></span>
+			</label>
+			<br>
+			<div>
+				<button type="submit" class="w3-button scaffold-green w3-round diagonal-shadow-grey"><b>Login</b></button>
+				<a href="/ui/forgot_password" style="padding-left:8px;">
+					<div class="w3-button w3-white scaffold-text-green w3-round scaffold-border-grey w3-border"><b>Forgot Password</b></div>
+				</a>
+			</div>
+		</form>
+		<br>
+		<div class="w3-container scaffold-green w3-round">
+			<p style="float: left;" class="footer-text w3-text-white"><b>&copy; 2023 John Carter</b></p>
+			<p style="float: right;" class="footer-text w3-text-white"><b>v{{ .version }}</b></p>
+		</div>
+	</div>
+
+</html>

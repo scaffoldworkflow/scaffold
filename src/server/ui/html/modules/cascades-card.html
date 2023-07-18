@@ -1,0 +1,38 @@
+<div class="w3-card-4 w3-round light theme-light w3-border theme-border-light">
+    <div class="w3-container scaffold-green w3-round cascade-title">
+        <h4>Cascades</h4>
+        <input id="search" class="w3-input w3-round search-bar light theme-light" type="text" name="search" placeholder="Search Cascades" oninput="render()">
+    </div>
+    <table class="w3-table w3-bordered light w3-border theme-border-light" id="cascades-table">
+        <tr>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Name</span>
+            </th>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Created</span>
+            </th>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Updated</span>
+            </th>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Version</span>
+            </th>
+            <th>
+                <span class="table-title-text"></span>
+            </th>
+        </tr>
+        {{ range .cascades }}
+            <tr>
+                <td>{{ .Name }}</td>
+                <td>{{ .Created }}</td>
+                <td>{{ .Updated }}</td>
+                <td>{{ .Version }}</td>
+                <td class="table-link-cell">
+                    <a href="/ui/cascades/{{ .Name }}" class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;">
+                        <i class="fa-solid fa-link"></i>
+                    </a>
+                </td>
+            </tr>
+        {{ end }}
+    </table>
+</div>

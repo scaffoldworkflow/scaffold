@@ -1,0 +1,103 @@
+/* global layout settings */
+.small-padding {
+    padding: 6px;
+}
+
+.small-margin-left {
+    margin-left: 5px;
+}
+
+.right-align {
+    float: right;
+}
+
+.left-align {
+    float: left;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.full-height {
+    height: 100%;
+}
+
+.full-min-height {
+    min-height: 100%;
+}
+
+.ninety-height {
+    height: 90%;
+}
+
+.ninety-min-height {
+    min-height: 90%;
+}
+
+.icon {
+    margin-top: 16px;
+    margin-right: 16px;
+    float: right;
+}
+
+.card-title {
+    float: left;
+}
+
+.card-title-bar {
+    display: inline-block;
+    width: 100%;
+}
+
+.inline-block-display {
+    display: inline-block;
+}
+
+.card-container {
+    height: 90%;
+    min-height: 90%;
+}
+
+.main {
+    height: 100%;
+    min-height: 100%;
+}
+
+.contents {
+    height: 90%;
+    min-height: 90%;
+}
+
+.full-page {
+    position: fixed;
+    top: 0px;
+    height: 100%;
+}
+
+.monaco-pane {
+    height: 100%;
+    width: 100%;
+}
+
+.monaco-container {
+    width: 100%;
+    height: 95%;
+}
+
+.breadcrumb {
+    padding: 6px;
+}
+
+.tag_x {
+    margin-left: 16px;
+}
+
+.card-header {
+    display: inline-block;
+}
+
+.card-header-button {
+    float: right;
+    margin-top: 6px;
+}

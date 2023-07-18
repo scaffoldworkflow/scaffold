@@ -1,0 +1,45 @@
+.variables:
+  platforms:
+    - linux/amd64
+    - linux/arm64
+    - linux/arm/v7
+  docker_org: jfcarter2358
+build-docker:
+  help: Build Scaffold Docker image
+  cmd: |
+    stud clean
+
+    mkdir -p dist
+
+    wsc compile
+
+    docker build -t scaffold -f src/server/Dockerfile .
+build-local:
+  help: Build Scaffold local binaries
+  cmd: |
+    stud clean
+    mkdir dist
+
+    cd src/server
+    env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -v -o scaffold
+    mkdir ../../dist/scaffold
+    mv scaffold ../../dist/scaffold/scaffold
+    cp launch.sh ../../dist/scaffold/launch-scaffold.sh
+    chmod +x ../../dist/scaffold/launch-scaffold.sh
+    cd ../..
+
+    wsc compile
+    cp -r src/server/ui-dist/templates dist/templates
+    cp -r src/server/ui-dist/static dist/static
+
+    print('Done!')
+clean:
+  help: Remove build and test artifacts
+  cmd: |
+    rm -r dist || true
+run-docker:
+  help: Deploy local images of Scaffold via docker compose
+  cmd: |
+    docker compose down
+    docker compose rm -f
+    docker compose up

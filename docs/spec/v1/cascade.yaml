@@ -1,0 +1,30 @@
+version: str
+name: str
+inputs:
+  - name: str
+    description: str
+    default: str
+    type: str
+tasks:
+  name: str
+  verb: str
+  depends_on:
+    - str
+  image: str
+  run: |
+    str
+  store:
+    env:
+      - str
+    file:
+      - str
+  load:
+    env:
+      - str
+    file:
+      - str
+  outputs:
+    str: str
+  inputs:
+    str: str
+  group: str
