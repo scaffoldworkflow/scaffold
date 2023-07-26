@@ -1,0 +1,55 @@
+<div id="state-modal" class="w3-modal" style="z-index:9999">
+    <div class="w3-modal-content w3-animate-top w3-card-4 w3-round light theme-light w3-border theme-border-light w3-round">
+        <header class="w3-container" id="state-header">
+            <div class="w3-display-topright">
+                <span onclick="triggerRun()" class="w3-button"><i class="fa-solid fa-play"></i></span>
+                <span onclick="closeModal('state-modal')" class="w3-button">&times;</span>
+            </div>
+            <h4 id="state-name"></h4>
+        </header>
+        <br>
+        <div class="w3-container">
+            <div class="w3-border w3-card light theme-light theme-border-light w3-round">
+                <header class="w3-container" id="status-header">
+                    <h4>Status</h4>
+                </header>
+                <br>
+                <div class="w3-container">
+                    <span id="state-status"></span>
+                    <br>
+                    <span id="state-started"></span>
+                    <br>
+                    <span id="state-finished"></span>
+                    <br>
+                </div>
+                <br>
+            </div>
+            <br>
+            <div class="w3-border w3-card light theme-light theme-border-light w3-round">
+                <header class="w3-container" id="output-header">
+                    <h4>Output</h4>
+                </header>
+                <br>
+                <div class="w3-container">
+                    <pre id="state-output" style="font-family:monospace;">
+                    </pre>
+                </div>
+                <br>
+            </div>
+            <br>
+            <div class="w3-border w3-card light theme-light theme-border-light w3-round">
+                <header class="w3-container" id="code-header">
+                    <h4>Code</h4>
+                </header>
+                <br>
+                <div class="w3-container">
+                    <pre id="state-code" style="font-family:monospace;">
+                    </pre>
+                </div>
+                <br>
+            </div>
+            <br>
+        </div>
+    </div>
+</div>
+

@@ -45,6 +45,11 @@
     float: left;
 }
 
+.card-button {
+    float: right;
+    margin-top: 8px;
+}
+
 .card-title-bar {
     display: inline-block;
     width: 100%;
@@ -100,4 +105,13 @@
 .card-header-button {
     float: right;
     margin-top: 6px;
+}
+
+.card-overflow {
+    height: 1000px;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    width: 100%;
+    position: relative;
 }

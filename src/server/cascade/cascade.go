@@ -3,9 +3,11 @@ package cascade
 import (
 	"fmt"
 	"scaffold/server/constants"
+	"scaffold/server/datastore"
+	"scaffold/server/input"
 	"scaffold/server/state"
+	"scaffold/server/task"
 	"scaffold/server/utils"
-	"sort"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -14,37 +16,14 @@ import (
 	"scaffold/server/mongodb"
 )
 
-type CascadeLoadStore struct {
-	Env  []string `json:"env" bson:"env"`
-	File []string `json:"file" bson:"file"`
-}
-
-type CascadeInput struct {
-	Description string `json:"description" bson:"description"`
-	Default     string `json:"default" bson:"default"`
-	Type        string `json:"type" bson:"type"`
-}
-
-type CascadeTask struct {
-	Name      string            `json:"name" bson:"name"`
-	Verb      string            `json:"verb" bson:"verb"`
-	DependsOn []string          `json:"depends_on" bson:"depends_on"`
-	Image     string            `json:"image" bson:"image"`
-	Run       string            `json:"run" bson:"run"`
-	Store     CascadeLoadStore  `json:"store" bson:"store"`
-	Load      CascadeLoadStore  `json:"load" bson:"load"`
-	Outputs   map[string]string `json:"outputs" bson:"outputs"`
-	Inputs    map[string]string `json:"inputs" bson:"inputs"`
-	Group     string            `json:"group" bson:"group"`
-}
-
 type Cascade struct {
-	Version string         `json:"version" bson:"version"`
-	Name    string         `json:"name" bson:"name"`
-	Inputs  []CascadeInput `json:"inputs" bson:"inputs"`
-	Tasks   []CascadeTask  `json:"tasks" bson:"tasks"`
-	Created string         `json:"created" bson:"created"`
-	Updated string         `json:"updated" bson:"updated"`
+	Version string        `json:"version" bson:"version"`
+	Name    string        `json:"name" bson:"name"`
+	Inputs  []input.Input `json:"inputs" bson:"inputs"`
+	Tasks   []task.Task   `json:"tasks" bson:"tasks"`
+	Created string        `json:"created" bson:"created"`
+	Updated string        `json:"updated" bson:"updated"`
+	Groups  []string      `json:"groups" bson:"groups"`
 }
 
 func CreateCascade(c *Cascade) error {
@@ -62,27 +41,34 @@ func CreateCascade(c *Cascade) error {
 		return err
 	}
 
-	ts := make([]state.StateTask, len(c.Tasks))
-	for idx, task := range c.Tasks {
-		t := state.StateTask{
-			Name:     task.Name,
-			Status:   constants.STATE_STATUS_NOT_STARTED,
-			Started:  "",
-			Finished: "",
-			Error:    "",
-			Output:   "",
+	for _, t := range c.Tasks {
+		t.Cascade = c.Name
+		fmt.Printf("New task: %v\n", &t)
+		if err := task.CreateTask(&t); err != nil {
+			return err
 		}
-		ts[idx] = t
 	}
 
-	s := &state.State{
+	for _, i := range c.Inputs {
+		i.Cascade = c.Name
+		if err := input.CreateInput(&i); err != nil {
+			return err
+		}
+	}
+
+	d := &datastore.DataStore{
 		Name:    c.Name,
+		Env:     make(map[string]string),
+		Files:   make([]string, 0),
 		Created: c.Created,
 		Updated: c.Updated,
-		Tasks:   ts,
 	}
 
-	err = state.CreateState(s)
+	for _, val := range c.Inputs {
+		d.Env[val.Name] = val.Default
+	}
+
+	err = datastore.CreateDataStore(d)
 	return err
 }
 
@@ -102,8 +88,15 @@ func DeleteCascadeByName(name string) error {
 		return fmt.Errorf("no cascade found with name %s", name)
 	}
 
-	err = state.DeleteStateByName(name)
+	if err := task.DeleteTasksByCascade(name); err != nil {
+		return err
+	}
 
+	if err := input.DeleteInputsByCascade(name); err != nil {
+		return err
+	}
+
+	err = datastore.DeleteDataStoreByName(name)
 	return err
 
 }
@@ -155,51 +148,33 @@ func UpdateCascadeByName(name string, c *Cascade) error {
 		return fmt.Errorf("no cascade found with name %s", name)
 	}
 
-	s, err := state.GetStateByName(name)
-
+	states, err := state.GetStatesByCascade(name)
 	if err != nil {
 		return err
 	}
-
-	taskNames := make([]string, len(c.Tasks))
-	for idx, task := range c.Tasks {
-		taskNames[idx] = task.Name
+	tasks, err := task.GetTasksByCascade(name)
+	if err != nil {
+		return nil
 	}
 
-	toRemove := make([]int, 0)
-	for idx, stateTask := range s.Tasks {
-		if !utils.Contains(taskNames, stateTask.Name) {
-			toRemove = append(toRemove, idx)
+	taskNames := make([]string, len(states))
+
+	for idx, t := range tasks {
+		taskNames[idx] = t.Name
+	}
+
+	for _, t := range tasks {
+		if !utils.Contains(taskNames, t.Name) {
+			t.Cascade = c.Name
+			if err := task.CreateTask(t); err != nil {
+				return err
+			}
+			continue
+		}
+		if err := task.UpdateTaskByNames(c.Name, t.Name, t); err != nil {
+			return err
 		}
 	}
-
-	sort.Sort(sort.Reverse(sort.IntSlice(toRemove)))
-
-	for _, idx := range toRemove {
-		s.Tasks = append(s.Tasks[:idx], s.Tasks[idx+1:]...)
-	}
-
-	stateTaskNames := make([]string, len(s.Tasks))
-	for idx, stateTask := range s.Tasks {
-		stateTaskNames[idx] = stateTask.Name
-	}
-
-	for idx, task := range c.Tasks {
-		if !utils.Contains(stateTaskNames, task.Name) {
-			temp := s.Tasks[idx:]
-			s.Tasks = append(s.Tasks[:idx], state.StateTask{
-				Name:     task.Name,
-				Status:   constants.STATE_STATUS_NOT_STARTED,
-				Started:  "",
-				Finished: "",
-				Error:    "",
-				Output:   "",
-			})
-			s.Tasks = append(s.Tasks, temp...)
-		}
-	}
-
-	err = state.UpdateStateByName(name, s)
 
 	return err
 }

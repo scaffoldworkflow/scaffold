@@ -1,0 +1,7 @@
+# Scaffold
+
+## About
+
+## Rationale
+
+## Examples

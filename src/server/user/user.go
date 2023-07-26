@@ -4,26 +4,37 @@ import (
 	"fmt"
 	"scaffold/server/config"
 	"scaffold/server/constants"
+	"scaffold/server/utils"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 
 	"scaffold/server/mongodb"
 )
 
 type User struct {
-	Username          string `json:"username" bson:"username"`
-	Password          string `json:"password" bson:"password"`
-	GivenName         string `json:"given_name" bson:"given_name"`
-	FamilyName        string `json:"family_name" bson:"family_name"`
-	Email             string `json:"email" bson:"email"`
-	ResetToken        string `json:"reset_token" bson:"reset_token"`
-	ResetTokenCreated string `json:"reset_token_created" bson:"reset_token_created"`
-	Created           string `json:"created" bson:"created"`
-	Updated           string `json:"updated" bson:"updated"`
-	LoginToken        string `json:"login_token" bson:"login_token"`
+	Username          string     `json:"username" bson:"username"`
+	Password          string     `json:"password" bson:"password"`
+	GivenName         string     `json:"given_name" bson:"given_name"`
+	FamilyName        string     `json:"family_name" bson:"family_name"`
+	Email             string     `json:"email" bson:"email"`
+	ResetToken        string     `json:"reset_token" bson:"reset_token"`
+	ResetTokenCreated string     `json:"reset_token_created" bson:"reset_token_created"`
+	Created           string     `json:"created" bson:"created"`
+	Updated           string     `json:"updated" bson:"updated"`
+	LoginToken        string     `json:"login_token" bson:"login_token"`
+	APITokens         []APIToken `json:"api_tokens" bson:"api_tokens"`
+	Groups            []string   `json:"groups" bson:"groups"`
+	Roles             []string   `json:"roles" bson:"roles"`
+}
+
+type APIToken struct {
+	Name    string `json:"name" bson:"name"`
+	Token   string `json:"token" bson:"token"`
+	Created string `json:"created" bson:"created"`
 }
 
 func CreateUser(u *User) error {
@@ -94,6 +105,27 @@ func GetUserByUsername(username string) (*User, error) {
 	return users[0], nil
 }
 
+func GetUserByAPIToken(apiToken string) (*User, error) {
+	// filter := bson.M{"api_tokens": bson.M{"token": apiToken}}
+
+	filter := bson.D{{}}
+	users, err := FilterUsers(filter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, u := range users {
+		for _, t := range u.APITokens {
+			if t.Token == apiToken {
+				return u, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no user found with api token %s", apiToken)
+}
+
 func GetUserByEmail(email string) (*User, error) {
 	filter := bson.M{"email": email}
 
@@ -158,6 +190,44 @@ func GetUserByResetToken(resetToken string) (*User, error) {
 	return users[0], nil
 }
 
+func GenerateAPIToken(username, name string) (string, error) {
+	token := utils.GenerateToken(32)
+	currentTime := time.Now().UTC()
+
+	apiToken := APIToken{
+		Name:    name,
+		Token:   token,
+		Created: currentTime.Format("2006-01-02T15:04:05Z"),
+	}
+
+	u, err := GetUserByUsername(username)
+	if err != nil {
+		return "", err
+	}
+
+	u.APITokens = append(u.APITokens, apiToken)
+
+	err = UpdateUserByUsername(username, u)
+	return token, err
+}
+
+func RevokeAPIToken(username, name string) error {
+	u, err := GetUserByUsername(username)
+	if err != nil {
+		return err
+	}
+
+	for idx, apiToken := range u.APITokens {
+		if apiToken.Name == name {
+			u.APITokens = append(u.APITokens[:idx], u.APITokens[idx+1:]...)
+			break
+		}
+	}
+
+	err = UpdateUserByUsername(username, u)
+	return err
+}
+
 func UpdateUserByUsername(username string, u *User) error {
 	filter := bson.M{"username": username}
 
@@ -167,7 +237,9 @@ func UpdateUserByUsername(username string, u *User) error {
 	collection := mongodb.Collections[constants.MONGODB_USER_COLLECTION_NAME]
 	ctx := mongodb.Ctx
 
-	result, err := collection.ReplaceOne(ctx, filter, u)
+	opts := options.Replace().SetUpsert(true)
+
+	result, err := collection.ReplaceOne(ctx, filter, u, opts)
 
 	if err != nil {
 		return err
@@ -231,6 +303,10 @@ func VerifyAdmin() error {
 		Email:             config.Config.Admin.Email,
 		ResetToken:        "",
 		ResetTokenCreated: "",
+		LoginToken:        "",
+		APITokens:         []APIToken{},
+		Groups:            []string{"admin"},
+		Roles:             []string{"admin"},
 	}
 
 	err := CreateUser(u)

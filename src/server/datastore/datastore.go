@@ -7,6 +7,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"scaffold/server/mongodb"
 )
@@ -89,7 +90,9 @@ func UpdateDataStoreByName(name string, d *DataStore) error {
 	collection := mongodb.Collections[constants.MONGODB_DATASTORE_COLLECTION_NAME]
 	ctx := mongodb.Ctx
 
-	result, err := collection.ReplaceOne(ctx, filter, d)
+	opts := options.Replace().SetUpsert(true)
+
+	result, err := collection.ReplaceOne(ctx, filter, d, opts)
 
 	if err != nil {
 		return err

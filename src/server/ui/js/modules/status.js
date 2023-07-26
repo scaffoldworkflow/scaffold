@@ -22,7 +22,7 @@ function countJSON(json) {
 
 function updateStatuses() {
     $.ajax({
-        url: "/status",
+        url: "/health/status",
         type: "GET",
         success: function (result) {
             tableInnerHTML = '<tr>' +
@@ -34,28 +34,17 @@ function updateStatuses() {
                 '</th>' +
             '</tr>'
 
-            totalCount = countJSON(result);
-            healthyCount = 0;
-            for (var key in result) {
-                if (result[key]) {
-                    healthyCount++;
-                }
-                serviceStatusColor = result[key] ? "scaffold-text-green" : "scaffold-text-green"
-                serviceStatusText = result[key] ? "Up" : "Down"
+            for (var i = 0; i < result.nodes.length; i++) {
+                serviceStatusColor = "scaffold-text-green"
+                serviceStatusText = "Up"
                 tableInnerHTML += '<tr>' +
-                    '<td>' + key + '</td>' +
+                    '<td>' + result.nodes[i] + '</td>' +
                     '<td class="' + serviceStatusColor + '">' + serviceStatusText + '</td>' +
                 '</tr>'
             }
             $("#status-table").html(tableInnerHTML)
             $("#status-icon").removeClass(allHealthClasses)
-            if (totalCount == healthyCount) {
-                $("#status-icon").addClass(healthIcons["healthy"] + " " + healthColors["healthy"])
-            } else if (healthyCount == 0) {
-                $("#status-icon").addClass(healthIcons["unhealthy"] + " " + healthColors["unhealthy"])
-            } else {
-                $("#status-icon").addClass(healthIcons["degraded"] + " " + healthColors["degraded"])
-            }
+            $("#status-icon").addClass(healthIcons["healthy"] + " " + healthColors["healthy"])
         },
         error: function (result) {
             $("#status-icon").removeClass(allHealthClasses)
@@ -72,7 +61,7 @@ function showStatus() {
 $(document).ready(
     function() {
         populateVariables()
-        // updateStatuses()
-        // setInterval(updateStatuses, healthIntervalMilliSeconds);
+        updateStatuses()
+        setInterval(updateStatuses, healthIntervalMilliSeconds);
     }
 )

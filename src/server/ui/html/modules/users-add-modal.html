@@ -16,6 +16,36 @@
             <input class="w3-input" type="text" id="users-add-family-name">
             <label>Email</label>
             <input class="w3-input" type="text" id="users-add-email">
+            <label>Groups</label>
+            <br>
+            <input class="w3-input" type="text" id="group-to-add">
+            <br>
+            <div class="w3-button scaffold-green w3-round" onclick="addGroup()">Add Group</div>
+            <br>
+            <br>
+            <div class="w3-card w3-container tag-container" id="group-card">
+            {{ range .group }}
+                <div ondblclick="removeGroup('{{ . }}')" class="w3-tag w3-round scaffold-green user-group tag" style="padding:3px" id="group-{{ . }}">
+                {{ . }}&nbsp
+                </div>
+            {{ end }}
+            </div>
+            <br> 
+            <br>
+            <label>Roles</label>
+            <input class="w3-input" type="text" id="role-to-add">
+            <br>
+            <div class="w3-button scaffold-green w3-round" onclick="addRole()">Add Role</div>
+            <br>
+            <br>
+            <div class="w3-card w3-container tag-container" id="role-card">
+            {{ range .roles }}
+                <div ondblclick="removeRole('{{ . }}')" class="w3-tag w3-round scaffold-green user-role tag" style="padding:3px" id="role-{{ . }}">
+                {{ . }}&nbsp
+                </div>
+            {{ end }}
+            </div>
+            <br>
             <br>
             <br>
             <button class="w3-button scaffold-green w3-round w3-right" onclick="addUser()">Add User</button>

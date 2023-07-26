@@ -3,12 +3,11 @@ package auth
 import (
 	"crypto/tls"
 	"fmt"
-	"math/rand"
 	"net/http"
+	"scaffold/server/cascade"
 	"scaffold/server/config"
 	"scaffold/server/user"
 	"scaffold/server/utils"
-	"strconv"
 	"strings"
 	"time"
 
@@ -40,6 +39,7 @@ type NodeObject struct {
 }
 
 var Nodes []NodeObject
+var LastScheduledIdx = 0
 
 func PerformLogin(c *gin.Context) {
 	username := c.PostForm("username")
@@ -58,7 +58,7 @@ func PerformLogin(c *gin.Context) {
 
 			valid, _ := user.VerifyUser(username, password)
 			if valid {
-				token := generateSessionToken()
+				token := utils.GenerateToken(32)
 				c.SetCookie("scaffold_token", token, 3600, "", "", false, false)
 				u, _ := user.GetUserByUsername(username)
 				u.LoginToken = token
@@ -69,7 +69,7 @@ func PerformLogin(c *gin.Context) {
 	} else {
 		valid, err := user.VerifyUser(username, password)
 		if valid {
-			token := generateSessionToken()
+			token := utils.GenerateToken(32)
 			if rememberMe == "on" {
 				c.SetCookie("scaffold_token", token, 604800, "", "", false, false)
 			} else {
@@ -89,10 +89,6 @@ func PerformLogin(c *gin.Context) {
 		}
 	}
 	c.AbortWithStatus(http.StatusUnauthorized)
-}
-
-func generateSessionToken() string {
-	return strconv.FormatInt(rand.Int63(), 16)
 }
 
 func PerformLogout(c *gin.Context) {
@@ -116,7 +112,7 @@ func RequestPasswordReset(c *gin.Context) {
 	u, _ := user.GetUserByEmail(email)
 
 	if u != nil {
-		token := strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16)
+		token := utils.GenerateToken(32)
 		currentTime := time.Now()
 
 		u.ResetToken = token
@@ -188,8 +184,8 @@ func HashAndSalt(pwd []byte) (string, error) {
 }
 
 func JoinNode(ctx *gin.Context) {
-	var n *NodeJoinObject
-	if err := ctx.ShouldBindJSON(n); err != nil {
+	var n NodeJoinObject
+	if err := ctx.ShouldBindJSON(&n); err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
 	}
@@ -201,4 +197,39 @@ func JoinNode(ctx *gin.Context) {
 	}
 
 	ctx.Status(http.StatusUnauthorized)
+}
+
+func GetAllGroups() ([]string, error) {
+	groups := []string{}
+
+	cascades, err := cascade.GetAllCascades()
+	if err != nil {
+		return []string{}, err
+	} else {
+		for _, c := range cascades {
+			for _, group := range c.Groups {
+				if !utils.Contains(groups, group) {
+					groups = append(groups, group)
+				}
+			}
+		}
+	}
+	users, err := user.GetAllUsers()
+	if err != nil {
+		return []string{}, err
+	} else {
+		for _, u := range users {
+			for _, group := range u.Groups {
+				if !utils.Contains(groups, group) {
+					groups = append(groups, group)
+				}
+			}
+		}
+	}
+
+	return groups, nil
+}
+
+func GetAllRoles() []string {
+	return []string{"read", "write", "admin"}
 }

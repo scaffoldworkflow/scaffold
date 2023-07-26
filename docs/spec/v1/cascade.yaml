@@ -1,17 +1,17 @@
-version: str
-name: str
+version: str # cascade api version
+name: str # cascade name
 inputs:
-  - name: str
-    description: str
-    default: str
-    type: str
+  - name: str # input name
+    description: str # input label text
+    default: str # default value
+    type: str # secret|plaintext
 tasks:
-  name: str
-  verb: str
-  depends_on:
-    - str
-  image: str
-  run: |
+  name: str # task name
+  verb: str # verb to be injected as SCAFFOLD_VERB env variable [optional]
+  depends_on: # [optional]
+    - str # task name to depend on
+  image: str # container image to run inside
+  run: | # code to run inside of container
     str
   store:
     env:

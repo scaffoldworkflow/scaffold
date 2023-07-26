@@ -4,7 +4,9 @@ package utils
 
 import (
 	"log"
+	"math/rand"
 	"os/exec"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -53,4 +55,11 @@ func InstallPackages(packages []string) error {
 		}
 	}
 	return nil
+}
+
+func GenerateToken(length int) string {
+	token := strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16)
+
+	token = token[:length]
+	return token
 }

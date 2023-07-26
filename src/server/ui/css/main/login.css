@@ -1,4 +1,6 @@
 /* import scaffold.css */
+/* import light.css */
+/* import dark.css */
 
 body {font-family: Arial, Helvetica, sans-serif;}
 
@@ -102,7 +104,7 @@ img.avatar {
   
   /* When the checkbox is checked, add a blue background */
   .container input:checked ~ .checkmark {
-    background-color: #10B26C;
+    background-color: #A3BE8C;
   }
   
   /* Create the checkmark/indicator (hidden when not checked) */

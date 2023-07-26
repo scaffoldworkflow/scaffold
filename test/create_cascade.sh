@@ -1,8 +1,12 @@
 #! /usr/bin/env bash
 
-cat foobar.yaml | yq -c . > /tmp/foobar.json
+source creds.sh
 
-curl -X POST -H "Content-Type: application/json" -d @/tmp/cascade.json http://localhost:2997/api/v1/cascade
+name="$1"
 
-rm /tmp/foobar.json
+cat "${name}.yaml" | yq -c . > "/tmp/${name}.json"
+
+curl -X POST -H "Content-Type: application/json" -H "Authorization: X-Scaffold-API ${PRIMARY_KEY}" -d "@/tmp/${name}.json" http://localhost:2997/api/v1/cascade
+
+rm "/tmp/${name}.json"
 

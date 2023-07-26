@@ -17,3 +17,12 @@
 .user-tag {
     padding-left: 5px;
 }
+
+.tag-container {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.tag {
+    margin-right: 10px;
+}

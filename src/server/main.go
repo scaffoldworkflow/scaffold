@@ -4,9 +4,13 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"scaffold/server/config"
+	"scaffold/server/constants"
 	"scaffold/server/manager"
+	"scaffold/server/worker"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,7 +33,13 @@ func main() {
 	// Initialize the routes
 	initializeRoutes()
 
-	go manager.Run()
+	rand.Seed(time.Now().UnixNano())
+
+	if config.Config.Node.Type == constants.NODE_TYPE_MANAGER {
+		go manager.Run()
+	} else {
+		go worker.Run()
+	}
 
 	// Start serving the application
 	router.Run(routerPort)

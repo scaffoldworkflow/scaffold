@@ -17,7 +17,12 @@
             <th class="table-title w3-medium scaffold-text-green">
                 <span class="table-title-text">Family Name</span>
             </th>
-            <th></th>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Roles</span>
+            </th>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Groups</span>
+            </th>
             <th>
                 {{ if .is_admin }}
                 <div class="w3-round w3-button scaffold-green" onclick="openModal('users-add-modal')">Create New</div>
@@ -30,12 +35,24 @@
                 <td>{{ .Email }}</td>
                 <td>{{ .GivenName }}</td>
                 <td>{{ .FamilyName }}</td>
+                <td>
+                    {{ range .Roles }}
+                        <div class="w3-tag w3-round scaffold-green" style="padding:3px">
+                        {{ . }}
+                        </div>
+                    {{ end }}
+                </td>
+                <td>
+                    {{ range .Groups }}
+                        <div class="w3-tag w3-round scaffold-green" style="padding:3px">
+                        {{ . }}
+                        </div>
+                    {{ end }}
+                </td>
                 <td class="table-link-cell">
                     <a href="/ui/user/{{ .Username }}" class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;">
                         <i class="fa-solid fa-pencil"></i>
                     </a>
-                </td>
-                <td class="table-link-cell">
                     {{ if $.is_admin }}
                     {{ if not (eq .Username $.admin_username)}}
                     <div class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;">

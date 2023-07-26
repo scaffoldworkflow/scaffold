@@ -1,11 +1,17 @@
 package page
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"scaffold/server/auth"
 	"scaffold/server/cascade"
 	"scaffold/server/config"
 	"scaffold/server/constants"
+	"scaffold/server/datastore"
+	"scaffold/server/filestore"
 	"scaffold/server/user"
+	"scaffold/server/utils"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -70,14 +76,53 @@ func ShowCascadePage(c *gin.Context) {
 	showPage(c, "cascade.html", gin.H{"cascade": *obj})
 }
 
+func ShowFilesPage(c *gin.Context) {
+	type FileObjects struct {
+		Cascade string
+		Files   []filestore.ObjectMetadata
+	}
+
+	objects := []FileObjects{}
+	fileMetadata, err := filestore.ListObjects()
+	if err != nil {
+		fmt.Printf("error: %s\n", err.Error())
+	}
+
+	datastores, _ := datastore.GetAllDataStores()
+	for _, d := range datastores {
+		files := []filestore.ObjectMetadata{}
+
+		fmt.Printf("File metadata: %v\n", fileMetadata)
+
+		for _, f := range d.Files {
+			fmt.Printf("name: %s\n", f)
+			files = append(files, fileMetadata[f])
+			fmt.Printf("files: %v\n", files)
+		}
+		obj := FileObjects{
+			Cascade: d.Name,
+			Files:   files,
+		}
+		fmt.Printf("obj: %v\n", obj)
+		objects = append(objects, obj)
+	}
+
+	fmt.Printf("objects: %v\n", objects)
+
+	showPage(c, "files.html", gin.H{"objects": objects})
+}
+
 func ShowUsersPage(c *gin.Context) {
 	token, _ := c.Cookie("scaffold_token")
 	u, _ := user.GetUserByLoginToken(token)
 
 	isAdmin := false
-	if u.Username == config.Config.Admin.Username {
+	if utils.Contains(u.Groups, "admin") || utils.Contains(u.Roles, "admin") {
 		isAdmin = true
 	}
+
+	groups, _ := auth.GetAllGroups()
+	roles := auth.GetAllRoles()
 
 	var users []user.User
 	if isAdmin {
@@ -90,7 +135,7 @@ func ShowUsersPage(c *gin.Context) {
 		users = []user.User{*u}
 	}
 
-	showPage(c, "users.html", gin.H{"users": users, "is_admin": isAdmin, "admin_username": config.Config.Admin.Username})
+	showPage(c, "users.html", gin.H{"users": users, "is_admin": isAdmin, "admin_username": config.Config.Admin.Username, "groups": groups, "roles": roles})
 }
 
 func ShowUserPage(c *gin.Context) {
@@ -100,7 +145,23 @@ func ShowUserPage(c *gin.Context) {
 		c.HTML(http.StatusNotFound, "404.html", gin.H{})
 	}
 
-	showPage(c, "user.html", gin.H{"user": &u})
+	groupObj := make([]map[string]string, len(u.Groups))
+	for idx, val := range u.Groups {
+		groupObj[idx] = map[string]string{
+			"value": val,
+		}
+	}
+	groupJSON, _ := json.Marshal(groupObj)
+
+	roleObj := make([]map[string]string, len(u.Roles))
+	for idx, val := range u.Roles {
+		roleObj[idx] = map[string]string{
+			"value": val,
+		}
+	}
+	roleJSON, _ := json.Marshal(roleObj)
+
+	showPage(c, "user.html", gin.H{"user": &u, "role_tag_json": string(roleJSON), "group_tag_json": string(groupJSON)})
 }
 
 func showPage(c *gin.Context, page string, header gin.H) {

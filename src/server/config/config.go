@@ -13,14 +13,24 @@ const DEFAULT_CONFIG_PATH = "/home/scaffold/data/config.json"
 const ENV_PREFIX = "SCAFFOLD_"
 
 type ConfigObject struct {
-	HTTPHost          string      `json:"http_host" env:"HTTP_HOST"`
-	HTTPPort          int         `json:"http_port" env:"HTTP_PORT"`
-	BaseURL           string      `json:"base_url" env:"BASE_URL"`
-	Admin             UserObject  `json:"admin" env:"ADMIN"`
-	DB                DBObject    `json:"db" env:"DB"`
-	Node              NodeObject  `json:"node_type" env:"NODE_TYPE"`
-	HeartbeatInterval int         `json:"heartbeat_interval" env:"HEARTBEAT_INTERVAL"`
-	Reset             ResetObject `json:"reset" env:"RESET"`
+	HTTPHost          string          `json:"http_host" env:"HTTP_HOST"`
+	HTTPPort          int             `json:"http_port" env:"HTTP_PORT"`
+	BaseURL           string          `json:"base_url" env:"BASE_URL"`
+	Admin             UserObject      `json:"admin" env:"ADMIN"`
+	DB                DBObject        `json:"db" env:"DB"`
+	Node              NodeObject      `json:"node" env:"NODE"`
+	HeartbeatInterval int             `json:"heartbeat_interval" env:"HEARTBEAT_INTERVAL"`
+	Reset             ResetObject     `json:"reset" env:"RESET"`
+	FileStore         FileStoreObject `json:"file_store" env:"file_store"`
+}
+
+type FileStoreObject struct {
+	AccessKey string `json:"access_key"`
+	SecretKey string `json:"secret_key"`
+	Host      string `json:"host"`
+	Port      int    `json:"port"`
+	Bucket    string `json:"bucket"`
+	Region    string `json:"region"`
 }
 
 type UserObject struct {
@@ -64,14 +74,14 @@ func LoadConfig() {
 		HTTPHost:          "scaffold",
 		HTTPPort:          2997,
 		BaseURL:           "http://localhost:2997",
-		HeartbeatInterval: 5,
+		HeartbeatInterval: 500,
 		Admin: UserObject{
 			Username: "admin",
 			Password: "admin",
 		},
 		DB: DBObject{
-			Username: "mongodb",
-			Password: "mongodb",
+			Username: "myCoolMongoDBUsername",
+			Password: "myCoolMongoDBPassword",
 			Name:     "scaffold",
 			Host:     "mongodb",
 			Port:     27017,
@@ -84,10 +94,18 @@ func LoadConfig() {
 		},
 		Node: NodeObject{
 			Type:        "manager",
-			ManagerHost: "localhost",
+			ManagerHost: "scaffold-manager",
 			ManagerPort: 2997,
-			JoinKey:     "",
-			PrimaryKey:  "",
+			JoinKey:     "MyCoolJoinKey12345",
+			PrimaryKey:  "MyCoolPrimaryKey12345",
+		},
+		FileStore: FileStoreObject{
+			AccessKey: "MyCoolMinIOAccessKey",
+			SecretKey: "MyCoolMinIOSecretKey",
+			Host:      "minio",
+			Port:      9000,
+			Bucket:    "scaffold",
+			Region:    "default-region",
 		},
 	}
 

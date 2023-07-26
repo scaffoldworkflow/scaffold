@@ -16,6 +16,8 @@ var collectionNames = []string{
 	constants.MONGODB_DATASTORE_COLLECTION_NAME,
 	constants.MONGODB_STATE_COLLECTION_NAME,
 	constants.MONGODB_USER_COLLECTION_NAME,
+	constants.MONGODB_TASK_COLLECTION_NAME,
+	constants.MONGODB_INPUT_COLLECTION_NAME,
 }
 var Collections map[string]*mongo.Collection
 var Ctx = context.TODO()

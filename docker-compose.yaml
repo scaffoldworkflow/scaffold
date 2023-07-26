@@ -1,21 +1,61 @@
 version: "3.9"
 services:
-  scaffold:
+  scaffold-manager:
     image: "scaffold"
     ports:
       - "127.0.0.1:2997:2997"
     environment:
       SCAFFOLD_SLEEP: "5"
+      SCAFFOLD_HOST: "scaffold-manager"
       SCAFFOLD_DB: |
         {
-          "username": "myCoolMongoDBUsername",
-          "password": "myCoolMongoDBPassword",
+          "username": "MyCoolMongoDBUsername",
+          "password": "MyCoolMongoDBPassword",
           "name": "scaffold",
           "host": "mongodb",
           "port": 27017
         }
+      SCAFFOLD_NODE: |
+        {
+          "type": "manager",
+          "manager_host": "scaffold-manager",
+          "manager_port": 2997,
+          "join_key": "MyCoolJoinKey12345",
+          "primary_key": "MyCoolPrimaryKey12345"
+        }
     depends_on:
       - "mongodb"
+      - "minio"
+    tty: true
+  scaffold-worker:
+    image: "scaffold"
+    ports:
+      - "127.0.0.1:2998:2998"
+    environment:
+      SCAFFOLD_HTTP_PORT: "2998"
+      SCAFFOLD_HTTP_HOST: "scaffold-worker"
+      SCAFFOLD_SLEEP: "5"
+      SCAFFOLD_DB: |
+        {
+          "username": "MyCoolMongoDBUsername",
+          "password": "MyCoolMongoDBPassword",
+          "name": "scaffold",
+          "host": "mongodb",
+          "port": 27017
+        }
+      SCAFFOLD_NODE: |
+        {
+          "type": "worker",
+          "manager_host": "scaffold-manager",
+          "manager_port": 2997,
+          "join_key": "MyCoolJoinKey12345",
+          "primary_key": "MyCoolPrimaryKey12345"
+        }
+    depends_on:
+      - "scaffold-manager"
+    security_opt:
+      - seccomp:unconfined
+    privileged: true
     tty: true
   mongodb:
     image: centos/mongodb-36-centos7:1
@@ -23,6 +63,16 @@ services:
       - "127.0.0.1:27017:27017"
     environment:
       MONGODB_DATABASE: scaffold
-      MONGODB_ADMIN_PASSWORD: myCoolAdminPassword
-      MONGODB_USER: myCoolMongoDBUsername
-      MONGODB_PASSWORD: myCoolMongoDBPassword
+      MONGODB_ADMIN_PASSWORD: MyCoolAdminPassword
+      MONGODB_USER: MyCoolMongoDBUsername
+      MONGODB_PASSWORD: MyCoolMongoDBPassword
+  minio:
+    image: bitnami/minio:2023
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    environment:
+      BITNAMI_DEBUG: "false"
+      MINIO_REGION: "default-region"
+      MINIO_ROOT_USER: MyCoolMinIOAccessKey
+      MINIO_ROOT_PASSWORD: MyCoolMinIOSecretKey

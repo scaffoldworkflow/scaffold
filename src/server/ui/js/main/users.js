@@ -8,6 +8,32 @@
 
 var users
 
+function addGroup() {
+    groupName = $("#group-to-add").val()
+    html = `<div ondblclick="removeGroup('{{ . }}')" class="w3-tag w3-round scaffold-green user-group tag" style="padding:3px" id="group-${groupName}">
+                ${groupName}
+            </div>`
+    $("#group-to-add").val("")
+    $("#group-card").append(html)
+}
+
+function removeGroup(name) {
+    $(`#group-${name}`).remove()
+}
+
+function addRole() {
+    roleName = $("#role-to-add").val()
+    html = `<div ondblclick="removeRole('{{ . }}')" class="w3-tag w3-round scaffold-green user-role tag" style="padding:3px" id="role-${roleName}">
+                ${roleName}
+            </div>`
+    $("#role-to-add").val("")
+    $("#role-card").append(html)
+}
+
+function removeRole(name) {
+    $(`#role-${name}`).remove()
+}
+
 function getUsers() {
     parts = window.location.href.split('/')
     $.ajax({
@@ -48,7 +74,17 @@ function render() {
 }
 
 function addUser() {
-    parts = window.location.href.split('/')
+    roles = []
+    roleElements = $('.user-role')
+    for (let i = 0; i < roleElements.length; i++) {
+        roles.push(roleElements.text())
+    }
+
+    groups= []
+    groupElements = $('.user-group')
+    for (let i = 0; i < groupElements.length; i++) {
+        groups.push(groupElements.text())
+    }
 
     data = {
         "username": $("#users-add-username").val(),
@@ -61,6 +97,9 @@ function addUser() {
         "created": "",
         "updated": "",
         "login_token": "",
+        "api_tokens": [],
+        "groups": groups,
+        "roles": roles,
     }
 
     $("#spinner").css("display", "block")
@@ -81,7 +120,7 @@ function addUser() {
         error: function(response) {
             closeModal('users-delete-modal');
             console.log(response)
-            $("#log-container").text(response.responseJSON['error'])
+            $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
             $("#page-darken").css("opacity", "0")
             openModal('error-modal')
@@ -114,7 +153,7 @@ function deleteUser() {
         error: function(response) {
             closeModal('users-delete-modal');
             console.log(response)
-            $("#log-container").text(response.responseJSON['error'])
+            $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
             $("#page-darken").css("opacity", "0")
             openModal('error-modal')

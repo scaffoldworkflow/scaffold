@@ -1,298 +1,229 @@
 package run
 
 import (
-	"encoding/json"
+	"bytes"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"os/exec"
-	"scaffold/server/config"
 	"scaffold/server/constants"
-	"scaffold/server/job"
-	"scaffold/server/step"
+	"scaffold/server/datastore"
+	"scaffold/server/filestore"
+	"scaffold/server/state"
+	"scaffold/server/task"
+	"strings"
 	"time"
-
-	"github.com/google/uuid"
-	"github.com/jfcarter2358/ceresdb-go/connection"
 )
 
-const JOB_STATUS_RUNNING = "running"
-const JOB_STATUS_FAILED = "failed"
-const JOB_STATUS_SUCCESS = "success"
-
-type StepStatus struct {
-	Status   string `json:"status"`
-	Started  string `json:"started"`
-	Finished string `json:"finished"`
-	Error    string `json:"error"`
-	Output   string `json:"output"`
-}
-
-type JobStatus struct {
-	Steps    map[string]StepStatus `json:"steps"`
-	Status   string                `json:"status"`
-	Started  string                `json:"started"`
-	Finished string                `json:"finished"`
-	Error    string                `json:"error"`
-}
+var runError error
 
 type Run struct {
-	ID       string               `json:"id"`
-	Pipeline string               `json:"pipeline"`
-	Jobs     map[string]JobStatus `json:"jobs"`
-	Status   string               `json:"status"`
-	Started  string               `json:"started"`
-	Finished string               `json:"finished"`
-	Error    string               `json:"error"`
+	Name  string      `json:"name"`
+	Task  task.Task   `json:"task"`
+	State state.State `json:"state"`
 }
 
-func CreateRun(newRun Run) (string, string) {
+func setErrorStatus(r *Run, output string) {
+	r.State.Output = output
+	r.State.Status = constants.STATE_STATUS_ERROR
 	currentTime := time.Now().UTC()
-	newRun.Started = currentTime.Format("2006-01-02T15:04:05Z")
-	newRun.ID = uuid.NewString()
-	newRun.Jobs = make(map[string]JobStatus)
-
-	queryData, _ := json.Marshal(&newRun)
-	queryString := fmt.Sprintf("post record %v.runs %v", config.Config.DB.Name, string(queryData))
-	_, err := connection.Query(queryString)
-
-	if err != nil {
-		return err.Error(), ""
-	}
-
-	go startRun(newRun)
-
-	return constants.STATUS_CREATED, newRun.ID
+	r.State.Finished = currentTime.Format("2006-01-02T15:04:05Z")
 }
 
-func DeleteRunByID(id string) string {
-	ids := []string{id}
-
-	queryData, _ := json.Marshal(&ids)
-	queryString := fmt.Sprintf("delete record %v.runs %v", config.Config.DB.Name, string(queryData))
-	_, err := connection.Query(queryString)
-
-	if err != nil {
-		return err.Error()
-	}
-
-	return constants.STATUS_OK
+func runCmd(cmd *exec.Cmd) {
+	runError = cmd.Run()
 }
 
-func GetAllRuns(filter, limit, count, orderasc, orderdsc string) (string, []Run) {
-	queryString := fmt.Sprintf("get record %v.runs", config.Config.DB.Name)
+func StartRun(r *Run) error {
+	r.State.Status = constants.STATE_STATUS_RUNNING
+	currentTime := time.Now().UTC()
+	r.State.Started = currentTime.Format("2006-01-02T15:04:05Z")
 
-	if filter != constants.REQUEST_DEFAULT_FILTER {
-		queryString += fmt.Sprintf(" | filter %v", filter)
-	}
-	if limit != constants.REQUEST_DEFAULT_LIMIT {
-		queryString += fmt.Sprintf(" | limit %v", limit)
-	}
-	if count != constants.REQUEST_DEFAULT_COUNT {
-		queryString += " | count"
-	}
-	if orderasc != constants.REQUEST_DEFAULT_ORDERDSC {
-		queryString += fmt.Sprintf(" | orderasc %v", orderasc)
-	}
-	if orderdsc != constants.REQUEST_DEFAULT_COUNT {
-		queryString += fmt.Sprintf(" | orderdsc %v", orderdsc)
-	}
-
-	data, err := connection.Query(queryString)
+	cName := strings.Split(r.Name, ".")[0]
+	ds, err := datastore.GetDataStoreByName(cName)
 	if err != nil {
-		return err.Error(), []Run{}
+		return err
 	}
-	marshalled, _ := json.Marshal(data)
-	var output []Run
-	json.Unmarshal(marshalled, &output)
+	for _, name := range r.Task.Store.Env {
+		val := os.Getenv(name)
+		ds.Env[name] = val
+	}
 
-	return constants.STATUS_FOUND, output
-}
+	containerName := strings.Replace(r.Name, ".", "-", -1)
 
-func GetRunByID(runID string) (string, Run) {
-	queryString := fmt.Sprintf("get record %v.runs | filter id = \"%s\"", config.Config.DB.Name, runID)
-
-	data, err := connection.Query(queryString)
+	runDir := fmt.Sprintf("/tmp/run-%s", containerName)
+	err = os.MkdirAll(runDir, 0755)
 	if err != nil {
-		return err.Error(), Run{}
-	}
-	marshalled, _ := json.Marshal(data)
-	var output []Run
-	json.Unmarshal(marshalled, &output)
-
-	if len(output) == 0 {
-		return constants.STATUS_NOT_FOUND, Run{}
+		setErrorStatus(r, err.Error())
+		return err
 	}
 
-	return constants.STATUS_OK, output[0]
-}
+	scriptPath := runDir + "/.run.sh"
+	envInPath := runDir + "/.envin"
 
-func UpdateRunByID(runID string, newRun Run) string {
-	queryString := fmt.Sprintf("get record %v.runs | filter id = \"%s\"", config.Config.DB.Name, runID)
-	datum, err := connection.Query(queryString)
+	envInput := ""
+	for key, val := range r.Task.Inputs {
+		encoded := base64.StdEncoding.EncodeToString([]byte(ds.Env[val]))
+		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+	}
+	for _, key := range r.Task.Load.Env {
+		encoded := base64.StdEncoding.EncodeToString([]byte(ds.Env[key]))
+		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+	}
+
+	envOutput := ""
+	for key := range r.Task.Outputs {
+		envOutput += fmt.Sprintf("echo \"%s;$(echo \"${%s}\" | base64)\" >> /tmp/run/.envout\n", key, key)
+	}
+	for _, key := range r.Task.Store.Env {
+		envOutput += fmt.Sprintf("echo \"%s;$(echo \"${%s}\" | base64)\" >> /tmp/run/.envout\n", key, key)
+	}
+
+	runScript := fmt.Sprintf(`
+	# load ENV var
+
+	while read -r line; do
+		name=${line%%;*}
+		value=${line#*;}
+		export ${name}="$(echo "${value}" | base64 -d)"
+	done < /tmp/run/.envin
+	
+	# run command
+	%s
+	
+	# save ENV vars
+	%s
+	`, r.Task.Run, envOutput)
+
+	// Write out our run script
+	data := []byte(runScript)
+	err = os.WriteFile(scriptPath, data, 0777)
 	if err != nil {
-		return err.Error()
+		setErrorStatus(r, err.Error())
+		return err
 	}
 
-	if len(datum) == 0 {
-		return constants.STATUS_NOT_FOUND
-	}
-
-	if newRun.Pipeline != "" {
-		datum[0]["pipeline"] = newRun.Pipeline
-	}
-	if newRun.Status != "" {
-		datum[0]["status"] = newRun.Status
-	}
-	if newRun.Started != "" {
-		datum[0]["started"] = newRun.Started
-	}
-	if newRun.Finished != "" {
-		datum[0]["finished"] = newRun.Finished
-	}
-	if len(newRun.Jobs) > 0 {
-		datum[0]["jobs"] = newRun.Jobs
-	}
-
-	queryData, _ := json.Marshal(&datum)
-	queryString = fmt.Sprintf("put record %v.runs %v", config.Config.DB.Name, string(queryData))
-	_, err = connection.Query(queryString)
+	// Write out envin script
+	data = []byte(envInput)
+	err = os.WriteFile(envInPath, data, 0777)
 	if err != nil {
-		return err.Error()
+		setErrorStatus(r, err.Error())
+		return err
 	}
 
-	return constants.STATUS_OK
-}
-
-func startRun(r Run) {
-	status, p := pipeline.GetPipelineByID(r.Pipeline)
-	if status != constants.STATUS_OK {
-		r.Error = fmt.Sprintf("count not find pipeline with id %s", r.Pipeline)
-		r.Status = constants.RUN_STATUS_ERROR
-		UpdateRunByID(r.ID, r)
-		return
-	}
-
-	r.Status = constants.RUN_STATUS_RUNNING
-
-	for _, jid := range p.Jobs {
-		_, j := job.GetJobByID(jid)
-
-		currentTime := time.Now().UTC()
-
-		jobStatus := JobStatus{
-			Status:  constants.JOB_STATUS_RUNNING,
-			Steps:   make(map[string]StepStatus),
-			Started: currentTime.Format("2006-01-02T15:04:05Z"),
+	for _, name := range r.Task.Load.File {
+		err := filestore.GetFile(name, fmt.Sprintf("%s/%s", runDir, name))
+		if err != nil {
+			setErrorStatus(r, err.Error())
+			return err
 		}
-		r.Jobs[j.Name] = jobStatus
-		UpdateRunByID(r.ID, r)
+	}
 
-		for _, sid := range j.Steps {
-			_, s := step.GetStepByID(sid)
+	// Clean up any possible artifacts
+	if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman kill %s", containerName)).Run(); err != nil {
+		fmt.Printf("No running container with name %s exists, skipping kill\n", containerName)
+	}
+	if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman rm %s", containerName)).Run(); err != nil {
+		fmt.Printf("No running container with name %s exists, skipping removal\n", containerName)
+	}
 
-			currentTime := time.Now().UTC()
+	podmanCommand := "podman run --privileged -d --security-opt label=disabled "
+	podmanCommand += fmt.Sprintf("--name %s ", containerName)
+	podmanCommand += fmt.Sprintf("--mount type=bind,src=%s,dst=/tmp/run ", runDir)
+	podmanCommand += r.Task.Image
+	podmanCommand += " bash -c /tmp/run/.run.sh"
 
-			stepStatus := StepStatus{
-				Started: currentTime.Format("2006-01-02T15:04:05Z"),
-				Status:  constants.STEP_STATUS_RUNNING,
+	fmt.Printf("command: %s", podmanCommand)
+
+	cmd := exec.Command("/bin/sh", "-c", podmanCommand)
+	var outb, errb bytes.Buffer
+	cmd.Stdout = &outb
+	cmd.Stderr = &errb
+	go runCmd(cmd)
+
+	output, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman ps -a --filter \"name=%s\" --format \"{{.Status}}\"", containerName)).CombinedOutput()
+	if err != nil {
+		fmt.Printf("Encountered error: %v\n", err.Error())
+		fmt.Printf("STDOUT: %s\n", string(output))
+
+		setErrorStatus(r, string(output))
+		return err
+	}
+
+	var podmanOutput string
+	erroredOut := false
+	for !strings.HasPrefix(string(output), "Exited") {
+		if string(output) == "" {
+			podmanOutput = outb.String() + "\n\n" + errb.String()
+			r.State.Output = podmanOutput
+			if runError != nil {
+				setErrorStatus(r, string(runError.Error()))
+				erroredOut = true
+				break
 			}
-			jobStatus.Steps[s.Name] = stepStatus
-			r.Jobs[j.Name] = jobStatus
-			UpdateRunByID(r.ID, r)
-
-			switch s.Type {
-			case constants.STEP_TYPE_DOCKER:
-				err := os.MkdirAll(fmt.Sprintf("/tmp/run-%s", r.ID), 0755)
-				if err != nil {
-					r.Error = err.Error()
-					r.Status = constants.RUN_STATUS_ERROR
-					r.Jobs = map[string]JobStatus{}
-					currentTime := time.Now().UTC()
-					r.Finished = currentTime.Format("2006-01-02T15:04:05Z")
-					UpdateRunByID(r.ID, r)
-					return
-				}
-
-			case constants.STEP_TYPE_LITERAL:
-				dirPath := fmt.Sprintf("/tmp/run-%s-%s", r.ID, s.ID)
-				scriptPath := dirPath + "/.run.sh"
-				outputPath := dirPath + "/.output"
-				exitCodePath := dirPath + "/.exitcode"
-
-				err := os.MkdirAll(dirPath, 0755)
-				if err != nil {
-					r.Error = err.Error()
-					r.Status = constants.RUN_STATUS_ERROR
-					r.Jobs = map[string]JobStatus{}
-					currentTime := time.Now().UTC()
-					r.Finished = currentTime.Format("2006-01-02T15:04:05Z")
-					UpdateRunByID(r.ID, r)
-					return
-				}
-
-				data := []byte(s.Contents)
-				err = os.WriteFile(scriptPath, data, 0777)
-				if err != nil {
-					r.Error = err.Error()
-					r.Status = constants.RUN_STATUS_ERROR
-					r.Jobs = map[string]JobStatus{}
-					currentTime := time.Now().UTC()
-					r.Finished = currentTime.Format("2006-01-02T15:04:05Z")
-					UpdateRunByID(r.ID, r)
-					return
-				}
-
-				go exec.Command("bash", "-c", fmt.Sprintf("%s 2>&1 > %s; echo \"$?\" > %s", scriptPath, outputPath, exitCodePath)).Run()
-
-				for {
-					if _, err := os.Stat(exitCodePath); err == nil {
-						rc, _ := os.ReadFile(exitCodePath)
-						rcString := string(rc)
-						if rcString[:len(rcString)-1] != "0" {
-							stepStatus.Status = constants.STEP_STATUS_ERROR
-							break
-						}
-						stepStatus.Status = constants.STEP_STATUS_SUCCESS
-						break
-					}
-					out, _ := os.ReadFile(outputPath)
-					stepStatus.Output = string(out)
-					jobStatus.Steps[s.Name] = stepStatus
-					r.Jobs[j.Name] = jobStatus
-					UpdateRunByID(r.ID, r)
-
-					time.Sleep(1 * time.Millisecond)
-				}
-
-				currentTime := time.Now().UTC()
-				finishTime := currentTime.Format("2006-01-02T15:04:05Z")
-
-				out, _ := os.ReadFile(outputPath)
-				stepStatus.Output = string(out)
-				stepStatus.Finished = finishTime
-				jobStatus.Steps[s.Name] = stepStatus
-				r.Jobs[j.Name] = jobStatus
+		} else {
+			logs, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman logs %s", containerName)).CombinedOutput()
+			if err != nil {
+				r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(err.Error()))
+			} else {
+				r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(logs))
 			}
 		}
+		time.Sleep(500 * time.Millisecond)
+		output, _ = exec.Command("/bin/sh", "-c", fmt.Sprintf("podman ps -a --filter \"name=%s\" --format \"{{.Status}}\"", containerName)).CombinedOutput()
+	}
+
+	if !erroredOut {
+		openParenIdx := strings.Index(string(output), "(")
+		closeParenIdx := strings.Index(string(output), ")")
+		returnCode := string(output)[openParenIdx+1 : closeParenIdx]
+
+		logs, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman logs %s", containerName)).CombinedOutput()
+		if err != nil {
+			r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(err.Error()))
+		} else {
+			r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(logs))
+		}
+
+		for _, name := range r.Task.Store.File {
+			filestore.UploadFile(fmt.Sprintf("%s/%s", runDir, name), name)
+		}
+
+		envOutPath := fmt.Sprintf("%s/.envout", runDir)
+		var dat []byte
+		if _, err := os.Stat(envOutPath); err == nil {
+			dat, err = os.ReadFile(envOutPath)
+			if err != nil {
+				setErrorStatus(r, err.Error())
+			}
+		}
+		envVarList := strings.Split(string(dat), "\n")
+		envVarMap := map[string]string{}
+
+		for _, val := range envVarList {
+			name, val, _ := strings.Cut(val, ";")
+			decoded, _ := base64.StdEncoding.DecodeString(val)
+			envVarMap[name] = string(decoded)
+		}
+
+		for _, name := range r.Task.Store.Env {
+			ds.Env[name] = envVarMap[name]
+		}
+		for env, name := range r.Task.Outputs {
+			ds.Env[name] = envVarMap[env]
+		}
+
+		if err := datastore.UpdateDataStoreByName(cName, ds); err != nil {
+			setErrorStatus(r, err.Error())
+		}
+
 		currentTime = time.Now().UTC()
-		jobStatus.Finished = currentTime.Format("2006-01-02T15:04:05Z")
-		didSucceed := true
-		for _, step := range jobStatus.Steps {
-			if step.Status != constants.STEP_STATUS_SUCCESS {
-				jobStatus.Status = constants.JOB_STATUS_FAILED
-				r.Status = constants.RUN_STATUS_FAILED
-				didSucceed = false
-			}
-		}
-		if didSucceed {
-			jobStatus.Status = constants.JOB_STATUS_SUCCESS
-			r.Status = constants.RUN_STATUS_SUCCESS
-		}
-		r.Jobs[j.Name] = jobStatus
-		UpdateRunByID(r.ID, r)
-
-		if r.Status == constants.RUN_STATUS_FAILED {
-			break
+		r.State.Finished = currentTime.Format("2006-01-02T15:04:05Z")
+		if returnCode == "0" {
+			r.State.Status = constants.STATE_STATUS_SUCCESS
+		} else {
+			r.State.Status = constants.STATE_STATUS_ERROR
 		}
 	}
+	return nil
 }
