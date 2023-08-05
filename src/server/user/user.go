@@ -117,7 +117,7 @@ func GetUserByAPIToken(apiToken string) (*User, error) {
 
 	for _, u := range users {
 		for _, t := range u.APITokens {
-			if t.Token == apiToken {
+			if err := bcrypt.CompareHashAndPassword([]byte(t.Token), []byte(apiToken)); err == nil {
 				return u, nil
 			}
 		}
@@ -147,56 +147,95 @@ func GetUserByEmail(email string) (*User, error) {
 }
 
 func GetUserByLoginToken(loginToken string) (*User, error) {
-	if loginToken == "" {
-		return nil, fmt.Errorf("invalid login token")
-	}
+	/*
+		if loginToken == "" {
+			return nil, fmt.Errorf("invalid login token")
+		}
 
-	filter := bson.M{"login_token": loginToken}
+		filter := bson.M{"login_token": loginToken}
 
+		users, err := FilterUsers(filter)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if len(users) == 0 {
+			return nil, fmt.Errorf("no user found with login token %s", loginToken)
+		}
+
+		if len(users) > 1 {
+			return nil, fmt.Errorf("multiple users found with login token %s", loginToken)
+		}
+
+		return users[0], nil
+	*/
+
+	filter := bson.D{{}}
 	users, err := FilterUsers(filter)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if len(users) == 0 {
-		return nil, fmt.Errorf("no user found with login token %s", loginToken)
+	for _, u := range users {
+		if err := bcrypt.CompareHashAndPassword([]byte(u.LoginToken), []byte(loginToken)); err == nil {
+			return u, nil
+		}
 	}
 
-	if len(users) > 1 {
-		return nil, fmt.Errorf("multiple users found with login token %s", loginToken)
-	}
-
-	return users[0], nil
+	return nil, fmt.Errorf("no user found with login token %s", loginToken)
 }
 
 func GetUserByResetToken(resetToken string) (*User, error) {
-	filter := bson.M{"reset_token": resetToken}
+	/*
+		filter := bson.M{"reset_token": resetToken}
 
+		users, err := FilterUsers(filter)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if len(users) == 0 {
+			return nil, fmt.Errorf("no user found with reset_token %s", resetToken)
+		}
+
+		if len(users) > 1 {
+			return nil, fmt.Errorf("multiple users found with reset_token %s", resetToken)
+		}
+
+		return users[0], nil
+	*/
+
+	filter := bson.D{{}}
 	users, err := FilterUsers(filter)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if len(users) == 0 {
-		return nil, fmt.Errorf("no user found with reset_token %s", resetToken)
+	for _, u := range users {
+		if err := bcrypt.CompareHashAndPassword([]byte(u.ResetToken), []byte(resetToken)); err == nil {
+			return u, nil
+		}
 	}
 
-	if len(users) > 1 {
-		return nil, fmt.Errorf("multiple users found with reset_token %s", resetToken)
-	}
-
-	return users[0], nil
+	return nil, fmt.Errorf("no user found with reset token %s", resetToken)
 }
 
 func GenerateAPIToken(username, name string) (string, error) {
 	token := utils.GenerateToken(32)
 	currentTime := time.Now().UTC()
 
+	hashedToken, err := HashAndSalt([]byte(token))
+	if err != nil {
+		return "", err
+	}
+
 	apiToken := APIToken{
 		Name:    name,
-		Token:   token,
+		Token:   hashedToken,
 		Created: currentTime.Format("2006-01-02T15:04:05Z"),
 	}
 

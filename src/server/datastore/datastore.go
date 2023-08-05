@@ -1,8 +1,14 @@
 package datastore
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"scaffold/server/config"
 	"scaffold/server/constants"
+	"scaffold/server/input"
+	"scaffold/server/logger"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -81,11 +87,41 @@ func GetDataStoreByName(name string) (*DataStore, error) {
 	return datastores[0], nil
 }
 
-func UpdateDataStoreByName(name string, d *DataStore) error {
+func UpdateDataStoreByName(name string, d *DataStore, is []input.Input) error {
 	filter := bson.M{"name": name}
 
 	currentTime := time.Now().UTC()
 	d.Updated = currentTime.Format("2006-01-02T15:04:05Z")
+
+	if config.Config.Node.Type == constants.NODE_TYPE_MANAGER {
+		logger.Infof("", "Node is of type %s", constants.NODE_TYPE_MANAGER)
+		toChange := []string{}
+		old, err := GetDataStoreByName(name)
+		if err != nil {
+			logger.Errorf("", "Error getting datastore %s: %s\n", name, err.Error())
+			return err
+		}
+
+		for _, val := range is {
+			if old.Env[val.Name] != d.Env[val.Name] {
+				toChange = append(toChange, val.Name)
+			}
+		}
+		postBody, _ := json.Marshal(toChange)
+		postBodyBuffer := bytes.NewBuffer(postBody)
+
+		httpClient := &http.Client{}
+		requestURL := fmt.Sprintf("http://localhost:%d/api/v1/input/%s/update", config.Config.HTTPPort, d.Name)
+		req, _ := http.NewRequest("POST", requestURL, postBodyBuffer)
+		req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode >= 400 {
+			return fmt.Errorf("received trigger status code %d", resp.StatusCode)
+		}
+	}
 
 	collection := mongodb.Collections[constants.MONGODB_DATASTORE_COLLECTION_NAME]
 	ctx := mongodb.Ctx

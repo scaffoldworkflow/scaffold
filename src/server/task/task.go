@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"scaffold/server/constants"
 	"scaffold/server/state"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,6 +15,18 @@ import (
 type TaskLoadStore struct {
 	Env  []string `json:"env" bson:"env"`
 	File []string `json:"file" bson:"file"`
+}
+
+type TaskCheck struct {
+	Interval  int               `json:"interval" bson:"interval"`
+	Image     string            `json:"image" bson:"image"`
+	Run       string            `json:"run" bson:"run"`
+	Store     TaskLoadStore     `json:"store" bson:"store"`
+	Load      TaskLoadStore     `json:"load" bson:"load"`
+	Outputs   map[string]string `json:"outputs" bson:"outputs"`
+	Inputs    map[string]string `json:"inputs" bson:"inputs"`
+	Updated   string            `json:"updated" bson:"updated"`
+	RunNumber int               `json:"run_number" bson:"run_number"`
 }
 
 type Task struct {
@@ -27,13 +40,18 @@ type Task struct {
 	Load      TaskLoadStore     `json:"load" bson:"load"`
 	Outputs   map[string]string `json:"outputs" bson:"outputs"`
 	Inputs    map[string]string `json:"inputs" bson:"inputs"`
-	Group     string            `json:"group" bson:"group"`
+	Updated   string            `json:"updated" bson:"updated"`
+	Check     TaskCheck         `json:"check" bson:"check"`
+	RunNumber int               `json:"run_number" bson:"run_number"`
+	ShouldRM  bool              `json:"should_rm" bson:"should_rm"`
 }
 
 func CreateTask(t *Task) error {
 	if _, err := GetTaskByNames(t.Cascade, t.Name); err == nil {
 		return fmt.Errorf("task already exists with names %s, %s", t.Cascade, t.Name)
 	}
+
+	t.Check.RunNumber = 0
 
 	s := state.State{
 		Task:     t.Name,
@@ -44,6 +62,30 @@ func CreateTask(t *Task) error {
 		Output:   "",
 	}
 	if err := state.CreateState(&s); err != nil {
+		return err
+	}
+
+	sc := state.State{
+		Task:     fmt.Sprintf("SCAFFOLD_CHECK-%s", t.Name),
+		Cascade:  t.Cascade,
+		Status:   constants.STATE_STATUS_NOT_STARTED,
+		Started:  "",
+		Finished: "",
+		Output:   "",
+	}
+	if err := state.CreateState(&sc); err != nil {
+		return err
+	}
+
+	sp := state.State{
+		Task:     fmt.Sprintf("SCAFFOLD_PREVIOUS-%s", t.Name),
+		Cascade:  t.Cascade,
+		Status:   constants.STATE_STATUS_NOT_STARTED,
+		Started:  "",
+		Finished: "",
+		Output:   "",
+	}
+	if err := state.CreateState(&sp); err != nil {
 		return err
 	}
 
@@ -141,6 +183,8 @@ func GetTasksByCascade(cascade string) ([]*Task, error) {
 
 func UpdateTaskByNames(cascade, task string, t *Task) error {
 	filter := bson.M{"cascade": cascade, "name": task}
+	currentTime := time.Now().UTC()
+	t.Updated = currentTime.Format("2006-01-02T15:04:05Z")
 
 	collection := mongodb.Collections[constants.MONGODB_TASK_COLLECTION_NAME]
 	ctx := mongodb.Ctx

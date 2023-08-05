@@ -2,10 +2,10 @@ package auth
 
 import (
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"scaffold/server/cascade"
 	"scaffold/server/config"
+	"scaffold/server/logger"
 	"scaffold/server/user"
 	"scaffold/server/utils"
 	"strings"
@@ -61,7 +61,13 @@ func PerformLogin(c *gin.Context) {
 				token := utils.GenerateToken(32)
 				c.SetCookie("scaffold_token", token, 3600, "", "", false, false)
 				u, _ := user.GetUserByUsername(username)
-				u.LoginToken = token
+				hashedToken, err := HashAndSalt([]byte(token))
+				if err != nil {
+					c.HTML(http.StatusBadRequest, "login.html", gin.H{
+						"ErrorTitle":   "Login Failed",
+						"ErrorMessage": err.Error()})
+				}
+				u.LoginToken = hashedToken
 				user.UpdateUserByUsername(username, u)
 				return
 			}
@@ -77,7 +83,13 @@ func PerformLogin(c *gin.Context) {
 			}
 
 			u, _ := user.GetUserByUsername(username)
-			u.LoginToken = token
+			hashedToken, err := HashAndSalt([]byte(token))
+			if err != nil {
+				c.HTML(http.StatusBadRequest, "login.html", gin.H{
+					"ErrorTitle":   "Login Failed",
+					"ErrorMessage": err.Error()})
+			}
+			u.LoginToken = hashedToken
 			user.UpdateUserByUsername(username, u)
 
 			c.Redirect(302, "/")
@@ -115,7 +127,11 @@ func RequestPasswordReset(c *gin.Context) {
 		token := utils.GenerateToken(32)
 		currentTime := time.Now()
 
-		u.ResetToken = token
+		hashedToken, err := HashAndSalt([]byte(token))
+		if err != nil {
+			panic(err)
+		}
+		u.ResetToken = hashedToken
 		u.ResetTokenCreated = currentTime.Format("2006-01-02 15:04:05")
 		user.UpdateUserByUsername(u.Username, u)
 
@@ -142,8 +158,7 @@ func RequestPasswordReset(c *gin.Context) {
 
 		// Now send E-Mail
 		if err := d.DialAndSend(m); err != nil {
-			fmt.Println(err)
-			panic(err)
+			logger.Fatal("", err.Error())
 		}
 		c.Redirect(302, "/ui/email_success")
 	} else {

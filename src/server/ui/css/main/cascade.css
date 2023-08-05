@@ -1,6 +1,6 @@
 /* import material.css */
 /* import scaffold.css */
-/* import sidebar.css */
+/* import current-state.css */
 /* import dark.css */
 /* import light.css */
 /* import layout.css */
@@ -17,4 +17,30 @@
 
 .cascade-tag {
     padding-left: 5px;
+}
+
+.current-state-item {
+    margin-left: 4px;
+    padding-left: 0px;
+}
+
+.current-state-end {
+    height: 5px;
+    width: 100%;
+}
+
+.current-state {
+    width:300px;
+    display:block;
+    left: 100%;
+    z-index: 999;
+}
+
+.current-state-header {
+    border:4px;
+}
+
+.current-state-theme {
+    cursor:pointer;
+    margin-top:4px;
 }

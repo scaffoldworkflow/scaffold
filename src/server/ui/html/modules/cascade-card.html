@@ -5,10 +5,12 @@
                 <div id="cascade-name" class="card-title light">
                     <h3>{{ .cascade.Name }}</h3>
                 </div>
-                <div id="cascade-input-button" class="card-button light">
+                <div id="cascade-state-button" class="card-button light" style="margin-right:4px;">
+                    <span onclick="toggleCurrentState()" class="w3-button light theme-light w3-round scaffold-hover-green">Current State&nbsp;<i class="fa-solid fa-database"></i></span>
+                </div>
+                <div id="cascade-input-button" class="card-button light" style="margin-right:4px;">
                     <span onclick="openInput()" class="w3-button light theme-light w3-round scaffold-hover-green">Inputs&nbsp;<i class="fa-solid fa-pencil"></i></span>
                 </div>
-
             </div>
         </div>
     </div>

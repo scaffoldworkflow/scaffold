@@ -10,6 +10,7 @@ import (
 	"scaffold/server/constants"
 	"scaffold/server/datastore"
 	"scaffold/server/filestore"
+	"scaffold/server/logger"
 	"scaffold/server/user"
 	"scaffold/server/utils"
 	"time"
@@ -71,45 +72,41 @@ func ShowCascadesPage(c *gin.Context) {
 
 func ShowCascadePage(c *gin.Context) {
 	name := c.Param("name")
-	obj, _ := cascade.GetCascadeByName(name)
+	obj, err := cascade.GetCascadeByName(name)
+	if err != nil {
+		c.Redirect(http.StatusTemporaryRedirect, "500.html")
+	}
 
 	showPage(c, "cascade.html", gin.H{"cascade": *obj})
 }
 
 func ShowFilesPage(c *gin.Context) {
-	type FileObjects struct {
-		Cascade string
-		Files   []filestore.ObjectMetadata
-	}
 
-	objects := []FileObjects{}
+	objects := []filestore.ObjectMetadata{}
 	fileMetadata, err := filestore.ListObjects()
 	if err != nil {
-		fmt.Printf("error: %s\n", err.Error())
+		logger.Errorf("", "Unable to get filestore objects: %s", err.Error())
+		utils.DynamicAPIResponse(c, "500.html", http.StatusInternalServerError, gin.H{})
 	}
+
+	cascades := []string{}
 
 	datastores, _ := datastore.GetAllDataStores()
 	for _, d := range datastores {
-		files := []filestore.ObjectMetadata{}
-
-		fmt.Printf("File metadata: %v\n", fileMetadata)
+		cascades = append(cascades, d.Name)
 
 		for _, f := range d.Files {
-			fmt.Printf("name: %s\n", f)
-			files = append(files, fileMetadata[f])
-			fmt.Printf("files: %v\n", files)
+			path := fmt.Sprintf("%s/%s", d.Name, f)
+			fm := filestore.ObjectMetadata{
+				Name:     f,
+				Cascade:  d.Name,
+				Modified: fileMetadata[path].Modified,
+			}
+			objects = append(objects, fm)
 		}
-		obj := FileObjects{
-			Cascade: d.Name,
-			Files:   files,
-		}
-		fmt.Printf("obj: %v\n", obj)
-		objects = append(objects, obj)
 	}
 
-	fmt.Printf("objects: %v\n", objects)
-
-	showPage(c, "files.html", gin.H{"objects": objects})
+	showPage(c, "files.html", gin.H{"objects": objects, "cascades": cascades})
 }
 
 func ShowUsersPage(c *gin.Context) {

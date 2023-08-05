@@ -15,8 +15,9 @@ import (
 var S3Config *aws.Config
 
 type ObjectMetadata struct {
-	Name     string `json:"name"`
-	Modified string `json:"modified"`
+	Name     string `json:"name" bson:"name"`
+	Modified string `json:"modified" bson:"modified"`
+	Cascade  string `json:"cascade" bson:"cascade"`
 }
 
 func InitBucket() {
@@ -124,7 +125,6 @@ func ListObjects() (map[string]ObjectMetadata, error) {
 	output := make(map[string]ObjectMetadata)
 
 	for _, item := range resp.Contents {
-		fmt.Printf("Object Name: %s\n", *item.Key)
 		output[*item.Key] = ObjectMetadata{
 			Name:     *item.Key,
 			Modified: (*item.LastModified).Format("2006-01-02T15:04:05Z"),

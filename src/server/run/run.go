@@ -9,6 +9,8 @@ import (
 	"scaffold/server/constants"
 	"scaffold/server/datastore"
 	"scaffold/server/filestore"
+	"scaffold/server/input"
+	"scaffold/server/logger"
 	"scaffold/server/state"
 	"scaffold/server/task"
 	"strings"
@@ -17,10 +19,19 @@ import (
 
 var runError error
 
+// type CheckRun struct {
+// 	Enabled bool           `json:"enabled"`
+// 	Name    string         `json:"name"`
+// 	Task    task.TaskCheck `json:"task"`
+// 	State   state.State    `json:"state"`
+// }
+
 type Run struct {
-	Name  string      `json:"name"`
-	Task  task.Task   `json:"task"`
-	State state.State `json:"state"`
+	Name     string      `json:"name"`
+	Task     task.Task   `json:"task"`
+	State    state.State `json:"state"`
+	Previous state.State `json:"previous"`
+	Number   int         `json:"number"`
 }
 
 func setErrorStatus(r *Run, output string) {
@@ -34,28 +45,28 @@ func runCmd(cmd *exec.Cmd) {
 	runError = cmd.Run()
 }
 
-func StartRun(r *Run) error {
+func StartRun(r *Run) (bool, error) {
 	r.State.Status = constants.STATE_STATUS_RUNNING
 	currentTime := time.Now().UTC()
 	r.State.Started = currentTime.Format("2006-01-02T15:04:05Z")
 
 	cName := strings.Split(r.Name, ".")[0]
+	logger.Debugf("", "Getting datastore by name %s", cName)
 	ds, err := datastore.GetDataStoreByName(cName)
 	if err != nil {
-		return err
-	}
-	for _, name := range r.Task.Store.Env {
-		val := os.Getenv(name)
-		ds.Env[name] = val
+		logger.Errorf("", "Cannot get datastore %s", cName)
+		return false, err
 	}
 
-	containerName := strings.Replace(r.Name, ".", "-", -1)
+	// containerName := strings.Replace(r.Name, ".", "-", -1)
+	containerName := fmt.Sprintf("%s-%s-%d", r.State.Cascade, r.State.Task, r.Number)
 
-	runDir := fmt.Sprintf("/tmp/run-%s", containerName)
+	runDir := fmt.Sprintf("/tmp/run/%s/%s/%d", r.State.Cascade, r.State.Task, r.Number)
 	err = os.MkdirAll(runDir, 0755)
 	if err != nil {
+		logger.Errorf("", "Error creating run directory %s", err.Error())
 		setErrorStatus(r, err.Error())
-		return err
+		return false, err
 	}
 
 	scriptPath := runDir + "/.run.sh"
@@ -99,41 +110,47 @@ func StartRun(r *Run) error {
 	data := []byte(runScript)
 	err = os.WriteFile(scriptPath, data, 0777)
 	if err != nil {
+		logger.Errorf("", "Error writing run file %s", err.Error())
 		setErrorStatus(r, err.Error())
-		return err
+		return false, err
 	}
 
 	// Write out envin script
 	data = []byte(envInput)
 	err = os.WriteFile(envInPath, data, 0777)
 	if err != nil {
+		logger.Errorf("", "Error writing envin file %s", err.Error())
 		setErrorStatus(r, err.Error())
-		return err
+		return false, err
 	}
 
 	for _, name := range r.Task.Load.File {
-		err := filestore.GetFile(name, fmt.Sprintf("%s/%s", runDir, name))
+		err := filestore.GetFile(fmt.Sprintf("%s/%s", r.Task.Cascade, name), fmt.Sprintf("%s/%s", runDir, name))
 		if err != nil {
+			logger.Errorf("", "Error getting file %s", err.Error())
 			setErrorStatus(r, err.Error())
-			return err
+			return false, err
 		}
 	}
 
 	// Clean up any possible artifacts
 	if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman kill %s", containerName)).Run(); err != nil {
-		fmt.Printf("No running container with name %s exists, skipping kill\n", containerName)
+		logger.Infof("", "No running container with name %s exists, skipping kill\n", containerName)
 	}
 	if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman rm %s", containerName)).Run(); err != nil {
-		fmt.Printf("No running container with name %s exists, skipping removal\n", containerName)
+		logger.Infof("", "No running container with name %s exists, skipping removal\n", containerName)
 	}
 
 	podmanCommand := "podman run --privileged -d --security-opt label=disabled "
+	if r.Task.ShouldRM {
+		podmanCommand += "--rm "
+	}
 	podmanCommand += fmt.Sprintf("--name %s ", containerName)
 	podmanCommand += fmt.Sprintf("--mount type=bind,src=%s,dst=/tmp/run ", runDir)
 	podmanCommand += r.Task.Image
 	podmanCommand += " bash -c /tmp/run/.run.sh"
 
-	fmt.Printf("command: %s", podmanCommand)
+	logger.Debugf("", "command: %s", podmanCommand)
 
 	cmd := exec.Command("/bin/sh", "-c", podmanCommand)
 	var outb, errb bytes.Buffer
@@ -143,11 +160,20 @@ func StartRun(r *Run) error {
 
 	output, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman ps -a --filter \"name=%s\" --format \"{{.Status}}\"", containerName)).CombinedOutput()
 	if err != nil {
-		fmt.Printf("Encountered error: %v\n", err.Error())
-		fmt.Printf("STDOUT: %s\n", string(output))
+		logger.Errorf("", "Encountered error: %v\n", err.Error())
+		logger.Debugf("", "STDOUT: %s\n", string(output))
 
+		shouldRestart := false
+		if strings.Contains(string(output), "no space left on device") {
+			shouldRestart = true
+			logs, err := exec.Command("/bin/sh", "-c", "podman system prune -a -f").CombinedOutput()
+			if err != nil {
+				logger.Errorf("", "Prune error string: %s", err.Error())
+			}
+			logger.Debugf("", "Prune output: %s", logs)
+		}
 		setErrorStatus(r, string(output))
-		return err
+		return shouldRestart, err
 	}
 
 	var podmanOutput string
@@ -157,6 +183,7 @@ func StartRun(r *Run) error {
 			podmanOutput = outb.String() + "\n\n" + errb.String()
 			r.State.Output = podmanOutput
 			if runError != nil {
+				logger.Errorf("", "Error running pod %s\n", runError.Error())
 				setErrorStatus(r, string(runError.Error()))
 				erroredOut = true
 				break
@@ -186,7 +213,11 @@ func StartRun(r *Run) error {
 		}
 
 		for _, name := range r.Task.Store.File {
-			filestore.UploadFile(fmt.Sprintf("%s/%s", runDir, name), name)
+			err := filestore.UploadFile(fmt.Sprintf("%s/%s", runDir, name), fmt.Sprintf("%s/%s", r.Task.Cascade, name))
+			if err != nil {
+				logger.Errorf("", "ERROR UPLOADING %s: %s\n", fmt.Sprintf("%s/%s", r.Task.Cascade, name), err.Error())
+			}
+			ds.Files = append(ds.Files, name)
 		}
 
 		envOutPath := fmt.Sprintf("%s/.envout", runDir)
@@ -194,6 +225,7 @@ func StartRun(r *Run) error {
 		if _, err := os.Stat(envOutPath); err == nil {
 			dat, err = os.ReadFile(envOutPath)
 			if err != nil {
+				logger.Errorf("", "Error reading file %s\n", err.Error())
 				setErrorStatus(r, err.Error())
 			}
 		}
@@ -213,7 +245,9 @@ func StartRun(r *Run) error {
 			ds.Env[name] = envVarMap[env]
 		}
 
-		if err := datastore.UpdateDataStoreByName(cName, ds); err != nil {
+		inputs := []input.Input{}
+		if err := datastore.UpdateDataStoreByName(cName, ds, inputs); err != nil {
+			logger.Errorf("", "Error updating datastore %s\n", err.Error())
 			setErrorStatus(r, err.Error())
 		}
 
@@ -225,5 +259,5 @@ func StartRun(r *Run) error {
 			r.State.Status = constants.STATE_STATUS_ERROR
 		}
 	}
-	return nil
+	return false, err
 }

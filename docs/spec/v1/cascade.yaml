@@ -1,10 +1,14 @@
 version: str # cascade api version
 name: str # cascade name
+groups:  # cascade groups that can view this cascade
+  - str
 inputs:
   - name: str # input name
     description: str # input label text
     default: str # default value
     type: str # secret|plaintext
+links:
+  str: str # Name of link, URL
 tasks:
   name: str # task name
   verb: str # verb to be injected as SCAFFOLD_VERB env variable [optional]
@@ -27,4 +31,7 @@ tasks:
     str: str
   inputs:
     str: str
-  group: str
+  check:
+    interval: int # interval to run health check in seconds
+    run: |
+      str

@@ -3,14 +3,12 @@
 package main
 
 import (
-	"log"
-	"math/rand"
+	"fmt"
 	"scaffold/server/config"
 	"scaffold/server/constants"
+	"scaffold/server/logger"
 	"scaffold/server/manager"
 	"scaffold/server/worker"
-	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,18 +20,18 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 
 	config.LoadConfig()
+	logger.SetLevel(config.Config.LogLevel)
 
-	routerPort := ":" + strconv.Itoa(config.Config.HTTPPort)
+	router = gin.New()
+	router.Use(gin.LoggerWithFormatter(logger.ConsoleLogFormatter))
+	router.Use(gin.Recovery())
 
-	log.Print("Running with port: " + strconv.Itoa(config.Config.HTTPPort))
+	logger.Infof("", "Running with port: %d", config.Config.HTTPPort)
 
-	router = gin.Default()
 	router.LoadHTMLGlob("templates/*")
-
-	// Initialize the routes
 	initializeRoutes()
 
-	rand.Seed(time.Now().UnixNano())
+	// rand.Seed(time.Now().UnixNano())
 
 	if config.Config.Node.Type == constants.NODE_TYPE_MANAGER {
 		go manager.Run()
@@ -41,6 +39,6 @@ func main() {
 		go worker.Run()
 	}
 
-	// Start serving the application
+	routerPort := fmt.Sprintf(":%d", config.Config.HTTPPort)
 	router.Run(routerPort)
 }

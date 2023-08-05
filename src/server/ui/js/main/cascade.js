@@ -7,11 +7,13 @@
 // import data.js
 // import state.js
 // import input.js
+// import accordion.js
 
 stateIntervalMilliSeconds = "500"
 
 tasks = []
 states = []
+datastore = {}
 link_data = []
 node_data = []
 structure = {}
@@ -27,11 +29,59 @@ hw = w / 2
 hh = h / 2
 m = 10
 
-function getTasks() {
+function toggleCurrentState() {
+    let sidebar = document.getElementById("current-state")
+    if (sidebar.className.indexOf("show") == -1) {
+        sidebar.classList.add("show");
+        sidebar.classList.remove("right-slide-out");
+        void sidebar.offsetWidth;
+        sidebar.classList.add("right-slide-in")
+        $("#current-state").css("left", `calc(100% - 300px)`)
+    } else {
+        sidebar.classList.remove("show");
+        sidebar.classList.remove("right-slide-in");
+        void sidebar.offsetWidth;
+        sidebar.classList.add("right-slide-out")
+        $("#current-state").css("left", `calc(100%)`)
+    }
+}
+
+function updateDatastore() {
+    $("#current-state-div").empty()
+
+    for (let [key, value] of Object.entries(datastore.env)) {
+        html = `<div class="w3-bar-item light scaffold-yellow w3-border-bottom theme-border-light">
+            <b>${key}</b>
+        </div>
+        <div class="w3-bar-item light theme-light w3-border-bottom theme-border-light">
+            ${value}
+        </div>`
+        $("#current-state-div").append(html)
+    }
+}
+
+function getDatastore() {
     parts = window.location.href.split('/')
     cascadeName = parts[parts.length - 1]
 
-    var foo
+    $.ajax({
+        url: "/api/v1/datastore/" + cascadeName,
+        type: "GET",
+        contentType: "application/json",
+        success: function (result) {
+            datastore = result
+            updateDatastore()
+            
+        },
+        error: function (result) {
+            console.log(result)
+        }
+    });
+}
+
+function getTasks() {
+    parts = window.location.href.split('/')
+    cascadeName = parts[parts.length - 1]
 
     $.ajax({
         url: "/api/v1/task/" + cascadeName,
@@ -89,13 +139,17 @@ function triggerRun() {
 
 $(document).ready(
     function () {
-        $("#spinner").css("display", "block")
-        $("#page-darken").css("opacity", "1")
-        
+        // let width = $( document ).width();
+        $("#current-state").css("left", `calc(100%)`)
+        $("#sidebar").css("left", "-300px")
+
+        // $("#spinner").css("display", "block")
+        // $("#page-darken").css("opacity", "1")
+
         getTasks()
         setInterval(function() {
             getStates(false)
         }, stateIntervalMilliSeconds)
-
+        setInterval(getDatastore, stateIntervalMilliSeconds)
     }
 )

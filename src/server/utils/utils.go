@@ -6,13 +6,14 @@ import (
 	"log"
 	"math/rand"
 	"os/exec"
+	"scaffold/server/logger"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func Error(err error, c *gin.Context, statusCode int) {
-	log.Printf("Encountered error: %v", err)
+	logger.Error("", err.Error())
 	c.JSON(statusCode, gin.H{"error": err.Error()})
 }
 
@@ -23,6 +24,17 @@ func Contains(s []string, e string) bool {
 		}
 	}
 	return false
+}
+
+func Keys(m map[string]string) []string {
+	keys := make([]string, len(m))
+
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+	return keys
 }
 
 func RemoveDuplicateValues(stringSlice []string) []string {
@@ -62,4 +74,14 @@ func GenerateToken(length int) string {
 
 	token = token[:length]
 	return token
+}
+
+func DynamicAPIResponse(ctx *gin.Context, redirect string, status int, response gin.H) {
+	_, err := ctx.Cookie("scaffold_token")
+	if err == nil {
+		logger.Debugf("", "Redirecting to %s", redirect)
+		ctx.Redirect(302, redirect)
+		return
+	}
+	ctx.JSON(status, response)
 }

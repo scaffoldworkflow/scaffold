@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"scaffold/server/constants"
 	"strconv"
 )
 
@@ -15,6 +16,8 @@ const ENV_PREFIX = "SCAFFOLD_"
 type ConfigObject struct {
 	HTTPHost          string          `json:"http_host" env:"HTTP_HOST"`
 	HTTPPort          int             `json:"http_port" env:"HTTP_PORT"`
+	WSPort            int             `json:"ws_port" env:"WS_PORT"`
+	LogLevel          string          `json:"log_level" env:"LOG_LEVEL"`
 	BaseURL           string          `json:"base_url" env:"BASE_URL"`
 	Admin             UserObject      `json:"admin" env:"ADMIN"`
 	DB                DBObject        `json:"db" env:"DB"`
@@ -73,6 +76,8 @@ func LoadConfig() {
 	Config = ConfigObject{
 		HTTPHost:          "scaffold",
 		HTTPPort:          2997,
+		WSPort:            8080,
+		LogLevel:          constants.LOG_LEVEL_INFO,
 		BaseURL:           "http://localhost:2997",
 		HeartbeatInterval: 500,
 		Admin: UserObject{

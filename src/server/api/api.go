@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -16,10 +17,12 @@ import (
 	"scaffold/server/cascade"
 	"scaffold/server/config"
 	"scaffold/server/constants"
+	"scaffold/server/container"
 	"scaffold/server/datastore"
 	"scaffold/server/filestore"
 	"scaffold/server/health"
 	"scaffold/server/input"
+	"scaffold/server/logger"
 	"scaffold/server/manager"
 	"scaffold/server/run"
 	"scaffold/server/state"
@@ -211,7 +214,17 @@ func UpdateDataStoreByName(ctx *gin.Context) {
 		return
 	}
 
-	err := datastore.UpdateDataStoreByName(name, &d)
+	inputs := []input.Input{}
+	if config.Config.Node.Type == constants.NODE_TYPE_MANAGER {
+		c, err := cascade.GetCascadeByName(name)
+		if err != nil {
+			utils.Error(err, ctx, http.StatusInternalServerError)
+			return
+		}
+		inputs = c.Inputs
+	}
+
+	err := datastore.UpdateDataStoreByName(name, &d, inputs)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
@@ -442,6 +455,24 @@ func UpdateInputByNames(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
 }
 
+func UpdateInputDependenciesByName(ctx *gin.Context) {
+	name := ctx.Param("cascade")
+
+	var changed []string
+	if err := ctx.ShouldBindJSON(&changed); err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	err := manager.InputChangeStateChange(name, changed)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
+}
+
 /*~~~~~~~~ TASK ~~~~~~~~*/
 
 func CreateTask(ctx *gin.Context) {
@@ -525,10 +556,6 @@ func GetTasksByCascade(ctx *gin.Context) {
 	cn := ctx.Param("cascade")
 
 	t, err := task.GetTasksByCascade(cn)
-
-	for _, ts := range t {
-		fmt.Printf("Task: %v\n", *ts)
-	}
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -699,11 +726,24 @@ func CreateRun(ctx *gin.Context) {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
 	}
+	t.RunNumber += 1
+
+	previousName := fmt.Sprintf("SCAFFOLD_PREVIOUS-%s", t.Name)
+	ps := *s
+	ps.Task = previousName
+	err = state.UpdateStateByNames(cn, previousName, &ps)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	s.Status = constants.STATE_STATUS_WAITING
 
 	obj := run.Run{
-		Name:  fmt.Sprintf("%s.%s", cn, tn),
-		Task:  *t,
-		State: *s,
+		Name:   fmt.Sprintf("%s.%s.%d", cn, tn, t.RunNumber),
+		Task:   *t,
+		State:  *s,
+		Number: t.RunNumber,
 	}
 	postBody, _ := json.Marshal(obj)
 	postBodyBuffer := bytes.NewBuffer(postBody)
@@ -723,12 +763,107 @@ func CreateRun(ctx *gin.Context) {
 		panic(err)
 	}
 	if resp.StatusCode >= 400 {
-		panic(fmt.Sprintf("Received trigger status code %d", resp.StatusCode))
+		utils.Error(fmt.Errorf("received trigger status code %d", resp.StatusCode), ctx, resp.StatusCode)
 	}
 	if _, ok := manager.InProgress[cn]; !ok {
-		manager.InProgress[cn] = map[string]string{tn: fmt.Sprintf("%s:%d", n.Host, n.Port)}
+		manager.InProgress[cn] = map[string]string{fmt.Sprintf("%s.%d", tn, t.RunNumber): fmt.Sprintf("%s:%d", n.Host, n.Port)}
 	} else {
-		manager.InProgress[cn][tn] = fmt.Sprintf("%s:%d", n.Host, n.Port)
+		manager.InProgress[cn][fmt.Sprintf("%s.%d", tn, t.RunNumber)] = fmt.Sprintf("%s:%d", n.Host, n.Port)
+	}
+
+	if err := task.UpdateTaskByNames(cn, tn, t); err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	cs, err := cascade.GetCascadeByName(cn)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+	manager.SetDependsState(cs, tn)
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
+}
+
+func CreateCheckRun(ctx *gin.Context) {
+	cn := ctx.Param("cascade")
+	tn := ctx.Param("task")
+
+	t, err := task.GetTaskByNames(cn, tn)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+	t.Check.RunNumber += 1
+
+	checkStateName := fmt.Sprintf("SCAFFOLD_CHECK-%s", tn)
+
+	s, err := state.GetStateByNames(cn, checkStateName)
+	if err != nil {
+		logger.Infof("", "No existing state for %s/%s found", cn, checkStateName)
+		s = &state.State{
+			Task:     checkStateName,
+			Cascade:  cn,
+			Status:   constants.STATE_STATUS_WAITING,
+			Started:  "",
+			Finished: "",
+			Output:   "",
+		}
+		if err := state.CreateState(s); err != nil {
+			utils.Error(err, ctx, http.StatusInternalServerError)
+			return
+		}
+	}
+
+	obj := run.Run{
+		Name: fmt.Sprintf("%s.%s.%d", cn, checkStateName, t.Check.RunNumber),
+		Task: task.Task{
+			Name:      checkStateName,
+			Cascade:   t.Cascade,
+			Verb:      "",
+			DependsOn: []string{},
+			Image:     t.Check.Image,
+			Run:       t.Check.Run,
+			Store:     t.Check.Store,
+			Load:      t.Check.Load,
+			Outputs:   t.Check.Outputs,
+			Inputs:    t.Check.Inputs,
+			Updated:   t.Check.Updated,
+			ShouldRM:  true,
+		},
+		State:  *s,
+		Number: t.RunNumber,
+	}
+	postBody, _ := json.Marshal(obj)
+	postBodyBuffer := bytes.NewBuffer(postBody)
+
+	n, err := getAvailableNode()
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	httpClient := &http.Client{}
+	requestURL := fmt.Sprintf("http://%s:%d/api/v1/trigger", n.Host, n.Port)
+	req, _ := http.NewRequest("POST", requestURL, postBodyBuffer)
+	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		logger.Error("", err.Error())
+	}
+	if resp.StatusCode >= 400 {
+		logger.Errorf("", "Received trigger status code %d", resp.StatusCode)
+	}
+	if _, ok := manager.InProgress[cn]; !ok {
+		manager.InProgress[cn] = map[string]string{fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber): fmt.Sprintf("%s:%d", n.Host, n.Port)}
+	} else {
+		manager.InProgress[cn][fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber)] = fmt.Sprintf("%s:%d", n.Host, n.Port)
+	}
+
+	if err := task.UpdateTaskByNames(cn, tn, t); err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
@@ -755,6 +890,39 @@ func getAvailableNode() (*auth.NodeObject, error) {
 	auth.LastScheduledIdx = nodeIdx
 
 	return &auth.Nodes[nodeIdx], nil
+}
+
+func GetAllContainers(ctx *gin.Context) {
+	available := map[string][]string{}
+	for _, n := range auth.Nodes {
+		httpClient := &http.Client{}
+		requestURL := fmt.Sprintf("http://%s:%d/api/v1/available", n.Host, n.Port)
+		req, _ := http.NewRequest("GET", requestURL, nil)
+		req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := httpClient.Do(req)
+
+		if err != nil {
+			logger.Errorf("", "Error getting available containers %s", err.Error())
+			continue
+		}
+		if resp.StatusCode == http.StatusOK {
+			//Read the response body
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				logger.Errorf("", "Error reading body: %s", err.Error())
+				continue
+			}
+			var data map[string][]string
+			json.Unmarshal(body, &data)
+
+			if len(data["containers"]) > 0 {
+				available[fmt.Sprintf("%s:%d", n.Host, n.Port)] = data["containers"]
+			}
+			resp.Body.Close()
+		}
+	}
+	ctx.JSON(http.StatusOK, available)
 }
 
 /*
@@ -787,37 +955,37 @@ func TriggerRun(ctx *gin.Context) {
 func GetRunState(ctx *gin.Context) {
 	cn := ctx.Param("cascade")
 	tn := ctx.Param("task")
+	n := ctx.Param("number")
 
-	runName := fmt.Sprintf("%s.%s", cn, tn)
-	if worker.CurrentRun.Name == runName {
-		ctx.JSON(http.StatusOK, gin.H{"state": worker.CurrentRun.State})
+	runName := fmt.Sprintf("%s.%s.%s", cn, tn, n)
+	if container.CurrentRun.Name == runName {
+		logger.Debugf("", "Run %s is currently running", runName)
+		ctx.JSON(http.StatusOK, gin.H{"state": container.CurrentRun.State})
+		return
 	}
 	for _, r := range worker.RunQueue {
 		if r.Name == runName {
+			logger.Debugf("", "Run %s is waiting in queue", runName)
 			ctx.JSON(http.StatusOK, gin.H{"state": r.State})
 			return
 		}
 	}
-	for idx, r := range worker.CompletedRuns {
-		if r.Name == runName {
-			ctx.JSON(http.StatusOK, gin.H{"state": r.State})
-			if len(worker.CompletedRuns) > 1 {
-				worker.CompletedRuns = append(worker.CompletedRuns[:idx], worker.RunQueue[idx+1:]...)
-			} else {
-				worker.CompletedRuns = []run.Run{}
-			}
-			return
-		}
+	if r, ok := container.CompletedRuns[runName]; ok {
+		logger.Debugf("", "Run %s is completed", runName)
+		ctx.JSON(http.StatusOK, gin.H{"state": r.State})
+		delete(container.CompletedRuns, runName)
+		return
 	}
 	ctx.Status(http.StatusNotFound)
 }
 
 func DownloadFile(ctx *gin.Context) {
 	name := ctx.Param("name")
+	fileName := ctx.Param("file")
 
 	path := fmt.Sprintf("/tmp/%s", uuid.New().String())
 
-	err := filestore.GetFile(name, path)
+	err := filestore.GetFile(fmt.Sprintf("%s/%s", name, fileName), path)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
@@ -827,13 +995,11 @@ func DownloadFile(ctx *gin.Context) {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
 	}
-	ctx.Header("Content-Disposition", "attachment; filename="+name)
+	ctx.Header("Content-Disposition", "attachment; filename="+fileName)
 	ctx.Header("Content-Type", "application/text/plain")
 	ctx.Header("Accept-Length", fmt.Sprintf("%d", len(data)))
 	ctx.Writer.Write([]byte(data))
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "OK",
-	})
+	ctx.Status(http.StatusOK)
 
 	if err := os.Remove(path); err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -844,6 +1010,7 @@ func UploadFile(ctx *gin.Context) {
 	name := ctx.Param("name")
 
 	file, err := ctx.FormFile("file")
+	fileName := file.Filename
 
 	// The file cannot be received.
 	if err != nil {
@@ -859,7 +1026,7 @@ func UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	if err := filestore.UploadFile(path, name); err != nil {
+	if err := filestore.UploadFile(path, fmt.Sprintf("%s/%s", name, fileName)); err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
 	}
@@ -869,8 +1036,25 @@ func UploadFile(ctx *gin.Context) {
 		return
 	}
 
+	ds, err := datastore.GetDataStoreByName(name)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	ds.Files = append(ds.Files, fileName)
+
+	inputs := []input.Input{}
+
+	if err := datastore.UpdateDataStoreByName(name, ds, inputs); err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
 	// File saved successfully. Return proper result
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "OK",
-	})
+	utils.DynamicAPIResponse(ctx, "/ui/files", http.StatusOK, gin.H{"message": "OK"})
+}
+
+func GetAvailableContainers(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, gin.H{"containers": container.LastRun})
 }

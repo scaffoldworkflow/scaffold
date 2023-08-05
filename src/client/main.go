@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"scaffold/client/apply"
+	"scaffold/client/exec"
 	"scaffold/client/trigger"
 
 	"github.com/akamensky/argparse"
@@ -14,13 +15,17 @@ func main() {
 
 	applyCommand := parser.NewCommand("apply", "Apply a Scaffold manifest file against a Scaffold instance")
 	applyHost := applyCommand.String("H", "host", &argparse.Options{Help: "Hostname for Scaffold instance", Default: "localhost"})
-	applyPort := applyCommand.String("p", "port", &argparse.Options{Help: "Port for Scaffold instance", Default: "3108"})
+	applyPort := applyCommand.String("p", "port", &argparse.Options{Help: "Port for Scaffold instance", Default: "2997"})
 	applyFile := applyCommand.String("f", "file", &argparse.Options{Required: true, Help: "Scaffold manifest to apply"})
 
 	triggerCommand := parser.NewCommand("trigger", "Trigger a Scaffold manifest")
 	triggerHost := triggerCommand.String("H", "host", &argparse.Options{Help: "Hostname for Scaffold instance", Default: "localhost"})
-	triggerPort := triggerCommand.String("p", "port", &argparse.Options{Help: "Port for Scaffold instance", Default: "3108"})
+	triggerPort := triggerCommand.String("p", "port", &argparse.Options{Help: "Port for Scaffold instance", Default: "2997"})
 	triggerName := triggerCommand.String("n", "name", &argparse.Options{Required: true, Help: "Scaffold manifest to apply"})
+
+	execCommand := parser.NewCommand("exec", "Exec into a scaffold container")
+	execHost := execCommand.String("H", "host", &argparse.Options{Help: "Hostname for Scaffold instance", Default: "localhost"})
+	execPort := execCommand.String("p", "port", &argparse.Options{Help: "Port for Scaffold instance", Default: "2997"})
 	// Parse input
 	err := parser.Parse(os.Args)
 	if err != nil {
@@ -35,5 +40,9 @@ func main() {
 
 	if triggerCommand.Happened() {
 		trigger.DoTrigger(*triggerHost, *triggerPort, *triggerName)
+	}
+
+	if execCommand.Happened() {
+		exec.DoExec(*execHost, *execPort)
 	}
 }

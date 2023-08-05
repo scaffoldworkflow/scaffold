@@ -17,7 +17,7 @@
 .darken {
     background-color: rgba(0,0,0,0.5);
     pointer-events: none;
-    z-index: 997;
+    z-index: 995;
 }
 
 .full-page {
@@ -55,6 +55,36 @@
 
     to {
         left: -300px;
+    }
+}
+
+.right-slide-in {
+    animation-duration: 0.5s;
+    animation-name: slide-in-right;
+}
+
+.right-slide-out {
+    animation-duration: 0.5s;
+    animation-name: slide-out-right;
+}
+
+@keyframes slide-out-right {
+    from {
+        left: calc(100% - 300px);
+    }
+
+    to {
+        left: calc(100%);
+    }
+}
+
+@keyframes slide-in-right {
+    from {
+        left: calc(100%);
+    }
+
+    to {
+        left: calc(100% - 300px);
     }
 }
 

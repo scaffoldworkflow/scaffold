@@ -22,3 +22,8 @@ function togglePane(id) {
         pane.addClass('w3-show')
     }
 }
+
+function openFileUploadModal(cascade) {
+    openModal('files-upload-file-modal')
+    $("#files-upload-file-form").attr('action', `/api/v1/datastore/file/${cascade}`)
+}

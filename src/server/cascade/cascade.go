@@ -17,13 +17,14 @@ import (
 )
 
 type Cascade struct {
-	Version string        `json:"version" bson:"version"`
-	Name    string        `json:"name" bson:"name"`
-	Inputs  []input.Input `json:"inputs" bson:"inputs"`
-	Tasks   []task.Task   `json:"tasks" bson:"tasks"`
-	Created string        `json:"created" bson:"created"`
-	Updated string        `json:"updated" bson:"updated"`
-	Groups  []string      `json:"groups" bson:"groups"`
+	Version string            `json:"version" bson:"version"`
+	Name    string            `json:"name" bson:"name"`
+	Inputs  []input.Input     `json:"inputs" bson:"inputs"`
+	Tasks   []task.Task       `json:"tasks" bson:"tasks"`
+	Created string            `json:"created" bson:"created"`
+	Updated string            `json:"updated" bson:"updated"`
+	Groups  []string          `json:"groups" bson:"groups"`
+	Links   map[string]string `json:"links" bson:"links"`
 }
 
 func CreateCascade(c *Cascade) error {
@@ -43,6 +44,7 @@ func CreateCascade(c *Cascade) error {
 
 	for _, t := range c.Tasks {
 		t.Cascade = c.Name
+		t.RunNumber = 0
 		fmt.Printf("New task: %v\n", &t)
 		if err := task.CreateTask(&t); err != nil {
 			return err

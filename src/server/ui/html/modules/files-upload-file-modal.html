@@ -1,0 +1,27 @@
+<div id="files-upload-file-modal" class="w3-modal" style="z-index:996">
+    <div class="w3-modal-content w3-animate-top w3-card-4 w3-round light theme-light w3-border theme-border-light w3-round">
+        <header class="w3-container scaffold-green" id="files-upload-file-header">
+            <div class="w3-display-topright">
+                <span onclick="closeModal('files-upload-file-modal')" class="w3-button">&times;</span>
+            </div>
+            <h4>Upload a File</h4>
+        </header>
+        <br>
+        <div class="w3-container">
+            <br>
+            <br>
+            <form action="/api/v1/datastore/file/" method="post" enctype="multipart/form-data" id="files-upload-file-form">
+                <label for="file" class="w3-medium scaffold-text-green">Select a File</label>
+                <br>
+                <input id="file" name="file" type="file" />
+                <br>
+                <br>
+                <button class="w3-button scaffold-green w3-round w3-right" form="files-upload-file-form" type="submit">Upload File</button>
+                <button class="w3-button scaffold-red w3-round w3-right" style="margin-right:8px;" onclick="closeModal('files-upload-file-modal')">Cancel</button>
+            </form>
+            <br>
+            <br>
+        </div>
+    </div>
+</div>
+

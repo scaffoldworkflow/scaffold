@@ -72,7 +72,7 @@ function build_node_structure(structure) {
 function get_node_width(name) {
     html = `<div hidden
             class="w3-round w3-border"
-            style="height:${h}px;position:absolute;text-align:center;vertical-align:middle;line-height:${h}px;z-index:998;"
+            style="height:${h}px;position:absolute;text-align:center;vertical-align:middle;line-height:${h}px;z-index:995;"
             id="placeholder">${name}</div>`
     $("#cascade-card").append(html)
     width = $("#placeholder").width() + (m* 2)
@@ -191,7 +191,7 @@ function renderNodes(cardID) {
         dependsOn = checkIfDependsOn(node_data[i].name, tasks)
         html = `<div 
             class="w3-round w3-border theme-border-light ${color} light"
-            style="width:${node_data[i].w}px;height:${h}px;top:${node_data[i].y-hh}px;left:${node_data[i].x-node_data[i].hw}px;position:absolute;text-align:center;vertical-align:middle;line-height:${h}px;z-index:998;"
+            style="width:${node_data[i].w}px;height:${h}px;top:${node_data[i].y-hh}px;left:${node_data[i].x-node_data[i].hw}px;position:absolute;text-align:center;vertical-align:middle;line-height:${h}px;z-index:995;"
             id="${node_data[i].name}"
             ondblclick="changeStateName('${node_data[i].name}')">
             ${node_data[i].name}`
