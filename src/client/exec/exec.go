@@ -48,7 +48,7 @@ type Message struct {
 var messageReady = true
 var message = []byte{}
 
-func ChooseContainer(host, port string, optionMap map[string]string) {
+func ChooseContainer(host, port, wsPort string, optionMap map[string]string) {
 	selected := -1
 	shouldList := true
 	fmt.Printf("Options map: %v\n", optionMap)
@@ -95,12 +95,13 @@ func ChooseContainer(host, port string, optionMap map[string]string) {
 	// fmt.Printf("You chose %s on node %s\n", name, hostPort)
 	// fmt.Printf("connectionParts: %v\n", connectionParts)
 	// fmt.Printf("nameParts: %v\n", nameParts)
-	ConnectWebsocket(host, port, connectionParts[0], connectionParts[1], nameParts[0], nameParts[1], nameParts[2])
+	ConnectWebsocket(host, wsPort, connectionParts[0], connectionParts[1], nameParts[0], nameParts[1], nameParts[2])
 }
 
-func DoExec(host, port string) {
+func DoExec(host, port, wsPort string) {
 	httpClient := &http.Client{}
 	requestURL := fmt.Sprintf("http://%s:%s/api/v1/run/containers", host, port)
+	fmt.Printf("Request URL: %s\n", requestURL)
 	req, _ := http.NewRequest("GET", requestURL, nil)
 	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", token))
 	req.Header.Set("Content-Type", "application/json")
@@ -130,7 +131,7 @@ func DoExec(host, port string) {
 		}
 	}
 
-	ChooseContainer(host, port, optionMap)
+	ChooseContainer(host, port, wsPort, optionMap)
 }
 
 func getInput(c *websocket.Conn) {
@@ -171,7 +172,7 @@ func ConnectWebsocket(proxyHost, proxyPort, host, port, cascade, run, version st
 	messageReady = true
 
 	// u := url.URL{Scheme: "ws", Host: fmt.Sprintf("%s:%s", host, port), Path: "/api/v1/exec"}
-	u := url.URL{Scheme: "ws", Host: fmt.Sprintf("%s:8081", proxyHost), Path: fmt.Sprintf("/?host=%s&port=%s&cascade=%s&run=%s&version=%s", host, port, cascade, run, version)}
+	u := url.URL{Scheme: "ws", Host: fmt.Sprintf("%s:%s", proxyHost, proxyPort), Path: fmt.Sprintf("/%s/%s/%s/%s/%s", host, port, cascade, run, version)}
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{"Authorization": []string{fmt.Sprintf("X-Scaffold-API %s", token)}})
 	if err != nil {
 		log.Fatal("dial error: ", err)

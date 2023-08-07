@@ -40,6 +40,7 @@ func Run() {
 		Name:    config.Config.HTTPHost,
 		Host:    config.Config.HTTPHost,
 		Port:    config.Config.HTTPPort,
+		WSPort:  config.Config.WSPort,
 		JoinKey: JoinKey,
 	}
 	postBody, err := json.Marshal(obj)
@@ -139,5 +140,5 @@ func StartWebsocketServer() {
 	logger.Info("", "Starting websocket application")
 	//Open a goroutine execution start program
 	// go socket.Manager.Start()
-	go cmd.StartWSServer([]string{"bash"})
+	go cmd.StartWSServer()
 }

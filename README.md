@@ -241,7 +241,7 @@ Infrastructure management is an interesting problem to tackle. Many organization
     - [ ] Get run statuses
         - [ ] By cascade name
         - [ ] By cascade and run names
-    - [ ] Exec into run
+    - [x] Exec into run
     - [x] List available exec runs
 
 - **File Interaction**
@@ -263,7 +263,7 @@ Infrastructure management is an interesting problem to tackle. Many organization
 
     - [x] Worker node directory and image cleanup
     - [ ] Task kill ability
-    - [ ] Exec into finished container (if still around)
+    - [x] Exec into finished container (if still around)
     - [x] Handle `no space left on device` if it happens
 
 -  **Security Improvements**

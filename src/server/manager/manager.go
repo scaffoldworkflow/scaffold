@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"scaffold/server/auth"
 	"scaffold/server/cascade"
@@ -21,6 +22,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 )
 
 var InProgress = map[string]map[string]string{}
@@ -29,7 +31,29 @@ func Run() {
 	mongodb.InitCollections()
 	filestore.InitBucket()
 
-	go http.ListenAndServe(fmt.Sprintf(":%d", config.Config.WSPort), proxy.NewProxy())
+	// r := http.NewServeMux()
+	r := mux.NewRouter()
+	// mux.Handle("/ws", websocket.Handler(run))
+	r.HandleFunc("/{host}/{port}/{cascade}/{run}/{version}",
+		func(w http.ResponseWriter, req *http.Request) {
+			proxy.NewProxy().ServeHTTP(w, req)
+		})
+
+	// http.Handle("/api/someAPI", apiHandler)
+	// go http.ListenAndServe(fmt.Sprintf(":%d", config.Config.WSPort), proxy.NewProxy())
+
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%d", config.Config.WSPort),
+		Handler: r,
+	}
+
+	go func() {
+		log.Printf("Running reverse proxy at http://0.0.0.0:%d\n", config.Config.WSPort)
+
+		if serverErr := server.ListenAndServe(); serverErr != nil {
+			log.Println(serverErr)
+		}
+	}()
 
 	health.IsHealthy = true
 
@@ -236,7 +260,7 @@ func triggerDepends(c *cascade.Cascade, tn string) {
 					break
 				}
 			}
-			if !shouldTrigger {
+			if !shouldTrigger || !t.AutoExecute {
 				continue
 			}
 			httpClient := &http.Client{}

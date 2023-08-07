@@ -12,6 +12,7 @@ links:
 tasks:
   name: str # task name
   verb: str # verb to be injected as SCAFFOLD_VERB env variable [optional]
+  auto_execute: bool # defaults to 'true'
   depends_on: # [optional]
     - str # task name to depend on
   image: str # container image to run inside

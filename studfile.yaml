@@ -4,6 +4,11 @@
     - linux/arm64
     - linux/arm/v7
   docker_org: jfcarter2358
+build-docker-helpers:
+  help: Build Helper Scaffold Docker image
+  cmd: |
+    docker build -t scaffold-build -f helpers/Dockerfile.build .
+    docker build -t scaffold-run -f helpers/Dockerfile.run .
 build-docker:
   help: Build Scaffold Docker image
   cmd: |

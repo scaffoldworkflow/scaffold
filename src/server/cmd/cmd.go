@@ -11,7 +11,8 @@ import (
 	"os/exec"
 	"os/signal"
 	"scaffold/server/config"
-	"strings"
+	"scaffold/server/logger"
+	"sort"
 	"syscall"
 	"time"
 	"unicode/utf8"
@@ -19,12 +20,10 @@ import (
 	_ "embed"
 
 	"github.com/creack/pty"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/websocket"
 )
-
-// run command
-var command string = getenv("SHELL", "bash")
 
 // wait time for server start
 var waitTime = 500
@@ -43,24 +42,51 @@ type Message struct {
 	Data  interface{} `json:"data"`
 }
 
-var ptmx *os.File
-var execCmd *exec.Cmd
+type Connection struct {
+	PTMX    *os.File
+	ExecCmd *exec.Cmd
+	Image   string
+	Done    bool
+	Name    string
+}
 
-func run(ws *websocket.Conn) {
+var connections []Connection
+
+func (c *Connection) run(ws *websocket.Conn) {
 
 	vars := mux.Vars(ws.Request())
 	fmt.Printf("cascade: %s\n", vars["cascade"])
 	fmt.Printf("run: %s\n", vars["run"])
 	fmt.Printf("version: %s\n", vars["version"])
 
+	cascade := vars["cascade"]
+	run := vars["run"]
+	version := vars["version"]
+
+	id := uuid.New().String()
+
 	// parts := strings.Split(name, ".")
-	// runDir := fmt.Sprintf("/tmp/run/%s/%s/%s", parts[0], parts[1], parts[2])
-	// containerName := fmt.Sprintf("%s-%s-%s", parts[0], parts[1], parts[2])
-	// podmanCommand := fmt.Sprintf("podman commit %s %s/%s && ", containerName, c.User.Username, containerName)
-	// podmanCommand += "podman run --privileged --security-opt label=disabled -it "
-	// podmanCommand += fmt.Sprintf("--mount type=bind,src=%s,dst=/tmp/run ", runDir)
-	// podmanCommand += fmt.Sprintf("%s/%s ", c.User.Username, containerName)
-	// podmanCommand += "sh"
+	runDir := fmt.Sprintf("/tmp/run/%s/%s/%s", cascade, run, version)
+	containerName := fmt.Sprintf("%s-%s-%s", cascade, run, version)
+	c.Image = containerName
+	c.Name = containerName
+
+	commitCommand := fmt.Sprintf("podman commit %s %s/%s", containerName, id, containerName)
+
+	out, err := exec.Command("bash", "-c", commitCommand).CombinedOutput()
+	logger.Debugf("", "podman commit: %s", string(out))
+	if err != nil {
+		logger.Error("", err.Error())
+	}
+
+	podmanCommand := "podman run --rm --privileged --security-opt label=disabled -it "
+	podmanCommand += fmt.Sprintf("--mount type=bind,src=%s,dst=/tmp/run ", runDir)
+	podmanCommand += fmt.Sprintf("%s/%s ", id, containerName)
+	podmanCommand += "sh"
+
+	logger.Debugf("", "Podman websocket command: %s", podmanCommand)
+
+	c.Name = containerName
 
 	defer ws.Close()
 
@@ -68,7 +94,7 @@ func run(ws *websocket.Conn) {
 		conn: ws,
 	}
 
-	if ptmx == nil {
+	if c.PTMX == nil {
 		var msg Message
 		if err := json.NewDecoder(ws).Decode(&msg); err != nil {
 			log.Println("failed to decode message:", err)
@@ -85,16 +111,10 @@ func run(ws *websocket.Conn) {
 			Cols: cols,
 		}
 
-		c := filter(strings.Split(command, " "))
-		if len(c) > 1 {
-			//nolint
-			execCmd = exec.Command(c[0], c[1:]...)
-		} else {
-			//nolint
-			execCmd = exec.Command(c[0])
-		}
+		pc := []string{"bash", "-c", podmanCommand}
+		c.ExecCmd = exec.Command(pc[0], pc[1:]...)
 
-		ptmx, err = pty.StartWithSize(execCmd, winsize)
+		c.PTMX, err = pty.StartWithSize(c.ExecCmd, winsize)
 		if err != nil {
 			log.Println("failed to create pty", err)
 			return
@@ -129,7 +149,7 @@ func run(ws *websocket.Conn) {
 					Cols: cols,
 				}
 
-				if err := pty.Setsize(ptmx, winsize); err != nil {
+				if err := pty.Setsize(c.PTMX, winsize); err != nil {
 					log.Println("failed to set window size:", err)
 					return
 				}
@@ -145,7 +165,7 @@ func run(ws *websocket.Conn) {
 
 			fmt.Printf("message data: %s", data)
 
-			_, err := ptmx.WriteString(data)
+			_, err := c.PTMX.WriteString(data)
 			if err != nil {
 				log.Println("failed to write data to ptmx:", err)
 				return
@@ -153,7 +173,10 @@ func run(ws *websocket.Conn) {
 		}
 	}()
 
-	_, _ = io.Copy(wsconn, ptmx)
+	go c.ExecuteCommand()
+
+	_, _ = io.Copy(wsconn, c.PTMX)
+
 }
 
 type wsConn struct {
@@ -188,10 +211,56 @@ func (ws *wsConn) Write(b []byte) (i int, err error) {
 	return n, e
 }
 
-func StartWSServer(args []string) {
-	if len(args) > 0 {
-		command = args[0]
+func (c *Connection) ExecuteCommand() {
+	state, err := c.ExecCmd.Process.Wait()
+	if err != nil {
+		return
 	}
+
+	logger.Debugf("", "Run exit code: %d", state.ExitCode())
+
+	rmCommand := fmt.Sprintf("podman rm -f %s", c.Name)
+	out, err := exec.Command("bash", "-c", rmCommand).CombinedOutput()
+	logger.Debugf("", "Podman rm: %s", string(out))
+	if err != nil {
+		logger.Error("", err.Error())
+	}
+
+	rmiCommand := fmt.Sprintf("podman rmi -f %s", c.Image)
+	out, err = exec.Command("bash", "-c", rmiCommand).CombinedOutput()
+	logger.Debugf("", "Podman rmi: %s", string(out))
+	if err != nil {
+		logger.Error("", err.Error())
+	}
+
+	if state.ExitCode() != -1 {
+		c.PTMX.Close()
+		c.PTMX = nil
+		c.ExecCmd = nil
+	}
+
+	c.Done = true
+}
+
+func PruneConnections() {
+	for {
+		toRemove := []int{}
+		for idx, c := range connections {
+			logger.Debugf("", "Runing container %s", c.Name)
+			if c.Done {
+				toRemove = append(toRemove, idx)
+			}
+		}
+
+		sort.Sort(sort.Reverse(sort.IntSlice(toRemove)))
+
+		for _, idx := range toRemove {
+			connections = append(connections[:idx], connections[idx+1:]...)
+		}
+	}
+}
+
+func StartWSServer() {
 
 	var serverErr error
 	// r := http.NewServeMux()
@@ -199,7 +268,9 @@ func StartWSServer(args []string) {
 	// mux.Handle("/ws", websocket.Handler(run))
 	r.HandleFunc("/ws/{cascade}/{run}/{version}",
 		func(w http.ResponseWriter, req *http.Request) {
-			s := websocket.Server{Handler: websocket.Handler(run)}
+			c := Connection{}
+			s := websocket.Server{Handler: websocket.Handler(c.run)}
+			connections = append(connections, c)
 			s.ServeHTTP(w, req)
 		})
 
@@ -209,7 +280,6 @@ func StartWSServer(args []string) {
 	}
 
 	go func() {
-		log.Println("running command: " + command)
 		log.Printf("running http://0.0.0.0:%d\n", config.Config.WSPort)
 
 		if serverErr := server.ListenAndServe(); serverErr != nil {
@@ -219,23 +289,24 @@ func StartWSServer(args []string) {
 	}()
 
 	// check process state
-	go func() {
-		ticker := time.NewTicker(time.Duration(checkProcInterval) * time.Second)
-		for range ticker.C {
-			if execCmd != nil {
-				state, err := execCmd.Process.Wait()
-				if err != nil {
-					return
-				}
+	// go func() {
+	// 	ticker := time.NewTicker(time.Duration(checkProcInterval) * time.Second)
+	// 	for range ticker.C {
+	// 		if execCmd != nil {
+	// 			state, err := execCmd.Process.Wait()
+	// 			exec.Command("bash", "-c", rmiCommand).CombinedOutput()
+	// 			if err != nil {
+	// 				return
+	// 			}
 
-				if state.ExitCode() != -1 {
-					ptmx.Close()
-					ptmx = nil
-					execCmd = nil
-				}
-			}
-		}
-	}()
+	// 			if state.ExitCode() != -1 {
+	// 				ptmx.Close()
+	// 				ptmx = nil
+	// 				execCmd = nil
+	// 			}
+	// 		}
+	// 	}
+	// }()
 
 	// wait for run server
 	time.Sleep(time.Duration(waitTime) * time.Microsecond)
@@ -248,12 +319,16 @@ func StartWSServer(args []string) {
 	signal.Notify(quit, syscall.SIGTERM, os.Interrupt)
 	<-quit
 
-	if ptmx != nil {
-		_ = ptmx.Close()
-	}
-	if execCmd != nil {
-		_ = execCmd.Process.Kill()
-		_, _ = execCmd.Process.Wait()
+	go PruneConnections()
+
+	for _, c := range connections {
+		if c.PTMX != nil {
+			_ = c.PTMX.Close()
+		}
+		if c.ExecCmd != nil {
+			_ = c.ExecCmd.Process.Kill()
+			_, _ = c.ExecCmd.Process.Wait()
+		}
 	}
 	if err := server.Shutdown(context.Background()); err != nil {
 		log.Println("failed to shutdown server", err)

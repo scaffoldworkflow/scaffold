@@ -30,20 +30,21 @@ type TaskCheck struct {
 }
 
 type Task struct {
-	Name      string            `json:"name" bson:"name"`
-	Cascade   string            `json:"cascade" bson:"cascade"`
-	Verb      string            `json:"verb" bson:"verb"`
-	DependsOn []string          `json:"depends_on" bson:"depends_on"`
-	Image     string            `json:"image" bson:"image"`
-	Run       string            `json:"run" bson:"run"`
-	Store     TaskLoadStore     `json:"store" bson:"store"`
-	Load      TaskLoadStore     `json:"load" bson:"load"`
-	Outputs   map[string]string `json:"outputs" bson:"outputs"`
-	Inputs    map[string]string `json:"inputs" bson:"inputs"`
-	Updated   string            `json:"updated" bson:"updated"`
-	Check     TaskCheck         `json:"check" bson:"check"`
-	RunNumber int               `json:"run_number" bson:"run_number"`
-	ShouldRM  bool              `json:"should_rm" bson:"should_rm"`
+	Name        string            `json:"name" bson:"name"`
+	Cascade     string            `json:"cascade" bson:"cascade"`
+	Verb        string            `json:"verb" bson:"verb"`
+	DependsOn   []string          `json:"depends_on" bson:"depends_on"`
+	Image       string            `json:"image" bson:"image"`
+	Run         string            `json:"run" bson:"run"`
+	Store       TaskLoadStore     `json:"store" bson:"store"`
+	Load        TaskLoadStore     `json:"load" bson:"load"`
+	Outputs     map[string]string `json:"outputs" bson:"outputs"`
+	Inputs      map[string]string `json:"inputs" bson:"inputs"`
+	Updated     string            `json:"updated" bson:"updated"`
+	Check       TaskCheck         `json:"check" bson:"check"`
+	RunNumber   int               `json:"run_number" bson:"run_number"`
+	ShouldRM    bool              `json:"should_rm" bson:"should_rm"`
+	AutoExecute bool              `json:"auto_execute" bson:"auto_execute"`
 }
 
 func CreateTask(t *Task) error {

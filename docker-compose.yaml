@@ -9,7 +9,7 @@ services:
       SCAFFOLD_SLEEP: "5"
       SCAFFOLD_HOST: "scaffold-manager"
       SCAFFOLD_WS_PORT: "8081"
-      SCAFFOLD_LOG_LEVEL: "DEBUG"
+      SCAFFOLD_LOG_LEVEL: "FATAL"
       SCAFFOLD_DB: |
         {
           "username": "MyCoolMongoDBUsername",
@@ -38,7 +38,7 @@ services:
     environment:
       SCAFFOLD_HTTP_PORT: "2998"
       SCAFFOLD_HTTP_HOST: "scaffold-worker"
-      SCAFFOLD_LOG_LEVEL: "FATAL"
+      SCAFFOLD_LOG_LEVEL: "DEBUG"
       SCAFFOLD_SLEEP: "5"
       SCAFFOLD_DB: |
         {

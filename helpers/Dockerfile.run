@@ -1,0 +1,29 @@
+FROM ubuntu:22.04
+
+WORKDIR /home/scaffold
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get install -y \
+    bash \
+    git \
+    curl \
+    podman \
+    fuse-overlayfs \
+    adduser \
+    ca-certificates \
+    gnupg \
+    lsb-release \
+    tzdata \
+    software-properties-common
+
+RUN adduser --disabled-password scaffold
+
+SHELL ["/bin/bash", "-c"]
+
+RUN mkdir -p /home/scaffold/.ssh
+
+RUN usermod --add-subuids 200000-201000 --add-subgids 200000-201000 scaffold
+
+CMD ["./start-scaffold.sh"]

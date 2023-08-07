@@ -917,7 +917,7 @@ func GetAllContainers(ctx *gin.Context) {
 			json.Unmarshal(body, &data)
 
 			if len(data["containers"]) > 0 {
-				available[fmt.Sprintf("%s:%d", n.Host, n.Port)] = data["containers"]
+				available[fmt.Sprintf("%s:%d", n.Host, n.WSPort)] = data["containers"]
 			}
 			resp.Body.Close()
 		}

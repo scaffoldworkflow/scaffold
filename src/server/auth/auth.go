@@ -28,6 +28,7 @@ type NodeJoinObject struct {
 	Name    string `json:"name"`
 	Host    string `json:"host"`
 	Port    int    `json:"port"`
+	WSPort  int    `json:"ws_port"`
 	JoinKey string `json:"join_key"`
 }
 
@@ -35,6 +36,7 @@ type NodeObject struct {
 	Name    string `json:"name" bson:"name"`
 	Host    string `json:"host" bson:"host"`
 	Port    int    `json:"port" bson:"port"`
+	WSPort  int    `json:"ws_port" bson:"ws_port"`
 	Healthy bool   `json:"healthy" bson:"healthy"`
 }
 
@@ -206,7 +208,7 @@ func JoinNode(ctx *gin.Context) {
 	}
 
 	if n.JoinKey == config.Config.Node.JoinKey {
-		Nodes = append(Nodes, NodeObject{Host: n.Host, Port: n.Port, Healthy: true})
+		Nodes = append(Nodes, NodeObject{Host: n.Host, Port: n.Port, WSPort: n.WSPort, Healthy: true})
 		ctx.Status(http.StatusOK)
 		return
 	}

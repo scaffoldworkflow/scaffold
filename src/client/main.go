@@ -26,6 +26,8 @@ func main() {
 	execCommand := parser.NewCommand("exec", "Exec into a scaffold container")
 	execHost := execCommand.String("H", "host", &argparse.Options{Help: "Hostname for Scaffold instance", Default: "localhost"})
 	execPort := execCommand.String("p", "port", &argparse.Options{Help: "Port for Scaffold instance", Default: "2997"})
+	execWSPort := execCommand.String("w", "ws-port", &argparse.Options{Help: "Websocket port for Scaffold instance", Default: "8080"})
+
 	// Parse input
 	err := parser.Parse(os.Args)
 	if err != nil {
@@ -43,6 +45,6 @@ func main() {
 	}
 
 	if execCommand.Happened() {
-		exec.DoExec(*execHost, *execPort)
+		exec.DoExec(*execHost, *execPort, *execWSPort)
 	}
 }

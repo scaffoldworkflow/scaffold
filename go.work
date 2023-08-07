@@ -3,5 +3,4 @@ go 1.18
 use (
 	./src/client
 	./src/server
-	./temp
 )

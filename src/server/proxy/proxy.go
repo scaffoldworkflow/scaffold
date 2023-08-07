@@ -74,6 +74,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
@@ -119,15 +120,21 @@ func ProxyHandler(target *url.URL) http.Handler { return NewProxy() }
 // URL's to the scheme, host and base path provider in target.
 func NewProxy() *WebsocketProxy {
 	backend := func(r *http.Request) *url.URL {
+		vars := mux.Vars(r)
+		host := vars["host"]
+		port := vars["port"]
+		cascade := vars["cascade"]
+		run := vars["run"]
+		version := vars["version"]
 
-		host := r.URL.Query().Get("host")
-		port := r.URL.Query().Get("port")
-		cascade := r.URL.Query().Get("cascade")
-		run := r.URL.Query().Get("run")
-		version := r.URL.Query().Get("version")
+		fmt.Printf("host: %s\n", host)
+		fmt.Printf("port: %s\n", port)
+		fmt.Printf("cascade: %s\n", cascade)
+		fmt.Printf("run: %s\n", run)
+		fmt.Printf("version: %s\n", version)
 
 		fmt.Printf("Connection information: %s %s %s %s %s\n", host, port, cascade, run, version)
-		fmt.Printf("request query path: %s\n", r.URL.RawQuery)
+		fmt.Printf("request path: %s\n", r.URL.Path)
 
 		url, err := url.Parse(fmt.Sprintf("ws://%s:%s/ws/%s/%s/%s", host, port, cascade, run, version))
 		if err != nil {
