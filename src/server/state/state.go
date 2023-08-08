@@ -12,12 +12,14 @@ import (
 )
 
 type State struct {
-	Task     string `json:"task" bson:"task"`
-	Cascade  string `json:"cascade" bson:"cascade"`
-	Status   string `json:"status" bson:"status"`
-	Started  string `json:"started" bson:"started"`
-	Finished string `json:"finished" bson:"finished"`
-	Output   string `json:"output" bson:"output"`
+	Task     string                   `json:"task" bson:"task"`
+	Cascade  string                   `json:"cascade" bson:"cascade"`
+	Status   string                   `json:"status" bson:"status"`
+	Started  string                   `json:"started" bson:"started"`
+	Finished string                   `json:"finished" bson:"finished"`
+	Output   string                   `json:"output" bson:"output"`
+	Display  []map[string]interface{} `json:"display" bson:"display"`
+	Number   int                      `json:"number" bson:"number"`
 }
 
 func CreateState(s *State) error {

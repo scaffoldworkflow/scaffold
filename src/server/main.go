@@ -4,11 +4,13 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"scaffold/server/config"
 	"scaffold/server/constants"
 	"scaffold/server/logger"
 	"scaffold/server/manager"
 	"scaffold/server/worker"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,7 +33,7 @@ func main() {
 	router.LoadHTMLGlob("templates/*")
 	initializeRoutes()
 
-	// rand.Seed(time.Now().UnixNano())
+	rand.Seed(time.Now().UnixNano())
 
 	if config.Config.Node.Type == constants.NODE_TYPE_MANAGER {
 		go manager.Run()

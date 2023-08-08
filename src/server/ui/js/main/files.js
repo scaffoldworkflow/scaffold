@@ -3,7 +3,7 @@
 // import theme.js
 // import modal.js
 // import user_menu.js
-// import status.js
+// import deploy_status.js
 // import data.js
 
 function togglePane(id) {

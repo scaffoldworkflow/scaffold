@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"net/http"
-	"scaffold/server/cascade"
 	"scaffold/server/config"
 	"scaffold/server/user"
 	"strings"
@@ -16,6 +15,21 @@ func EnsureLoggedIn() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var token string
 		var err error
+
+		baUsername, baPassword, hasAuth := c.Request.BasicAuth()
+		if hasAuth {
+			_, err := user.GetUserByUsername(baUsername)
+			if err != nil {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+			verified, err := user.VerifyUser(baUsername, baPassword)
+			if err != nil || !verified {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+			return
+		}
 
 		authString := c.Request.Header.Get("Authorization")
 		if authString == "" {
@@ -85,6 +99,24 @@ func EnsureSelf() gin.HandlerFunc {
 		var token string
 		var err error
 
+		baUsername, baPassword, hasAuth := c.Request.BasicAuth()
+		if hasAuth {
+			if baUsername != username {
+				c.AbortWithStatus(http.StatusUnauthorized)
+			}
+			_, err := user.GetUserByUsername(baUsername)
+			if err != nil {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+			verified, err := user.VerifyUser(baUsername, baPassword)
+			if err != nil || !verified {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+			return
+		}
+
 		authString := c.Request.Header.Get("Authorization")
 		if authString == "" {
 			token, err = c.Cookie("scaffold_token")
@@ -120,54 +152,6 @@ func EnsureSelf() gin.HandlerFunc {
 		if authString == "" {
 			c.Redirect(307, "/ui/login")
 			return
-		}
-		c.AbortWithStatus(http.StatusUnauthorized)
-	}
-}
-
-func EnsureGroupsAllowedByCascade() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var usr *user.User
-		authString := c.Request.Header.Get("Authorization")
-		found := false
-		if authString == "" {
-			token, err := c.Cookie("scaffold_token")
-			if err == nil {
-				usr, err = user.GetUserByLoginToken(token)
-				if err != nil {
-					found = true
-				}
-			}
-		} else {
-			if !found {
-				token := strings.Split(authString, " ")[1]
-				if token == config.Config.Node.PrimaryKey {
-					return
-				}
-				var err error
-				usr, err = user.GetUserByAPIToken(token)
-				if err != nil {
-					c.AbortWithStatus(http.StatusUnauthorized)
-				}
-			}
-		}
-
-		name := c.Param("cascade")
-		cs, err := cascade.GetCascadeByName(name)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		}
-
-		if len(cs.Groups) == 0 {
-			return
-		}
-
-		if usr != nil {
-			for _, group := range usr.Groups {
-				if StringSliceContains(cs.Groups, group) {
-					return
-				}
-			}
 		}
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
@@ -244,6 +228,12 @@ func EnsureRolesAllowed(roles []string) gin.HandlerFunc {
 			}
 		}
 		c.AbortWithStatus(http.StatusUnauthorized)
+	}
+}
+
+func EnsureBasicAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
 	}
 }
 

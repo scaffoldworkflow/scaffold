@@ -1,20 +1,21 @@
-var globalDataStore
-var globalInputs
+var datastore
+var inputs  
 
 function openInput() {
     getDataStore()
-    openModal("input-modal")
+    toggleCurrentInput()
 }
 
 function getDataStore() {
-    cascadeName = parts[parts.length - 1]
+    let parts = window.location.href.split('/')
+    let cascadeName = parts[parts.length - 1]
 
     $.ajax({
         url: "/api/v1/datastore/" + cascadeName,
         type: "GET",
         success: function (result) {
-            globalDataStore = result
-            getInputs()
+            datastore = result
+            getInputs(true)
         },
         error: function (result) {
             console.log(result)
@@ -22,15 +23,18 @@ function getDataStore() {
     });
 }
 
-function getInputs() {
-    cascadeName = parts[parts.length - 1]
+function getInputs(trigger) {
+    let parts = window.location.href.split('/')
+    let cascadeName = parts[parts.length - 1]
 
     $.ajax({
         url: "/api/v1/input/" + cascadeName,
         type: "GET",
         success: function (result) {
-            globalInputs = result
-            loadInputData()
+            inputs = result
+            if (trigger) {
+                loadInputData()
+            }
         },
         error: function (result) {
             console.log(result)
@@ -39,26 +43,28 @@ function getInputs() {
 }
 
 function loadInputData() {
-    inputs = [...globalInputs]
-    datastore = globalDataStore.env
+    $("#current-input-div").empty()
 
-    $("#input-card").empty()
-    $("#input-card").append("<br>")
+    let html = `<div class="w3-bar-item light scaffold-green w3-border-bottom theme-border-light w3-button" onclick="saveInputs()" >
+        <i class="fa-solid fa-floppy-disk" id="save-icon"></i>&nbsp;Save input changes
+    </div>`
+    $("#current-input-div").append(html)
 
-    for (let i = 0; i < inputs.length; i++) {
-        // value = encodeURIComponent(datastore[inputs[i].name])
-        value = datastore[inputs[i].name]
-        html = `<label>
-                ${inputs[i].description}
-            </label>
+    for (let idx = 0; idx < inputs.length; idx++) {
+        let i = inputs[idx]
+        let value = datastore.env[i.name]
+        let html = `<div class="w3-bar-item light theme-base w3-border-bottom theme-border-light">
+            <b>${i.description}</b>
+        </div>
+        <div class="w3-bar-item light theme-light w3-border-bottom theme-border-light">
             <input
                 class="w3-input"
-                type="${inputs[i].type}"
-                id="${inputs[i].name}"
-            >`
-        $("#input-card").append(html)
-        $("#input-card").append("<br>")
-        $(`#${inputs[i].name}`).val(value)
+                type="${i.type}"
+                id="${i.name}"
+            >
+        </div>`
+        $("#current-input-div").append(html)
+        $(`#${i.name}`).val(value)
     }
 }
 
@@ -73,11 +79,11 @@ function changeIcon() {
 }
 
 function saveInputs() {
+    let parts = window.location.href.split('/')
+    let cascadeName = parts[parts.length - 1]
+
     $("#spinner").css("display", "block")
     $("#page-darken").css("opacity", "1")
-
-    inputs = [...globalInputs]
-    datastore = globalDataStore
     
     for (let i = 0; i < inputs.length; i++) {
         value = $(`#${inputs[i].name}`).val()
@@ -106,3 +112,9 @@ function saveInputs() {
         }
     });
 }
+
+$(document).ready(
+    function() {
+        getInputs(false)
+    }
+)

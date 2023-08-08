@@ -3,7 +3,7 @@
         <h4>Users</h4>
         <input id="search" class="w3-input w3-round search-bar light theme-light" type="text" name="search" placeholder="Search Users" oninput="render()">
     </div>
-    <table class="w3-table w3-bordered light w3-border theme-border-light" id="users-table">
+    <table class="w3-table light w3-border theme-border-light theme-table-striped" id="users-table">
         <tr>
             <th class="table-title w3-medium scaffold-text-green">
                 <span class="table-title-text">Username</span>
@@ -50,13 +50,15 @@
                     {{ end }}
                 </td>
                 <td class="table-link-cell">
-                    <a href="/ui/user/{{ .Username }}" class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;">
-                        <i class="fa-solid fa-pencil"></i>
-                    </a>
+                    <div id="user-edit-button" class="card-button light" style="margin-right:4px;">
+                        <a href="/ui/user/{{ .Username }}" class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;">
+                            <i class="fa-solid fa-pencil"></i>
+                        </a>
+                    </div>
                     {{ if $.is_admin }}
                     {{ if not (eq .Username $.admin_username)}}
-                    <div class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;">
-                        <i class="fa-solid fa-trash pointer-cursor" onclick="openDeleteModal('{{ .Username }}')"></i>
+                    <div id="user-delete-button" class="card-button light" style="margin-right:4px;">
+                        <i class="fa-solid fa-tras" onclick="openDeleteModal('{{ .Username }}')"></i>
                     </div>
                     {{ end }}
                     {{ end }}

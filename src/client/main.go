@@ -3,25 +3,32 @@ package main
 import (
 	"fmt"
 	"os"
-	"scaffold/client/apply"
+	"scaffold/client/cascade"
+	"scaffold/client/constants"
 	"scaffold/client/exec"
-	"scaffold/client/trigger"
+	"scaffold/client/logger"
 
 	"github.com/akamensky/argparse"
 )
 
 func main() {
+	// config.LoadConfig()
+	// logger.SetLevel(config.Config.LogLevel)
+	logger.SetLevel(constants.LOG_LEVEL_DEBUG)
+
 	parser := argparse.NewParser("scaffold", "Scaffold infrastructure management client")
 
-	applyCommand := parser.NewCommand("apply", "Apply a Scaffold manifest file against a Scaffold instance")
+	cascadeCommand := parser.NewCommand("cascade", "Manage scaffold cascades")
+
+	applyCommand := cascadeCommand.NewCommand("apply", "Create or update a cascade")
 	applyHost := applyCommand.String("H", "host", &argparse.Options{Help: "Hostname for Scaffold instance", Default: "localhost"})
 	applyPort := applyCommand.String("p", "port", &argparse.Options{Help: "Port for Scaffold instance", Default: "2997"})
 	applyFile := applyCommand.String("f", "file", &argparse.Options{Required: true, Help: "Scaffold manifest to apply"})
 
-	triggerCommand := parser.NewCommand("trigger", "Trigger a Scaffold manifest")
-	triggerHost := triggerCommand.String("H", "host", &argparse.Options{Help: "Hostname for Scaffold instance", Default: "localhost"})
-	triggerPort := triggerCommand.String("p", "port", &argparse.Options{Help: "Port for Scaffold instance", Default: "2997"})
-	triggerName := triggerCommand.String("n", "name", &argparse.Options{Required: true, Help: "Scaffold manifest to apply"})
+	deleteCommand := cascadeCommand.NewCommand("delete", "Delete an existing cascade")
+	deleteHost := deleteCommand.String("H", "host", &argparse.Options{Help: "Hostname for Scaffold instance", Default: "localhost"})
+	deletePort := deleteCommand.String("p", "port", &argparse.Options{Help: "Port for Scaffold instance", Default: "2997"})
+	deleteName := deleteCommand.String("n", "name", &argparse.Options{Required: true, Help: "Name of the cascade to remove"})
 
 	execCommand := parser.NewCommand("exec", "Exec into a scaffold container")
 	execHost := execCommand.String("H", "host", &argparse.Options{Help: "Hostname for Scaffold instance", Default: "localhost"})
@@ -37,11 +44,11 @@ func main() {
 	}
 
 	if applyCommand.Happened() {
-		apply.DoApply(*applyHost, *applyPort, *applyFile)
+		cascade.DoApply(*applyHost, *applyPort, *applyFile)
 	}
 
-	if triggerCommand.Happened() {
-		trigger.DoTrigger(*triggerHost, *triggerPort, *triggerName)
+	if deleteCommand.Happened() {
+		cascade.DoDelete(*deleteHost, *deletePort, *deleteName)
 	}
 
 	if execCommand.Happened() {

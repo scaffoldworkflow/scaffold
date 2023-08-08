@@ -26,6 +26,7 @@ import (
 )
 
 var InProgress = map[string]map[string]string{}
+var ToCheck = map[string]map[string]string{}
 
 func Run() {
 	mongodb.InitCollections()
@@ -63,6 +64,7 @@ func Run() {
 	health.IsReady = true
 
 	InProgress = make(map[string]map[string]string)
+	ToCheck = make(map[string]map[string]string)
 
 	for {
 		newNodes := []auth.NodeObject{}
@@ -80,8 +82,8 @@ func Run() {
 		if err == nil {
 			for _, c := range cascades {
 				taskMap := map[string]string{}
-				if _, ok := InProgress[c.Name]; ok {
-					taskMap = InProgress[c.Name]
+				if _, ok := ToCheck[c.Name]; ok {
+					taskMap = ToCheck[c.Name]
 				}
 				for _, t := range c.Tasks {
 					for key := range taskMap {
@@ -115,13 +117,19 @@ func Run() {
 
 								state.UpdateStateByNames(c.Name, t.Name, &s)
 
-								logger.Tracef("", "FOOBAR :::::::: Got state %s", s.Status)
+								logger.Tracef("", "Got state %s", s.Status)
 
 								if s.Status == constants.STATE_STATUS_SUCCESS {
-									logger.Debugf("", "Task %s has completed, removing from InProgress", key)
-									triggerDepends(c, t.Name)
+									logger.Debugf("", "Task %s has completed with success, removing from InProgress", key)
+									triggerDepends(c, t.Name, constants.STATUS_TRIGGER_SUCCESS)
+									triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ALWAYS)
 									delete(InProgress[c.Name], key)
-									logger.Debugf("", "InProgress: %v", InProgress)
+									delete(ToCheck[c.Name], key)
+								} else if s.Status == constants.STATE_STATUS_ERROR {
+									logger.Debugf("", "Task %s has completed with error, removing from InProgress", key)
+									triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ERROR)
+									triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ALWAYS)
+									delete(ToCheck[c.Name], key)
 								}
 
 								resp.Body.Close()
@@ -167,6 +175,7 @@ func Run() {
 								if s.Status == constants.STATE_STATUS_SUCCESS {
 									logger.Debugf("", "Removing state %s from InProgress", checkStateName)
 									delete(InProgress[c.Name], key)
+									delete(ToCheck[c.Name], key)
 								}
 								if s.Status == constants.STATE_STATUS_ERROR {
 									ss, err := state.GetStateByNames(c.Name, t.Name)
@@ -176,6 +185,10 @@ func Run() {
 									}
 									ss.Status = constants.STATE_STATUS_ERROR
 									state.UpdateStateByNames(c.Name, t.Name, ss)
+									triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ERROR)
+									triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ALWAYS)
+									delete(InProgress[c.Name], key)
+									delete(ToCheck[c.Name], key)
 								}
 
 								resp.Body.Close()
@@ -222,6 +235,7 @@ func Run() {
 							continue
 						}
 
+						logger.Debugf("", "Triggering check run for %s %s", c.Name, t.Name)
 						httpClient := &http.Client{}
 						requestURL := fmt.Sprintf("http://localhost:%d/api/v1/run/%s/%s/check", config.Config.HTTPPort, c.Name, t.Name)
 						req, _ := http.NewRequest("POST", requestURL, nil)
@@ -243,19 +257,52 @@ func Run() {
 	}
 }
 
-func triggerDepends(c *cascade.Cascade, tn string) {
-	success := []string{}
+func triggerDepends(c *cascade.Cascade, tn, status string) {
+	toTrigger := []string{}
 	states, _ := state.GetStatesByCascade(c.Name)
-	for _, s := range states {
-		if s.Status == constants.STATE_STATUS_SUCCESS {
-			success = append(success, s.Task)
+	switch status {
+	case constants.STATUS_TRIGGER_SUCCESS:
+		for _, s := range states {
+			if s.Status == constants.STATE_STATUS_SUCCESS {
+				toTrigger = append(toTrigger, s.Task)
+			}
+		}
+	case constants.STATUS_TRIGGER_ERROR:
+		for _, s := range states {
+			if s.Status == constants.STATE_STATUS_ERROR {
+				toTrigger = append(toTrigger, s.Task)
+			}
+		}
+	case constants.STATUS_TRIGGER_ALWAYS:
+		for _, s := range states {
+			if s.Status == constants.STATE_STATUS_ERROR || s.Status == constants.STATE_STATUS_SUCCESS {
+				toTrigger = append(toTrigger, s.Task)
+			}
 		}
 	}
 	for _, t := range c.Tasks {
-		if utils.Contains(t.DependsOn, tn) {
+		dependsOn := make([]string, 0)
+		switch status {
+		case constants.STATUS_TRIGGER_SUCCESS:
+			if t.DependsOn.Success == nil {
+				continue
+			}
+			dependsOn = append(dependsOn, t.DependsOn.Success...)
+		case constants.STATUS_TRIGGER_ERROR:
+			if t.DependsOn.Error == nil {
+				continue
+			}
+			dependsOn = append(dependsOn, t.DependsOn.Error...)
+		case constants.STATUS_TRIGGER_ALWAYS:
+			if t.DependsOn.Always == nil {
+				continue
+			}
+			dependsOn = append(dependsOn, t.DependsOn.Always...)
+		}
+		if utils.Contains(dependsOn, tn) {
 			shouldTrigger := true
-			for _, n := range t.DependsOn {
-				if !utils.Contains(success, n) {
+			for _, n := range dependsOn {
+				if !utils.Contains(toTrigger, n) {
 					shouldTrigger = false
 					break
 				}
@@ -301,6 +348,8 @@ func InputChangeStateChange(name string, changed []string) error {
 				Started:  "",
 				Finished: "",
 				Output:   "",
+				Number:   t.RunNumber,
+				Display:  make([]map[string]interface{}, 0),
 			}
 			if err := state.UpdateStateByNames(c.Name, s.Task, s); err != nil {
 				logger.Errorf("", "Cannot update state %s %s: %s", c.Name, t.Name, err.Error())
@@ -316,8 +365,18 @@ func InputChangeStateChange(name string, changed []string) error {
 
 func SetDependsState(c *cascade.Cascade, tn string) {
 	for _, t := range c.Tasks {
-		if utils.Contains(t.DependsOn, tn) {
-			if !utils.Contains(t.DependsOn, tn) {
+		dependsOn := make([]string, 0)
+		if t.DependsOn.Success != nil {
+			dependsOn = append(dependsOn, t.DependsOn.Success...)
+		}
+		if t.DependsOn.Error != nil {
+			dependsOn = append(dependsOn, t.DependsOn.Error...)
+		}
+		if t.DependsOn.Always != nil {
+			dependsOn = append(dependsOn, t.DependsOn.Always...)
+		}
+		if utils.Contains(dependsOn, tn) {
+			if !utils.Contains(dependsOn, tn) {
 				continue
 			}
 			ss, err := state.GetStateByNames(c.Name, t.Name)
@@ -333,6 +392,8 @@ func SetDependsState(c *cascade.Cascade, tn string) {
 				Started:  "",
 				Finished: "",
 				Output:   "",
+				Number:   t.RunNumber,
+				Display:  make([]map[string]interface{}, 0),
 			}
 			if err := state.UpdateStateByNames(c.Name, s.Task, s); err != nil {
 				logger.Errorf("", "Cannot update state %s %s: %s", c.Name, s.Task, err.Error())

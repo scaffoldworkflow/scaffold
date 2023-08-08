@@ -4,65 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"scaffold/server/constants"
+	"scaffold/client/constants"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 var LogLevel = 0
-
-var ConsoleLogFormatter = func(param gin.LogFormatterParams) string {
-	if param.Latency > time.Minute {
-		param.Latency = param.Latency.Truncate(time.Second)
-	}
-
-	timestamp := param.TimeStamp.Format("2006-01-02T15:04:05Z")
-	statusCode := param.StatusCode
-	latency := param.Latency
-	clientIP := param.ClientIP
-	method := param.Method
-	path := param.Path
-	errorMessage := param.ErrorMessage
-
-	statusCodeColor := constants.COLOR_GREEN
-	methodColor := constants.COLOR_MAGENTA
-
-	level := constants.LOG_LEVEL_INFO
-	if statusCode >= 400 {
-		level = constants.LOG_LEVEL_ERROR
-		statusCodeColor = constants.COLOR_RED
-	}
-
-	switch method {
-	case "GET":
-		methodColor = constants.METHOD_GET
-	case "POST":
-		methodColor = constants.METHOD_POST
-	case "PUT":
-		methodColor = constants.METHOD_PUT
-	case "PATCH":
-		methodColor = constants.METHOD_PATCH
-	case "DELETE":
-		methodColor = constants.METHOD_DELETE
-	}
-
-	return Logf(level,
-		constants.LOG_FORMAT_CONSOLE,
-		timestamp,
-		"%s%3d%s | %13v | %15s | %s%-7s%s %#v | %s",
-		statusCodeColor,
-		statusCode,
-		constants.COLOR_NONE,
-		latency,
-		clientIP,
-		methodColor,
-		method,
-		constants.COLOR_NONE,
-		path,
-		errorMessage,
-	)
-}
 
 func sliceIndex(list []string, val string) int {
 	for i := 0; i < len(list); i++ {

@@ -3,14 +3,22 @@ package task
 import (
 	"fmt"
 	"scaffold/server/constants"
+	"scaffold/server/logger"
 	"scaffold/server/state"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"scaffold/server/mongodb"
 )
+
+type TaskDependsOn struct {
+	Success []string `json:"success" bson:"success"`
+	Error   []string `json:"error" bson:"error"`
+	Always  []string `json:"always" bson:"always"`
+}
 
 type TaskLoadStore struct {
 	Env  []string `json:"env" bson:"env"`
@@ -23,7 +31,7 @@ type TaskCheck struct {
 	Run       string            `json:"run" bson:"run"`
 	Store     TaskLoadStore     `json:"store" bson:"store"`
 	Load      TaskLoadStore     `json:"load" bson:"load"`
-	Outputs   map[string]string `json:"outputs" bson:"outputs"`
+	Env       map[string]string `json:"env" bson:"env"`
 	Inputs    map[string]string `json:"inputs" bson:"inputs"`
 	Updated   string            `json:"updated" bson:"updated"`
 	RunNumber int               `json:"run_number" bson:"run_number"`
@@ -33,12 +41,12 @@ type Task struct {
 	Name        string            `json:"name" bson:"name"`
 	Cascade     string            `json:"cascade" bson:"cascade"`
 	Verb        string            `json:"verb" bson:"verb"`
-	DependsOn   []string          `json:"depends_on" bson:"depends_on"`
+	DependsOn   TaskDependsOn     `json:"depends_on" bson:"depends_on"`
 	Image       string            `json:"image" bson:"image"`
 	Run         string            `json:"run" bson:"run"`
 	Store       TaskLoadStore     `json:"store" bson:"store"`
 	Load        TaskLoadStore     `json:"load" bson:"load"`
-	Outputs     map[string]string `json:"outputs" bson:"outputs"`
+	Env         map[string]string `json:"env" bson:"env"`
 	Inputs      map[string]string `json:"inputs" bson:"inputs"`
 	Updated     string            `json:"updated" bson:"updated"`
 	Check       TaskCheck         `json:"check" bson:"check"`
@@ -61,6 +69,8 @@ func CreateTask(t *Task) error {
 		Started:  "",
 		Finished: "",
 		Output:   "",
+		Number:   t.RunNumber,
+		Display:  make([]map[string]interface{}, 0),
 	}
 	if err := state.CreateState(&s); err != nil {
 		return err
@@ -73,6 +83,8 @@ func CreateTask(t *Task) error {
 		Started:  "",
 		Finished: "",
 		Output:   "",
+		Number:   t.RunNumber,
+		Display:  make([]map[string]interface{}, 0),
 	}
 	if err := state.CreateState(&sc); err != nil {
 		return err
@@ -85,6 +97,8 @@ func CreateTask(t *Task) error {
 		Started:  "",
 		Finished: "",
 		Output:   "",
+		Number:   0,
+		Display:  make([]map[string]interface{}, 0),
 	}
 	if err := state.CreateState(&sp); err != nil {
 		return err
@@ -186,11 +200,16 @@ func UpdateTaskByNames(cascade, task string, t *Task) error {
 	filter := bson.M{"cascade": cascade, "name": task}
 	currentTime := time.Now().UTC()
 	t.Updated = currentTime.Format("2006-01-02T15:04:05Z")
+	t.Cascade = cascade
+
+	logger.Debugf("", "Updating task %v", *t)
 
 	collection := mongodb.Collections[constants.MONGODB_TASK_COLLECTION_NAME]
 	ctx := mongodb.Ctx
 
-	result, err := collection.ReplaceOne(ctx, filter, t)
+	opts := options.Replace().SetUpsert(true)
+
+	result, err := collection.ReplaceOne(ctx, filter, t, opts)
 
 	if err != nil {
 		return err
@@ -199,6 +218,8 @@ func UpdateTaskByNames(cascade, task string, t *Task) error {
 	if result.ModifiedCount != 1 {
 		return fmt.Errorf("no task found with names %s, %s", cascade, task)
 	}
+
+	logger.Debugf("", "Update result: %v", result)
 
 	return nil
 }

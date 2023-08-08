@@ -61,26 +61,95 @@ func ShowResetPasswordPage(c *gin.Context) {
 }
 
 func ShowCascadesPage(c *gin.Context) {
+	token, _ := c.Cookie("scaffold_token")
+	u, _ := user.GetUserByLoginToken(token)
+
+	if u == nil {
+		c.Redirect(http.StatusTemporaryRedirect, "401.html")
+		return
+	}
+
 	cascadePointers, _ := cascade.GetAllCascades()
-	cascades := make([]cascade.Cascade, len(cascadePointers))
+	cascades := make([]map[string]interface{}, len(cascadePointers))
 	for idx, obj := range cascadePointers {
-		cascades[idx] = *obj
+		objBytes, _ := json.Marshal(obj)
+		var data map[string]interface{}
+		json.Unmarshal(objBytes, &data)
+		isInGroup := false
+		for _, ug := range u.Groups {
+			if ug == "admin" {
+				isInGroup = true
+				break
+			}
+			for _, cg := range obj.Groups {
+				if ug == cg {
+					isInGroup = true
+					break
+				}
+			}
+			if isInGroup {
+				break
+			}
+		}
+		data["in_group"] = isInGroup
+		cascades[idx] = data
 	}
 
 	showPage(c, "cascades.html", gin.H{"cascades": cascades})
 }
 
 func ShowCascadePage(c *gin.Context) {
+	token, _ := c.Cookie("scaffold_token")
+	u, _ := user.GetUserByLoginToken(token)
+
+	if u == nil {
+		c.Redirect(http.StatusTemporaryRedirect, "401.html")
+		return
+	}
+
 	name := c.Param("name")
 	obj, err := cascade.GetCascadeByName(name)
 	if err != nil {
 		c.Redirect(http.StatusTemporaryRedirect, "500.html")
+		return
+	}
+
+	isInGroup := false
+	for _, ug := range u.Groups {
+		fmt.Printf("Checking user group %s\n", ug)
+		if ug == "admin" {
+			isInGroup = true
+			break
+		}
+		for _, cg := range obj.Groups {
+			fmt.Printf("Checking cascade group: %s\n", cg)
+			if ug == cg {
+				fmt.Println("In group!")
+				isInGroup = true
+				break
+			}
+		}
+		if isInGroup {
+			break
+		}
+	}
+
+	if !isInGroup {
+		c.Redirect(http.StatusTemporaryRedirect, "401.html")
+		return
 	}
 
 	showPage(c, "cascade.html", gin.H{"cascade": *obj})
 }
 
 func ShowFilesPage(c *gin.Context) {
+	token, _ := c.Cookie("scaffold_token")
+	u, _ := user.GetUserByLoginToken(token)
+
+	if u == nil {
+		c.Redirect(http.StatusTemporaryRedirect, "401.html")
+		return
+	}
 
 	objects := []filestore.ObjectMetadata{}
 	fileMetadata, err := filestore.ListObjects()
@@ -89,11 +158,13 @@ func ShowFilesPage(c *gin.Context) {
 		utils.DynamicAPIResponse(c, "500.html", http.StatusInternalServerError, gin.H{})
 	}
 
-	cascades := []string{}
+	cascadeList := []string{}
+	inGroups := map[string]bool{}
 
 	datastores, _ := datastore.GetAllDataStores()
-	for _, d := range datastores {
-		cascades = append(cascades, d.Name)
+	cascades, _ := cascade.GetAllCascades()
+	for idx, d := range datastores {
+		cascadeList = append(cascadeList, d.Name)
 
 		for _, f := range d.Files {
 			path := fmt.Sprintf("%s/%s", d.Name, f)
@@ -104,14 +175,36 @@ func ShowFilesPage(c *gin.Context) {
 			}
 			objects = append(objects, fm)
 		}
+		isInGroup := false
+		for _, ug := range u.Groups {
+			if ug == "admin" {
+				isInGroup = true
+				break
+			}
+			for _, cg := range cascades[idx].Groups {
+				if ug == cg {
+					isInGroup = true
+					break
+				}
+			}
+			if isInGroup {
+				break
+			}
+		}
+		inGroups[d.Name] = isInGroup
 	}
 
-	showPage(c, "files.html", gin.H{"objects": objects, "cascades": cascades})
+	showPage(c, "files.html", gin.H{"objects": objects, "cascades": cascadeList, "in_groups": inGroups})
 }
 
 func ShowUsersPage(c *gin.Context) {
 	token, _ := c.Cookie("scaffold_token")
 	u, _ := user.GetUserByLoginToken(token)
+
+	if u == nil {
+		c.Redirect(http.StatusTemporaryRedirect, "401.html")
+		return
+	}
 
 	isAdmin := false
 	if utils.Contains(u.Groups, "admin") || utils.Contains(u.Roles, "admin") {
@@ -157,6 +250,9 @@ func ShowUserPage(c *gin.Context) {
 		}
 	}
 	roleJSON, _ := json.Marshal(roleObj)
+
+	logger.Debugf("", "group json: %s", string(groupJSON))
+	logger.Debugf("", "role json: %s", string(roleJSON))
 
 	showPage(c, "user.html", gin.H{"user": &u, "role_tag_json": string(roleJSON), "group_tag_json": string(groupJSON)})
 }

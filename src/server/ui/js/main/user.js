@@ -3,7 +3,7 @@
 // import theme.js
 // import modal.js
 // import user_menu.js
-// import status.js
+// import deploy_status.js
 // import data.js
 
 var groupTagify
@@ -25,7 +25,11 @@ $(document).ready(
 )
 
 function addGroup() {
-    groupName = $("#group-to-add").val()
+    let groupName = $("#group-to-add").val()
+    groupName = groupName.trim()
+    if (groupName == "") {
+        return
+    }
     html = `<div ondblclick="removeGroup('{{ . }}')" class="w3-tag w3-round scaffold-green user-group tag" style="padding:3px" id="group-${groupName}">
                 ${groupName}
             </div>`
@@ -38,7 +42,11 @@ function removeGroup(name) {
 }
 
 function addRole() {
-    roleName = $("#role-to-add").val()
+    let roleName = $("#role-to-add").val()
+    roleName = roleName.trim()
+    if (roleName == "") {
+        return
+    }
     html = `<div ondblclick="removeRole('{{ . }}')" class="w3-tag w3-round scaffold-green user-role tag" style="padding:3px" id="role-${roleName}">
                 ${roleName}
             </div>`

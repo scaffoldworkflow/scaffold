@@ -3,7 +3,7 @@
 // import theme.js
 // import modal.js
 // import user_menu.js
-// import status.js
+// import deploy_status.js
 // import data.js
 
 var cascades
@@ -23,31 +23,27 @@ function getCascades() {
 }
 
 function render() {
-    var prefix = $("#search").val();
-    var tempCascades = JSON.parse(JSON.stringify(cascades));
+    let prefix = $("#search").val();
     prefix = prefix.toLowerCase();
-    if (prefix != "") {
-        for (var idx = tempCascades.length - 1; idx >= 0; idx--) {
-            if (tempCascades[idx].name.toLowerCase().indexOf(prefix) == -1) {
-                tempCascades.splice(idx, 1)
-            }
+    
+    if (prefix == "") {
+        for (let idx = 0; idx < cascades.cascades.length; idx++) {
+            let name = cascades.cascades[idx].name
+            $(`#cascades-row-${name}`).removeClass("table-hide")
+            $(`#cascades-row-${name}`).addClass("table-show")
         }
+        return
     }
-    var table = document.getElementById('cascades-table');
-    var tableHTMLString = '<tr><th class="table-title w3-medium scaffold-text-green"><span class="table-title-text">Name</span></th><th class="table-title w3-medium scaffold-text-green"><span class="table-title-text">Created</span></th><th class="table-title w3-medium scaffold-text-green"><span class="table-title-text">Updated</span></th><th class="table-title w3-medium scaffold-text-green"><span class="table-title-text">Version</span></th><th><span class="table-title-text"></span></th></tr>' +
-        tempCascades.cascades.map(function (cascade) {
-            return '<tr>' +
-                '<td>' + cascade.name + '</td>' +
-                '<td>' + cascade.created + '</td>' +
-                '<td>' + cascade.updated + '</td>' +
-                '<td>' + cascade.version + '</td>' +
-                '<td class="table-link-cell">' +
-                '<a href="/ui/cascade/' + cascade.name + '" class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;"><i class="fa-solid fa-link"></i></a>' +
-                '</td>' +
-                '</tr>'
-        }).join('');
-
-    table.innerHTML = tableHTMLString;
+    for (let idx = 0; idx < cascades.cascades.length; idx++) {
+        let name = cascades.cascades[idx].name
+        if (name.toLowerCase().indexOf(prefix) == -1) {
+            $(`#cascades-row-${name}`).removeClass("table-show")
+            $(`#cascades-row-${name}`).addClass("table-hide")
+            continue
+        }
+        $(`#cascades-row-${name}`).removeClass("table-hide")
+        $(`#cascades-row-${name}`).addClass("table-show")
+    }
 }
 
 $(document).ready(

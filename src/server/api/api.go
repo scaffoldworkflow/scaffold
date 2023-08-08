@@ -720,6 +720,7 @@ func CreateRun(ctx *gin.Context) {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
 	}
+	s.Number += 1
 
 	t, err := task.GetTaskByNames(cn, tn)
 	if err != nil {
@@ -767,14 +768,21 @@ func CreateRun(ctx *gin.Context) {
 	}
 	if _, ok := manager.InProgress[cn]; !ok {
 		manager.InProgress[cn] = map[string]string{fmt.Sprintf("%s.%d", tn, t.RunNumber): fmt.Sprintf("%s:%d", n.Host, n.Port)}
+		manager.ToCheck[cn] = map[string]string{fmt.Sprintf("%s.%d", tn, t.RunNumber): fmt.Sprintf("%s:%d", n.Host, n.Port)}
 	} else {
 		manager.InProgress[cn][fmt.Sprintf("%s.%d", tn, t.RunNumber)] = fmt.Sprintf("%s:%d", n.Host, n.Port)
+		manager.ToCheck[cn][fmt.Sprintf("%s.%d", tn, t.RunNumber)] = fmt.Sprintf("%s:%d", n.Host, n.Port)
 	}
 
 	if err := task.UpdateTaskByNames(cn, tn, t); err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
 	}
+
+	// if err := state.UpdateStateByNames(cn, tn, s); err != nil {
+	// 	utils.Error(err, ctx, http.StatusInternalServerError)
+	// 	return
+	// }
 
 	cs, err := cascade.GetCascadeByName(cn)
 	if err != nil {
@@ -809,28 +817,33 @@ func CreateCheckRun(ctx *gin.Context) {
 			Started:  "",
 			Finished: "",
 			Output:   "",
+			Number:   t.RunNumber,
+			Display:  make([]map[string]interface{}, 0),
 		}
 		if err := state.CreateState(s); err != nil {
 			utils.Error(err, ctx, http.StatusInternalServerError)
 			return
 		}
 	}
+	s.Number = t.RunNumber
 
 	obj := run.Run{
 		Name: fmt.Sprintf("%s.%s.%d", cn, checkStateName, t.Check.RunNumber),
 		Task: task.Task{
-			Name:      checkStateName,
-			Cascade:   t.Cascade,
-			Verb:      "",
-			DependsOn: []string{},
-			Image:     t.Check.Image,
-			Run:       t.Check.Run,
-			Store:     t.Check.Store,
-			Load:      t.Check.Load,
-			Outputs:   t.Check.Outputs,
-			Inputs:    t.Check.Inputs,
-			Updated:   t.Check.Updated,
-			ShouldRM:  true,
+			Name:        checkStateName,
+			Cascade:     t.Cascade,
+			Verb:        "",
+			DependsOn:   task.TaskDependsOn{},
+			Image:       t.Check.Image,
+			Run:         t.Check.Run,
+			Store:       t.Check.Store,
+			Load:        t.Check.Load,
+			Env:         t.Check.Env,
+			Inputs:      t.Check.Inputs,
+			Updated:     t.Check.Updated,
+			AutoExecute: true,
+			ShouldRM:    true,
+			RunNumber:   t.RunNumber,
 		},
 		State:  *s,
 		Number: t.RunNumber,
@@ -857,12 +870,51 @@ func CreateCheckRun(ctx *gin.Context) {
 	}
 	if _, ok := manager.InProgress[cn]; !ok {
 		manager.InProgress[cn] = map[string]string{fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber): fmt.Sprintf("%s:%d", n.Host, n.Port)}
+		manager.ToCheck[cn] = map[string]string{fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber): fmt.Sprintf("%s:%d", n.Host, n.Port)}
 	} else {
 		manager.InProgress[cn][fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber)] = fmt.Sprintf("%s:%d", n.Host, n.Port)
+		manager.ToCheck[cn][fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber)] = fmt.Sprintf("%s:%d", n.Host, n.Port)
 	}
 
 	if err := task.UpdateTaskByNames(cn, tn, t); err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	// if err := state.UpdateStateByNames(cn, tn, s); err != nil {
+	// 	utils.Error(err, ctx, http.StatusInternalServerError)
+	// 	return
+	// }
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
+}
+
+func ManagerKillRun(ctx *gin.Context) {
+	cn := ctx.Param("cascade")
+	tn := ctx.Param("task")
+	nn := ctx.Param("number")
+
+	key := fmt.Sprintf("%s.%s", tn, nn)
+
+	uri := ""
+	logger.Debugf("", "Looking for %s/%s.%s", cn, tn, nn)
+	logger.Debugf("", "Kill in progress: %s", manager.InProgress)
+	if _, ok := manager.InProgress[cn]; ok {
+		if val, ok := manager.InProgress[cn][key]; ok {
+			uri = val
+		}
+	}
+
+	httpClient := &http.Client{}
+	requestURL := fmt.Sprintf("http://%s/api/v1/kill/%s/%s/%s", uri, cn, tn, nn)
+	req, _ := http.NewRequest("DELETE", requestURL, nil)
+	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+	}
+	if resp.StatusCode >= 400 {
+		utils.Error(fmt.Errorf("received kill status code %d", resp.StatusCode), ctx, resp.StatusCode)
 		return
 	}
 
@@ -947,9 +999,26 @@ func TriggerRun(ctx *gin.Context) {
 		Started:  "",
 		Finished: "",
 		Output:   "",
+		Number:   r.Number,
+		Display:  make([]map[string]interface{}, 0),
 	}
 
+	logger.Debugf("", "Writing new run to queue %v", r)
+
 	worker.RunQueue = append(worker.RunQueue, r)
+}
+
+func KillRun(ctx *gin.Context) {
+	cn := ctx.Param("cascade")
+	tn := ctx.Param("task")
+	nn := ctx.Param("number")
+
+	if err := run.Kill(cn, tn, nn); err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	ctx.Status(http.StatusOK)
 }
 
 func GetRunState(ctx *gin.Context) {

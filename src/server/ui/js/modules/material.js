@@ -3,9 +3,9 @@ function toggleSidebar() {
     var page_darken = document.getElementById("page-darken")
     if (sidebar.className.indexOf("show") == -1) {
         sidebar.classList.add("show");
-        sidebar.classList.remove("left-slide-out");
+        sidebar.classList.remove("left-slide-out-300");
         void sidebar.offsetWidth;
-        sidebar.classList.add("left-slide-in")
+        sidebar.classList.add("left-slide-in-300")
         $("#sidebar").css("left", "0px")
 
         page_darken.classList.remove("fade-out");
@@ -14,9 +14,9 @@ function toggleSidebar() {
         $("#page-darken").css("opacity", "1")
     } else {
         sidebar.classList.remove("show");
-        sidebar.classList.remove("left-slide-in");
+        sidebar.classList.remove("left-slide-in-300");
         void sidebar.offsetWidth;
-        sidebar.classList.add("left-slide-out")
+        sidebar.classList.add("left-slide-out-300")
         $("#sidebar").css("left", "-300px")
 
         page_darken.classList.remove("fade-in");

@@ -72,6 +72,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"scaffold/server/logger"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -127,14 +128,7 @@ func NewProxy() *WebsocketProxy {
 		run := vars["run"]
 		version := vars["version"]
 
-		fmt.Printf("host: %s\n", host)
-		fmt.Printf("port: %s\n", port)
-		fmt.Printf("cascade: %s\n", cascade)
-		fmt.Printf("run: %s\n", run)
-		fmt.Printf("version: %s\n", version)
-
-		fmt.Printf("Connection information: %s %s %s %s %s\n", host, port, cascade, run, version)
-		fmt.Printf("request path: %s\n", r.URL.Path)
+		logger.Tracef("Trying to exec with information %s, %s, %s, %s, %s", host, port, cascade, run, version)
 
 		url, err := url.Parse(fmt.Sprintf("ws://%s:%s/ws/%s/%s/%s", host, port, cascade, run, version))
 		if err != nil {

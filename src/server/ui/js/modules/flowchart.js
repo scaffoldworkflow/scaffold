@@ -10,7 +10,37 @@ var state_colors = {
     "running": "scaffold-blue",
     "waiting": "scaffold-yellow"
 }
+
+var state_text_colors = {
+    "not_started": "scaffold-text-charcoal",
+    "success": "scaffold-text-green",
+    "error": "scaffold-text-red",
+    "running": "scaffold-text-blue",
+    "waiting": "scaffold-text-yellow"
+}
+
 color_keys = ["not_started", "success", "error", "running", "waiting"]
+
+var hidden = []
+
+function render() {
+    let prefix = $("#search").val();
+    prefix = prefix.toLowerCase();
+    
+
+    if (prefix == "") {
+        hidden = []
+        return
+    } else {
+        for (let i = 0; i < node_data.length; i++) {
+            let name = node_data[i].name
+            if (name.toLowerCase().indexOf(prefix) == -1) {
+                hidden.push(name)
+            }
+        }
+    }
+    updateNodeColors()
+}
 
 function add_node_children(els, name, depends) {
     for (let idx = 0; idx < els.length; idx++) {
@@ -127,23 +157,45 @@ function getStatusFromName(n, states) {
     return "not_started"
 }
 
+// Checks if the task matching a name has any set depends_on fields
 function checkIfDependsOn(n, tasks) {
     for (let i = 0; i < tasks.length; i++) {
         if (tasks[i].name == n) {
-            if (tasks[i].depends_on == null) {
-                return false
+            is_valid = true
+            if (tasks[i].depends_on.success == null && tasks[i].depends_on.error == null && tasks[i].depends_on.always == null) {
+                is_valid = false
             }
-            return true
+            return is_valid 
         }
     }
     return false
 }
 
+/*
+description: check if any tasks depend on the task matching the passed name
+inputs:
+    n | string | name of the task to check if it is depended on
+    tasks | list[object] | list of tasks to check
+outputs:
+    bool | if the task is depended on or not
+*/
 function checkIfDependedOn(n, tasks) {
     for (let i = 0; i < tasks.length; i++) {
         if (tasks[i].depends_on != null) {
-            if (tasks[i].depends_on.includes(n)) {
-                return true
+            if (tasks[i].depends_on.success != null) {
+                if (tasks[i].depends_on.success.includes(n)) {
+                    return true
+                }
+            }
+            if (tasks[i].depends_on.error != null) {
+                if (tasks[i].depends_on.error.includes(n)) {
+                    return true
+                }
+            }
+            if (tasks[i].depends_on.always != null) {
+                if (tasks[i].depends_on.always.includes(n)) {
+                    return true
+                }
             }
         }
     }
@@ -152,18 +204,37 @@ function checkIfDependedOn(n, tasks) {
 
 function setupNodes() {
     for (let idx = 0; idx < tasks.length; idx++) {
-        if (tasks[idx].depends_on != null) {
+        structure[tasks[idx].name] = []
+        if (tasks[idx].depends_on.success != null) {
             // Create links as needed
-            for (let jdx = 0; jdx < tasks[idx].depends_on.length; jdx++) {
+            for (let jdx = 0; jdx < tasks[idx].depends_on.success.length; jdx++) {
                 link_data.push({
-                    from: tasks[idx].depends_on[jdx],
-                    to: tasks[idx].name
+                    from: tasks[idx].depends_on.success[jdx],
+                    to: tasks[idx].name,
+                    color: "#A3BE8C",
                 })
-                console.log("Depends on link")
             }
-            structure[tasks[idx].name] = [...tasks[idx].depends_on]
-        } else {
-            structure[tasks[idx].name] = []
+            structure[tasks[idx].name].push(...tasks[idx].depends_on.success)
+        }
+        if (tasks[idx].depends_on.error != null) {
+            for (let jdx = 0; jdx < tasks[idx].depends_on.error.length; jdx++) {
+                link_data.push({
+                    from: tasks[idx].depends_on.error[jdx],
+                    to: tasks[idx].name,
+                    color: "#BF616A",
+                })
+            }
+            structure[tasks[idx].name].push(...tasks[idx].depends_on.error)
+        }
+        if (tasks[idx].depends_on.always != null) {
+            for (let jdx = 0; jdx < tasks[idx].depends_on.always.length; jdx++) {
+                link_data.push({
+                    from: tasks[idx].depends_on.always[jdx],
+                    to: tasks[idx].name,
+                    color: "#5E81AC",
+                })
+            }
+            structure[tasks[idx].name].push(...tasks[idx].depends_on.always)
         }
     }
     
@@ -191,7 +262,7 @@ function renderNodes(cardID) {
         dependsOn = checkIfDependsOn(node_data[i].name, tasks)
         html = `<div 
             class="w3-round w3-border theme-border-light ${color} light"
-            style="width:${node_data[i].w}px;height:${h}px;top:${node_data[i].y-hh}px;left:${node_data[i].x-node_data[i].hw}px;position:absolute;text-align:center;vertical-align:middle;line-height:${h}px;z-index:995;"
+            style="cursor:pointer;width:${node_data[i].w}px;height:${h}px;top:${node_data[i].y-hh}px;left:${node_data[i].x-node_data[i].hw}px;position:absolute;text-align:center;vertical-align:middle;line-height:${h}px;z-index:995;"
             id="${node_data[i].name}"
             ondblclick="changeStateName('${node_data[i].name}')">
             ${node_data[i].name}`
@@ -215,11 +286,14 @@ function updateNodeColors() {
     for (let i = 0; i < node_data.length; i++) {
         current_status = getStatusFromName(node_data[i].name, states)
         color = state_colors[current_status]
-
+        $(`#${node_data[i].name}`).css("filter", `brightness(100%)`)
         for (let j = 0; j < color_keys.length; j++) {
             $(`#${node_data[i].name}`).removeClass(state_colors[color_keys[j]])
         }
         $(`#${node_data[i].name}`).addClass(color)
+        if (hidden.includes(node_data[i].name)) {
+            $(`#${node_data[i].name}`).css("filter", `brightness(50%)`)
+        }
     }
 }
 
@@ -230,9 +304,13 @@ function renderLines(canvasID) {
     ctx.lineWidth = 4;
     ctx.lineCap = "round"
 
-    ctx.beginPath();
+    
     
     for (let i = 0; i < link_data.length; i++) {
+        ctx.beginPath();
+
+        ctx.strokeStyle = link_data[i].color
+
         s = getLinkCoordsFromName(link_data[i].from, node_data)
         s.y += hh + 10
         e = getLinkCoordsFromName(link_data[i].to, node_data)
@@ -242,10 +320,12 @@ function renderLines(canvasID) {
         c_2 = {x: e.x, y: e.y - delta}
         
         ctx.moveTo(e.x, e.y);
-        ctx.bezierCurveTo(c_1.x, c_1.y, c_2.x, c_2.y, s.x, s.y);    
+        ctx.bezierCurveTo(c_1.x, c_1.y, c_2.x, c_2.y, s.x, s.y);
+
+        ctx.stroke()
+        ctx.closePath()
     }
-    ctx.stroke()
-    ctx.closePath()
+    
 }
 
 function updateFlowchart(canvasID, cardID) {

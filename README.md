@@ -230,17 +230,16 @@ Infrastructure management is an interesting problem to tackle. Many organization
 
 - **Cascade Interaction**
 
-    - [ ] Upload cascade
-    - [ ] Download cascade
-    - [ ] Delete cascade
-    - [ ] Update cascade
+    - [x] Upload cascade
+    - [x] Delete cascade
+    - [x] Update cascade
+    - [ ] Better presentation to user (e.g. connection opened, connection closed)
 
 - **Run Interaction**
 
-    - [ ] Get run output
-    - [ ] Get run statuses
-        - [ ] By cascade name
-        - [ ] By cascade and run names
+    - [ ] Get task output
+    - [ ] List tasks and status by cascade
+    - [ ] Get task statuses by cascade and task name
     - [x] Exec into run
     - [x] List available exec runs
 
@@ -262,17 +261,17 @@ Infrastructure management is an interesting problem to tackle. Many organization
 -  **Worker Improvements**
 
     - [x] Worker node directory and image cleanup
-    - [ ] Task kill ability
+    - [x] Task kill ability
     - [x] Exec into finished container (if still around)
     - [x] Handle `no space left on device` if it happens
+    - [ ] Check task kill ability
 
 -  **Security Improvements**
     - [x] Hash and salt api tokens
     - [x] Hash and salt login tokens
-    - [ ] Cascade group-based access
-        - [ ] Files
-        - [ ] Cascades
-    - [ ] Encrypt exec websocket traffic
+    - [x] Cascade group-based access
+        - [x] Files
+        - [x] Cascades
     - [ ] Run with HTTPS
     - [ ] Implement basic auth for API token request
 
@@ -284,19 +283,23 @@ Infrastructure management is an interesting problem to tackle. Many organization
 
 -  **UI Improvements**
 
-    - [ ] Fix cascade search
-    - [ ] Task search to highlight tasks containing search string
+    - [x] Fix cascade search
+    - [x] Task search to highlight tasks containing search string
     - [x] Display Cascade links
     - [x] Display current Cascade state
+    - [ ] Move task status to right slide in
+    - [ ] Change auto-execute from cascade page
 
 -  **Task Display Improvements**
 
     - [x] Task store and show previous state
-    - [ ] Task formatted display
+    - [x] Task formatted display
         - Write specific format JSON to /tmp/run/.display in container to setup display in UI
-            - [ ] Tables
-            - [ ] Single value
-            - [ ] Block value
+            - [x] Tables
+            - [x] Single value
+            - [x] Pre-formatted value
+    - [ ] Tasks nodes on cascade page should be left-aligned
+    - [ ] Previous should display one less than run number
 
 -  **Documentation**
 
@@ -306,9 +309,9 @@ Infrastructure management is an interesting problem to tackle. Many organization
 -  **Cascade Improvements**
 
     - [x] Add check recurring tasks
-    - [ ] Selective auto-execute
-    - [ ] On success, on failure, and always tasks
+    - [x] Selective auto-execute
+    - [x] On success, on error, and always tasks
 
 -  **Manager Improvements**
-    - [ ] Proxy websocket exec requests
-    - [ ] Save worker proxy port on join
+    - [x] Proxy websocket exec requests
+    - [x] Save worker proxy port on join

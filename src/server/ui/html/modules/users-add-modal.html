@@ -24,11 +24,6 @@
             <br>
             <br>
             <div class="w3-card w3-container tag-container" id="group-card">
-            {{ range .group }}
-                <div ondblclick="removeGroup('{{ . }}')" class="w3-tag w3-round scaffold-green user-group tag" style="padding:3px" id="group-{{ . }}">
-                {{ . }}&nbsp
-                </div>
-            {{ end }}
             </div>
             <br> 
             <br>
@@ -39,11 +34,9 @@
             <br>
             <br>
             <div class="w3-card w3-container tag-container" id="role-card">
-            {{ range .roles }}
-                <div ondblclick="removeRole('{{ . }}')" class="w3-tag w3-round scaffold-green user-role tag" style="padding:3px" id="role-{{ . }}">
-                {{ . }}&nbsp
+                <div ondblclick="removeRole('read')" class="w3-tag w3-round scaffold-green user-role tag" style="padding:3px" id="role-read">
+                    read&nbsp;
                 </div>
-            {{ end }}
             </div>
             <br>
             <br>

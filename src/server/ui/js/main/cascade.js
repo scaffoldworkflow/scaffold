@@ -3,9 +3,9 @@
 // import theme.js
 // import modal.js
 // import user_menu.js
-// import status.js
+// import deploy_status.js
 // import data.js
-// import state.js
+// import run_state.js
 // import input.js
 // import accordion.js
 
@@ -29,20 +29,39 @@ hw = w / 2
 hh = h / 2
 m = 10
 
+right_panel_width = 500
+
 function toggleCurrentState() {
     let sidebar = document.getElementById("current-state")
     if (sidebar.className.indexOf("show") == -1) {
         sidebar.classList.add("show");
-        sidebar.classList.remove("right-slide-out");
+        sidebar.classList.remove("right-slide-out-500");
         void sidebar.offsetWidth;
-        sidebar.classList.add("right-slide-in")
-        $("#current-state").css("left", `calc(100% - 300px)`)
+        sidebar.classList.add("right-slide-in-500")
+        $("#current-state").css("left", `calc(100% - ${right_panel_width}px)`)
     } else {
         sidebar.classList.remove("show");
-        sidebar.classList.remove("right-slide-in");
+        sidebar.classList.remove("right-slide-in-500");
         void sidebar.offsetWidth;
-        sidebar.classList.add("right-slide-out")
+        sidebar.classList.add("right-slide-out-500")
         $("#current-state").css("left", `calc(100%)`)
+    }
+}
+
+function toggleCurrentInput() {
+    let sidebar = document.getElementById("current-input")
+    if (sidebar.className.indexOf("show") == -1) {
+        sidebar.classList.add("show");
+        sidebar.classList.remove("right-slide-out-500");
+        void sidebar.offsetWidth;
+        sidebar.classList.add("right-slide-in-500")
+        $("#current-input").css("left", `calc(100% - ${right_panel_width}px)`)
+    } else {
+        sidebar.classList.remove("show");
+        sidebar.classList.remove("right-slide-in-500");
+        void sidebar.offsetWidth;
+        sidebar.classList.add("right-slide-out-500")
+        $("#current-input").css("left", `calc(100%)`)
     }
 }
 
@@ -50,10 +69,23 @@ function updateDatastore() {
     $("#current-state-div").empty()
 
     for (let [key, value] of Object.entries(datastore.env)) {
-        html = `<div class="w3-bar-item light scaffold-yellow w3-border-bottom theme-border-light">
+        shouldShow = true
+        for (let idx = 0; idx < inputs.length; idx++) {
+            let i = inputs[idx]
+            if (i.name == key) {
+                if (i.type == "password") {
+                    shouldShow = false
+                    break
+                }
+            }
+        }
+        if (!shouldShow) {
+            continue
+        }
+        html = `<div class="w3-bar-item light theme-base w3-border-bottom theme-border-light">
             <b>${key}</b>
         </div>
-        <div class="w3-bar-item light theme-light w3-border-bottom theme-border-light">
+        <div class="w3-bar-item light theme-light w3-border-bottom theme-border-base">
             ${value}
         </div>`
         $("#current-state-div").append(html)
@@ -61,8 +93,8 @@ function updateDatastore() {
 }
 
 function getDatastore() {
-    parts = window.location.href.split('/')
-    cascadeName = parts[parts.length - 1]
+    let parts = window.location.href.split('/')
+    let cascadeName = parts[parts.length - 1]
 
     $.ajax({
         url: "/api/v1/datastore/" + cascadeName,
@@ -80,8 +112,8 @@ function getDatastore() {
 }
 
 function getTasks() {
-    parts = window.location.href.split('/')
-    cascadeName = parts[parts.length - 1]
+    let parts = window.location.href.split('/')
+    let cascadeName = parts[parts.length - 1]
 
     $.ajax({
         url: "/api/v1/task/" + cascadeName,
@@ -99,8 +131,8 @@ function getTasks() {
 }
 
 function getStates(shouldInit) {
-    parts = window.location.href.split('/')
-    cascadeName = parts[parts.length - 1]
+    let parts = window.location.href.split('/')
+    let cascadeName = parts[parts.length - 1]
 
     $.ajax({
         url: "/api/v1/state/" + cascadeName,
@@ -120,8 +152,9 @@ function getStates(shouldInit) {
 }
 
 function triggerRun() {
-    cascadeName = parts[parts.length - 1]
-    taskName = CurrentStateName
+    let parts = window.location.href.split('/')
+    let cascadeName = parts[parts.length - 1]
+    let taskName = CurrentStateName
     
     if (taskName != "") {
         $.ajax({
@@ -141,6 +174,7 @@ $(document).ready(
     function () {
         // let width = $( document ).width();
         $("#current-state").css("left", `calc(100%)`)
+        $("#current-input").css("left", `calc(100%)`)
         $("#sidebar").css("left", "-300px")
 
         // $("#spinner").css("display", "block")

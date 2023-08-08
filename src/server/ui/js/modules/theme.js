@@ -16,21 +16,9 @@ function toggleTheme() {
     if (theme == 'light') {
         theme = 'dark'
         $('.light').addClass('dark').removeClass('light');
-        if (typeof editor === 'undefined' || editor === null) {
-            console.log("Editor not found!")
-        } else {
-            console.log("Editor found!")
-            monaco.editor.setTheme('scaffoldDarkTheme');
-        }
     } else {
         theme = 'light'
         $('.dark').addClass('light').removeClass('dark');
-        if (typeof editor === 'undefined' || editor === null) {
-            console.log("Editor not found!")
-        } else {
-            console.log("Editor found!")
-            monaco.editor.setTheme('scaffoldLightTheme');
-        }
     }
     localStorage.setItem('scaffold-theme', theme);
 }

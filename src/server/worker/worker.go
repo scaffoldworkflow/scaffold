@@ -81,6 +81,7 @@ func PollQueue() {
 			container.CurrentName = container.CurrentRun.Name
 			shouldRestart, _ := run.StartRun(&container.CurrentRun)
 			if shouldRestart {
+				logger.Debugf("", "Should restart is true")
 				RunQueue = append([]run.Run{container.CurrentRun}, RunQueue...)
 			} else {
 				logger.Debugf("", "Current run name: %s", container.CurrentRun.Name)
@@ -91,19 +92,20 @@ func PollQueue() {
 				container.CompletedRuns[container.CurrentRun.Name] = run.Run{
 					Name: c.Name,
 					Task: task.Task{
-						Name:      t.Name,
-						Cascade:   t.Cascade,
-						Verb:      t.Verb,
-						DependsOn: t.DependsOn,
-						Image:     t.Image,
-						Run:       t.Run,
-						Store:     t.Store,
-						Load:      t.Load,
-						Outputs:   t.Outputs,
-						Inputs:    t.Inputs,
-						Updated:   t.Updated,
-						Check:     t.Check,
-						RunNumber: t.RunNumber,
+						Name:        t.Name,
+						Cascade:     t.Cascade,
+						Verb:        t.Verb,
+						DependsOn:   t.DependsOn,
+						Image:       t.Image,
+						Run:         t.Run,
+						Store:       t.Store,
+						Load:        t.Load,
+						Env:         t.Env,
+						Inputs:      t.Inputs,
+						Updated:     t.Updated,
+						Check:       t.Check,
+						RunNumber:   t.RunNumber,
+						AutoExecute: t.AutoExecute,
 					},
 					State: state.State{
 						Task:     s.Task,
@@ -112,6 +114,8 @@ func PollQueue() {
 						Started:  s.Started,
 						Finished: s.Finished,
 						Output:   s.Output,
+						Number:   t.RunNumber,
+						Display:  s.Display,
 					},
 					Previous: state.State{
 						Task:     p.Task,
@@ -120,6 +124,8 @@ func PollQueue() {
 						Started:  p.Started,
 						Finished: p.Finished,
 						Output:   p.Output,
+						Number:   p.Number,
+						Display:  p.Display,
 					},
 					Number: container.CurrentRun.Number,
 				}
@@ -130,6 +136,7 @@ func PollQueue() {
 					container.LastImage = append(container.LastImage, container.CurrentRun.Task.Image)
 				}
 			}
+			logger.Debugf("", "current run: %v", container.CurrentRun)
 			container.CurrentRun = run.Run{}
 			health.IsAvailable = true
 		}

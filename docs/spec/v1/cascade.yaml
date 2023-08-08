@@ -14,25 +14,30 @@ tasks:
   verb: str # verb to be injected as SCAFFOLD_VERB env variable [optional]
   auto_execute: bool # defaults to 'true'
   depends_on: # [optional]
-    - str # task name to depend on
+    success:
+      - str # task name to depend on success status
+    error:
+      - str # task name to depend on error status
+    always:
+      - str # task name to depend on success or error status
   image: str # container image to run inside
   run: | # code to run inside of container
     str
+  env:
+    str: str # ENV VAR NAME: value
   store:
     env:
-      - str
+      - str # Name of datastore value to load in (name is env variable name)
     file:
-      - str
+      - str # Name of file to load from filestore
   load:
     env:
-      - str
+      - str # Name of datastore value to store (name is env variable name)
     file:
-      - str
-  outputs:
-    str: str
+      - str # Name of file to store to filestore
   inputs:
-    str: str
+    str: str # ENV VAR NAME: Input name
   check:
     interval: int # interval to run health check in seconds
-    run: |
+    run: | # Code to run during check step
       str

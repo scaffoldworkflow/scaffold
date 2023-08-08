@@ -130,36 +130,29 @@ func (c *Container) ExecContainer(name string) {
 
 	c.Cmd.Stderr = c.Cmd.Stdout
 
-	fmt.Println("Running container")
 	go c.Cmd.Run()
 
 	for {
 		if c.InputReady {
-			fmt.Println("InputReady is true")
 			if _, errWrite := io.WriteString(c.Stdin, fmt.Sprintf("%s\n", c.Input)); errWrite != nil {
 				c.Error = errWrite.Error()
 				break
 			}
-			fmt.Printf("Write data: %s\n", c.Input)
 			c.InputReady = false
 		}
 		if c.OutputReady {
-			fmt.Println("OutputReady is true")
 			data, errRead := io.ReadAll(c.Stdout)
 			if err != nil {
 				c.Error = errRead.Error()
 				break
 			}
-			fmt.Printf("Read data: %s\n", string(data))
 			c.Output += string(data)
 		}
 	}
-	fmt.Println("BROKEN OUT OF LOOP")
 	c.Error = err.Error()
 }
 
 func (c *Container) Write(data string) (string, int) {
-	fmt.Printf("Container stdin: %v", c.Stdin)
 	if _, err := io.WriteString(c.Stdin, fmt.Sprintf("%s\n", data)); err != nil {
 		return err.Error(), 500
 	}

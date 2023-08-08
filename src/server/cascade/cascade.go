@@ -5,6 +5,7 @@ import (
 	"scaffold/server/constants"
 	"scaffold/server/datastore"
 	"scaffold/server/input"
+	"scaffold/server/logger"
 	"scaffold/server/state"
 	"scaffold/server/task"
 	"scaffold/server/utils"
@@ -12,6 +13,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"scaffold/server/mongodb"
 )
@@ -45,7 +47,6 @@ func CreateCascade(c *Cascade) error {
 	for _, t := range c.Tasks {
 		t.Cascade = c.Name
 		t.RunNumber = 0
-		fmt.Printf("New task: %v\n", &t)
 		if err := task.CreateTask(&t); err != nil {
 			return err
 		}
@@ -140,15 +141,7 @@ func UpdateCascadeByName(name string, c *Cascade) error {
 	collection := mongodb.Collections[constants.MONGODB_CASCADE_COLLECTION_NAME]
 	ctx := mongodb.Ctx
 
-	result, err := collection.ReplaceOne(ctx, filter, c)
-
-	if err != nil {
-		return err
-	}
-
-	if result.ModifiedCount != 1 {
-		return fmt.Errorf("no cascade found with name %s", name)
-	}
+	opts := options.Replace().SetUpsert(true)
 
 	states, err := state.GetStatesByCascade(name)
 	if err != nil {
@@ -159,22 +152,49 @@ func UpdateCascadeByName(name string, c *Cascade) error {
 		return nil
 	}
 
+	result, err := collection.ReplaceOne(ctx, filter, c, opts)
+
+	if err != nil {
+		return err
+	}
+
+	if result.ModifiedCount != 1 {
+		return fmt.Errorf("no cascade found with name %s", name)
+	}
+
 	taskNames := make([]string, len(states))
 
 	for idx, t := range tasks {
 		taskNames[idx] = t.Name
 	}
 
-	for _, t := range tasks {
+	newNames := make([]string, len(c.Tasks))
+
+	for idx, t := range c.Tasks {
 		if !utils.Contains(taskNames, t.Name) {
-			t.Cascade = c.Name
-			if err := task.CreateTask(t); err != nil {
+			t.Cascade = name
+			logger.Debugf("", "Creating task %s with cascade %s", t.Name, t.Cascade)
+			if err := task.CreateTask(&t); err != nil {
 				return err
 			}
 			continue
 		}
-		if err := task.UpdateTaskByNames(c.Name, t.Name, t); err != nil {
+		logger.Debugf("", "Updating task %s with cascade %s", t.Name, name)
+		if err := task.UpdateTaskByNames(name, t.Name, &t); err != nil {
 			return err
+		}
+		newNames[idx] = t.Name
+	}
+
+	logger.Debugf("", "Old tasks: %v", taskNames)
+	logger.Debugf("", "New tasks: %v", newNames)
+
+	for _, t := range tasks {
+		if !utils.Contains(newNames, t.Name) {
+			logger.Debugf("", "Removing task %s", t.Name)
+			if err := task.DeleteTaskByNames(name, t.Name); err != nil {
+				return err
+			}
 		}
 	}
 

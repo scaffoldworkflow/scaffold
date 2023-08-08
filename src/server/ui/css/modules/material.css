@@ -28,17 +28,17 @@
     height: 100%;
 }
 
-.left-slide-in {
+.left-slide-in-300 {
     animation-duration: 0.5s;
-    animation-name: slide-in-left;
+    animation-name: slide-in-left-300;
 }
 
-.left-slide-out {
+.left-slide-out-300 {
     animation-duration: 0.5s;
-    animation-name: slide-out-left;
+    animation-name: slide-out-left-300;
 }
 
-@keyframes slide-in-left {
+@keyframes slide-in-left-300 {
     from {
         left: -300px;
     }
@@ -48,7 +48,7 @@
     }
 }
 
-@keyframes slide-out-left {
+@keyframes slide-out-left-300 {
     from {
         left: 0px;
     }
@@ -58,19 +58,19 @@
     }
 }
 
-.right-slide-in {
+.right-slide-in-500 {
     animation-duration: 0.5s;
-    animation-name: slide-in-right;
+    animation-name: slide-in-right-500;
 }
 
-.right-slide-out {
+.right-slide-out-500 {
     animation-duration: 0.5s;
-    animation-name: slide-out-right;
+    animation-name: slide-out-right-500;
 }
 
-@keyframes slide-out-right {
+@keyframes slide-out-right-500 {
     from {
-        left: calc(100% - 300px);
+        left: calc(100% - 500px);
     }
 
     to {
@@ -78,13 +78,43 @@
     }
 }
 
-@keyframes slide-in-right {
+@keyframes slide-in-right-500 {
     from {
         left: calc(100%);
     }
 
     to {
-        left: calc(100% - 300px);
+        left: calc(100% - 500px);
+    }
+}
+
+.right-slide-in-1000 {
+    animation-duration: 0.5s;
+    animation-name: slide-in-right-1000;
+}
+
+.right-slide-out-1000 {
+    animation-duration: 0.5s;
+    animation-name: slide-out-right-1000;
+}
+
+@keyframes slide-out-right-1000 {
+    from {
+        left: calc(100% - 1000px);
+    }
+
+    to {
+        left: calc(100%);
+    }
+}
+
+@keyframes slide-in-right-1000 {
+    from {
+        left: calc(100%);
+    }
+
+    to {
+        left: calc(100% - 1000px);
     }
 }
 

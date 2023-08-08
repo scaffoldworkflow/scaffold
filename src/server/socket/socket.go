@@ -158,11 +158,9 @@ func (c *Client) Read() {
 				}
 			}
 		} else {
-			fmt.Println("Authenticated!")
 			switch inboundData.Status {
 			case 100:
 				if c.Container.Name == "" {
-					fmt.Println("Getting all containers")
 					data := map[int]string{}
 					for idx, name := range container.LastRun {
 						data[idx] = name
@@ -175,7 +173,6 @@ func (c *Client) Read() {
 					outboundData.Status = 300
 				}
 			case 200:
-				fmt.Println("Got read code")
 				if c.Container.Error != "" {
 					outboundMap := map[string]string{"stdout": c.Container.Error}
 					output, _ := json.Marshal(outboundMap)
@@ -191,8 +188,6 @@ func (c *Client) Read() {
 					if c.Container.Error != "" {
 						status = 500
 					}
-
-					fmt.Printf("Get stdout '%s' and status '%d'\n", stdout, status)
 
 					outboundMap := map[string]string{"stdout": stdout}
 					output, _ := json.Marshal(outboundMap)

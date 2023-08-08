@@ -55,9 +55,6 @@ var connections []Connection
 func (c *Connection) run(ws *websocket.Conn) {
 
 	vars := mux.Vars(ws.Request())
-	fmt.Printf("cascade: %s\n", vars["cascade"])
-	fmt.Printf("run: %s\n", vars["run"])
-	fmt.Printf("version: %s\n", vars["version"])
 
 	cascade := vars["cascade"]
 	run := vars["run"]
@@ -162,8 +159,6 @@ func (c *Connection) run(ws *websocket.Conn) {
 				log.Println("invalid message data:", data)
 				return
 			}
-
-			fmt.Printf("message data: %s", data)
 
 			_, err := c.PTMX.WriteString(data)
 			if err != nil {

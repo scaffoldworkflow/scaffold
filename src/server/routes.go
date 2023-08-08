@@ -115,6 +115,7 @@ func initializeRoutes() {
 					runRoutes.POST(":cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.CreateRun)
 					runRoutes.POST(":cascade/:task/check", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.CreateCheckRun)
 					runRoutes.GET("/containers", middleware.EnsureLoggedIn(), api.GetAllContainers)
+					runRoutes.DELETE("/:cascade/:task/:number", middleware.EnsureLoggedIn(), api.ManagerKillRun)
 				}
 			}
 		}
@@ -144,6 +145,7 @@ func initializeRoutes() {
 				v1Routes.POST("/trigger", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.TriggerRun)
 				v1Routes.GET("/state/:cascade/:task/:number", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetRunState)
 				v1Routes.GET("/available", middleware.EnsureLoggedIn(), api.GetAvailableContainers)
+				v1Routes.DELETE("/kill/:cascade/:task/:number", middleware.EnsureLoggedIn(), api.KillRun)
 			}
 		}
 	}

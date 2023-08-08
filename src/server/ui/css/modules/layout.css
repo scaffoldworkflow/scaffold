@@ -115,3 +115,11 @@
     width: 100%;
     position: relative;
 }
+
+.table-show {
+    display: table-row;
+}
+
+.table-hide {
+    display: none;
+}

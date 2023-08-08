@@ -3,6 +3,7 @@ package run
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -71,6 +72,7 @@ func StartRun(r *Run) (bool, error) {
 
 	scriptPath := runDir + "/.run.sh"
 	envInPath := runDir + "/.envin"
+	displayPath := runDir + "/.display"
 
 	envInput := ""
 	for key, val := range r.Task.Inputs {
@@ -81,11 +83,12 @@ func StartRun(r *Run) (bool, error) {
 		encoded := base64.StdEncoding.EncodeToString([]byte(ds.Env[key]))
 		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
 	}
+	for key, val := range r.Task.Env {
+		encoded := base64.StdEncoding.EncodeToString([]byte(val))
+		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+	}
 
 	envOutput := ""
-	for key := range r.Task.Outputs {
-		envOutput += fmt.Sprintf("echo \"%s;$(echo \"${%s}\" | base64)\" >> /tmp/run/.envout\n", key, key)
-	}
 	for _, key := range r.Task.Store.Env {
 		envOutput += fmt.Sprintf("echo \"%s;$(echo \"${%s}\" | base64)\" >> /tmp/run/.envout\n", key, key)
 	}
@@ -142,9 +145,7 @@ func StartRun(r *Run) (bool, error) {
 	}
 
 	podmanCommand := "podman run --privileged -d --security-opt label=disabled "
-	if r.Task.ShouldRM {
-		podmanCommand += "--rm "
-	}
+
 	podmanCommand += fmt.Sprintf("--name %s ", containerName)
 	podmanCommand += fmt.Sprintf("--mount type=bind,src=%s,dst=/tmp/run ", runDir)
 	podmanCommand += r.Task.Image
@@ -179,6 +180,7 @@ func StartRun(r *Run) (bool, error) {
 	var podmanOutput string
 	erroredOut := false
 	for !strings.HasPrefix(string(output), "Exited") {
+		logger.Debugf("", "Checking for exit status: %s", string(output))
 		if string(output) == "" {
 			podmanOutput = outb.String() + "\n\n" + errb.String()
 			r.State.Output = podmanOutput
@@ -188,12 +190,43 @@ func StartRun(r *Run) (bool, error) {
 				erroredOut = true
 				break
 			}
+			// Load in display file if present and able
+			if _, err := os.Stat(displayPath); err == nil {
+				logger.Tracef("", "Display path is present")
+				data, err := os.ReadFile(displayPath)
+				if err == nil {
+					logger.Tracef("", "Read display file")
+					var obj []map[string]interface{}
+					if err := json.Unmarshal(data, &obj); err != nil {
+						logger.Errorf("", "Error unmarshalling display JSON: %v", err)
+					} else {
+						logger.Tracef("", "Updating display object")
+						r.State.Display = obj
+					}
+				}
+			}
+
 		} else {
 			logs, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman logs %s", containerName)).CombinedOutput()
 			if err != nil {
-				r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(err.Error()))
+				r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s--------------------------------\n\n%s", podmanOutput, logs, string(err.Error()))
 			} else {
 				r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(logs))
+			}
+			// Load in display file if present and able
+			if _, err := os.Stat(displayPath); err == nil {
+				logger.Tracef("", "Display path is present")
+				data, err := os.ReadFile(displayPath)
+				if err == nil {
+					logger.Tracef("", "Read display file")
+					var obj []map[string]interface{}
+					if err := json.Unmarshal(data, &obj); err != nil {
+						logger.Errorf("", "Error unmarshalling display JSON: %v", err)
+					} else {
+						logger.Tracef("", "Updating display object")
+						r.State.Display = obj
+					}
+				}
 			}
 		}
 		time.Sleep(500 * time.Millisecond)
@@ -241,9 +274,6 @@ func StartRun(r *Run) (bool, error) {
 		for _, name := range r.Task.Store.Env {
 			ds.Env[name] = envVarMap[name]
 		}
-		for env, name := range r.Task.Outputs {
-			ds.Env[name] = envVarMap[env]
-		}
 
 		inputs := []input.Input{}
 		if err := datastore.UpdateDataStoreByName(cName, ds, inputs); err != nil {
@@ -258,6 +288,26 @@ func StartRun(r *Run) (bool, error) {
 		} else {
 			r.State.Status = constants.STATE_STATUS_ERROR
 		}
+
+		if r.Task.ShouldRM {
+			rmCommand := fmt.Sprintf("podman rm -f %s", containerName)
+			out, err := exec.Command("bash", "-c", rmCommand).CombinedOutput()
+			logger.Debugf("", "Podman rm: %s", string(out))
+			r.State.Output += fmt.Sprintf("\n\n--------------------------------\n\n%s", string(out))
+			if err != nil {
+				logger.Error("", err.Error())
+				r.State.Output += fmt.Sprintf("\n\n--------------------------------\n\n%s", err.Error())
+			}
+		}
 	}
 	return false, err
+}
+
+func Kill(cn, tn, nn string) error {
+	containerName := fmt.Sprintf("%s-%s-%s", cn, tn, nn)
+	if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman kill %s", containerName)).Run(); err != nil {
+		logger.Infof("", "No running container with name %s exists, skipping kill\n", containerName)
+		return err
+	}
+	return nil
 }
