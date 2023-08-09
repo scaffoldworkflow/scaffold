@@ -72,9 +72,7 @@ function buildDisplayTable(cd, color, text_color) {
             </header>
         `
     }
-    // output += `
-    //     <div class="w3-container">
-    // `
+
     // create the table
     output += `<table class="w3-table light w3-border theme-border-light theme-table-striped">`
     
@@ -108,16 +106,7 @@ function buildDisplayTable(cd, color, text_color) {
     // close out the table
     output += `</table>`
 
-    // add ending line break for formatting
-    output += `<br>`
-
     // close out the card
-    // output += `
-    //     </div>
-    //     </div>
-    //     <br>
-    // `
-
     output += `
         </div>
         <br>
@@ -134,7 +123,6 @@ function buildDisplayPre(cd, color) {
             <header class="w3-container ${color}">
                 <h4>${cd.name}</h4>
             </header>
-            <br>
         `
     }
     output += `
@@ -148,11 +136,9 @@ function buildDisplayPre(cd, color) {
         </pre>
     `
 
-    // add ending line break for formatting
-    output += `<br>`
-
     // close out the card
     output += `
+        </div>
         </div>
         <br>
     `
@@ -168,7 +154,6 @@ function buildDisplayValue(cd, color) {
             <header class="w3-container ${color}">
                 <h4>${cd.name}</h4>
             </header>
-            <br>
         `
     }
     output += `
@@ -181,9 +166,6 @@ function buildDisplayValue(cd, color) {
             ${cd.data}
         </p>
     `
-
-    // add ending line break for formatting
-    output += `<br>`
 
     // close out the card
     output += `

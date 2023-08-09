@@ -24,7 +24,7 @@ type ConfigObject struct {
 	Node              NodeObject      `json:"node" env:"NODE"`
 	HeartbeatInterval int             `json:"heartbeat_interval" env:"HEARTBEAT_INTERVAL"`
 	Reset             ResetObject     `json:"reset" env:"RESET"`
-	FileStore         FileStoreObject `json:"file_store" env:"file_store"`
+	FileStore         FileStoreObject `json:"file_store" env:"FILE_STORE"`
 }
 
 type FileStoreObject struct {

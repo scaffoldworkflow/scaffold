@@ -208,6 +208,7 @@ func JoinNode(ctx *gin.Context) {
 	}
 
 	if n.JoinKey == config.Config.Node.JoinKey {
+		logger.Debugf("", "Joining node %s, %d, %d", n.Host, n.Port, n.WSPort)
 		Nodes = append(Nodes, NodeObject{Host: n.Host, Port: n.Port, WSPort: n.WSPort, Healthy: true})
 		ctx.Status(http.StatusOK)
 		return

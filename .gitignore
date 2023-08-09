@@ -3,4 +3,3 @@ src/server/ui-dist
 .python-version
 temp
 test/\.*\.yaml
-src/client/cli

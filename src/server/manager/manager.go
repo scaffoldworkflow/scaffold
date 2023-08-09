@@ -70,7 +70,9 @@ func Run() {
 		newNodes := []auth.NodeObject{}
 		for _, n := range auth.Nodes {
 			queryURL := fmt.Sprintf("http://%s:%d/health/healthy", n.Host, n.Port)
+			logger.Debugf("", "Querying %s", queryURL)
 			resp, err := http.Get(queryURL)
+			logger.Debugf("", "Got response code %d", resp.StatusCode)
 			if err != nil || resp.StatusCode >= 400 {
 				continue
 			}

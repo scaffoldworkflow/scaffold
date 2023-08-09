@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"scaffold/client/auth"
 	"scaffold/client/logger"
 	"scaffold/server/utils"
 	"strconv"
@@ -21,17 +22,6 @@ import (
 	"github.com/buger/goterm"
 	"github.com/gorilla/websocket"
 )
-
-// type Message struct {
-// 	//Message Struct
-// 	Sender    string `json:"sender,omitempty"`
-// 	Recipient string `json:"recipient,omitempty"`
-// 	Content   string `json:"content,omitempty"`
-// 	ServerIP  string `json:"serverIp,omitempty"`
-// 	SenderIP  string `json:"senderIp,omitempty"`
-// }
-
-var token = "MyCoolPrimaryKey12345"
 
 type Event string
 
@@ -49,7 +39,7 @@ type Message struct {
 var messageReady = true
 var message = []byte{}
 
-func ChooseContainer(host, port, wsPort string, optionMap map[string]string) {
+func ChooseContainer(p auth.ProfileObj, optionMap map[string]string) {
 	selected := -1
 	shouldList := true
 	for shouldList {
@@ -92,17 +82,21 @@ func ChooseContainer(host, port, wsPort string, optionMap map[string]string) {
 	connectionParts := strings.Split(hostPort, ":")
 	nameParts := strings.Split(name, ".")
 
-	logger.Tracef("", "Connection info: %s, %s, %s, %s, %s, %s, %s", host, wsPort, connectionParts[0], connectionParts[1], nameParts[0], nameParts[1], nameParts[2])
+	logger.Tracef("", "Connection info: %s, %s, %s, %s, %s, %s, %s", p.Host, p.WSPort, connectionParts[0], connectionParts[1], nameParts[0], nameParts[1], nameParts[2])
 
-	ConnectWebsocket(host, wsPort, connectionParts[0], connectionParts[1], nameParts[0], nameParts[1], nameParts[2])
+	ConnectWebsocket(p, connectionParts[0], connectionParts[1], nameParts[0], nameParts[1], nameParts[2])
 }
 
-func DoExec(host, port, wsPort string) {
+func DoExec(profile string) {
+	p := auth.ReadProfile(profile)
+
+	uri := fmt.Sprintf("%s://%s:%s", p.Protocol, p.Host, p.Port)
+
 	httpClient := &http.Client{}
-	requestURL := fmt.Sprintf("http://%s:%s/api/v1/run/containers", host, port)
+	requestURL := fmt.Sprintf("%s/api/v1/run/containers", uri)
 	fmt.Printf("Request URL: %s\n", requestURL)
 	req, _ := http.NewRequest("GET", requestURL, nil)
-	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", token))
+	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", p.APIToken))
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := httpClient.Do(req)
 
@@ -130,7 +124,7 @@ func DoExec(host, port, wsPort string) {
 		}
 	}
 
-	ChooseContainer(host, port, wsPort, optionMap)
+	ChooseContainer(p, optionMap)
 }
 
 func getInput(c *websocket.Conn) {
@@ -162,7 +156,7 @@ func getInput(c *websocket.Conn) {
 	}
 }
 
-func ConnectWebsocket(proxyHost, proxyPort, host, port, cascade, run, version string) {
+func ConnectWebsocket(p auth.ProfileObj, host, port, cascade, run, version string) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 
@@ -171,10 +165,10 @@ func ConnectWebsocket(proxyHost, proxyPort, host, port, cascade, run, version st
 	messageReady = true
 
 	// u := url.URL{Scheme: "ws", Host: fmt.Sprintf("%s:%s", host, port), Path: "/api/v1/exec"}
-	u := url.URL{Scheme: "ws", Host: fmt.Sprintf("%s:%s", proxyHost, proxyPort), Path: fmt.Sprintf("/%s/%s/%s/%s/%s", host, port, cascade, run, version)}
+	u := url.URL{Scheme: "ws", Host: fmt.Sprintf("%s:%s", p.Host, p.WSPort), Path: fmt.Sprintf("/%s/%s/%s/%s/%s", host, port, cascade, run, version)}
 
 	logger.Tracef("", "Websocket connection URL: %s", u.String())
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{"Authorization": []string{fmt.Sprintf("X-Scaffold-API %s", token)}})
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{"Authorization": []string{fmt.Sprintf("X-Scaffold-API %s", p.APIToken)}})
 	if err != nil {
 		log.Fatal("dial error: ", err)
 	}

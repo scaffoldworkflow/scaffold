@@ -86,8 +86,6 @@ tasks:
     interval: 30
     image: ubuntu:20.04
     run: |
-      echo "Writing data to display"
-      echo '[{"kind":"value","name":"Exit Reason","data":"Testing errored check"}]' > /tmp/run/.display
       echo "Bailing with invalid status"
       exit 1
   auto_execute: false

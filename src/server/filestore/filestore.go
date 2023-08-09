@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"scaffold/server/config"
+	"scaffold/server/logger"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -59,7 +60,8 @@ func InitBucket() {
 		// Create a new bucket using the CreateBucket call.
 		_, err := client.CreateBucket(cparams)
 		if err != nil {
-			panic(err)
+			logger.Errorf("", "Encountered error with creating bucket: %v", err)
+			// panic(err)
 		}
 	}
 }
