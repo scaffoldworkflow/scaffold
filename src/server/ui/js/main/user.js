@@ -30,9 +30,7 @@ function addGroup() {
     if (groupName == "") {
         return
     }
-    html = `<div ondblclick="removeGroup('{{ . }}')" class="w3-tag w3-round scaffold-green user-group tag" style="padding:3px" id="group-${groupName}">
-                ${groupName}
-            </div>`
+    html = `<div ondblclick="removeGroup('{{ . }}')" class="w3-tag w3-round scaffold-green user-group tag" style="padding:3px" id="group-${groupName}">${groupName}</div>`
     $("#group-to-add").val("")
     $("#group-card").append(html)
 }
@@ -47,9 +45,7 @@ function addRole() {
     if (roleName == "") {
         return
     }
-    html = `<div ondblclick="removeRole('{{ . }}')" class="w3-tag w3-round scaffold-green user-role tag" style="padding:3px" id="role-${roleName}">
-                ${roleName}
-            </div>`
+    html = `<div ondblclick="removeRole('{{ . }}')" class="w3-tag w3-round scaffold-green user-role tag" style="padding:3px" id="role-${roleName}">${roleName}</div>`
     $("#role-to-add").val("")
     $("#role-card").append(html)
 }

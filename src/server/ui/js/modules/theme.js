@@ -5,6 +5,8 @@ $(document).ready(function() {
     if (theme) {
         if (theme == 'light') {
             $('.dark').addClass('light').removeClass('dark');
+        } else {
+            $('.light').addClass('dark').removeClass('light');
         }
     } else {
         theme = 'light'

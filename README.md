@@ -6,7 +6,7 @@ Scaffold is an infrastructure management tool that takes a waterfall approach to
 
 ## Rationale
 
-Infrastructure management is an interesting problem to tackle. Many organization use CI/CD pipelines to handle deployment and upgrades (e.g. Jenkins, Concourse) which allows for an automated approach to management, however execution status and can be hard to track. Additionally, changes that may be inside the middle of an upgrade pipeline may need to be re-run without running the whole pipeline and may change the required state of subsequent tasks. The waterfall approach allows for independent execution of tasks with their state changes propagating down to dependent tasks.
+Infrastructure management is an interesting problem to tackle. Many organization use CI/CD pipelines to handle deployment and upgrades (e.g. Jenkins, Concourse) which allows for an automated approach to management, however execution status and state can be hard to track. Additionally, changes that may be inside the middle of an upgrade pipeline may need to be re-run without running the whole pipeline and may change the required state of subsequent tasks. The waterfall approach allows for independent execution of tasks with their state changes propagating down to dependent tasks.
 
 ## Examples
 
@@ -225,8 +225,8 @@ Infrastructure management is an interesting problem to tackle. Many organization
 ### CLI
 
 - **Authentication**
-    - [ ] Generate API token from CLI
-    - [ ] Read/write token from/to a `~/.scaffold/creds` file
+    - [x] Generate API token from CLI
+    - [x] Read/write token from/to a `~/.scaffold/creds` file
 
 - **Cascade Interaction**
 
@@ -249,7 +249,7 @@ Infrastructure management is an interesting problem to tackle. Many organization
     - [ ] Download a file
 
 - **Configuration**
-    - [ ] Read/write config from/to a `~/.scaffold/config` file
+    - [x] Read/write config from/to a `~/.scaffold/config` file
 
 ### Server
 
@@ -273,7 +273,8 @@ Infrastructure management is an interesting problem to tackle. Many organization
         - [x] Files
         - [x] Cascades
     - [ ] Run with HTTPS
-    - [ ] Implement basic auth for API token request
+    - [x] Implement basic auth for API token request
+    - [ ] Group based access for container exec
 
 -  **File UI**
 
@@ -289,6 +290,9 @@ Infrastructure management is an interesting problem to tackle. Many organization
     - [x] Display current Cascade state
     - [ ] Move task status to right slide in
     - [ ] Change auto-execute from cascade page
+    - [ ] Add group and role removal from user create page
+    - [ ] Add legend to cascade page
+    - [ ] Fix user search
 
 -  **Task Display Improvements**
 

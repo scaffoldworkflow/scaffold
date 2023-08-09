@@ -14,9 +14,7 @@ function addGroup() {
     if (groupName == "") {
         return
     }
-    html = `<div ondblclick="removeGroup('{{ . }}')" class="w3-tag w3-round scaffold-green user-group tag" style="padding:3px" id="group-${groupName}">
-                ${groupName}
-            </div>`
+    html = `<div ondblclick="removeGroup('{{ . }}')" class="w3-tag w3-round scaffold-green user-group tag" style="padding:3px" id="group-${groupName}">${groupName}</div>`
     $("#group-to-add").val("")
     $("#group-card").append(html)
 }
@@ -26,15 +24,12 @@ function removeGroup(name) {
 }
 
 function addRole() {
-    roleName = $("#role-to-add").val()
     let roleName = $("#role-to-add").val()
     roleName = roleName.trim()
     if (roleName == "") {
         return
     }
-    html = `<div ondblclick="removeRole('{{ . }}')" class="w3-tag w3-round scaffold-green user-role tag" style="padding:3px" id="role-${roleName}">
-                ${roleName}
-            </div>`
+    html = `<div ondblclick="removeRole('{{ . }}')" class="w3-tag w3-round scaffold-green user-role tag" style="padding:3px" id="role-${roleName}">${roleName}</div>`
     $("#role-to-add").val("")
     $("#role-card").append(html)
 }
@@ -86,13 +81,13 @@ function addUser() {
     roles = []
     roleElements = $('.user-role')
     for (let i = 0; i < roleElements.length; i++) {
-        roles.push(roleElements.text())
+        roles.push($(roleElements[i]).text().trim())
     }
 
     groups= []
     groupElements = $('.user-group')
     for (let i = 0; i < groupElements.length; i++) {
-        groups.push(groupElements.text())
+        groups.push($(groupElements[i]).text().trim())
     }
 
     data = {

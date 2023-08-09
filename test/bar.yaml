@@ -24,8 +24,6 @@ tasks:
       - bar.txt
   env:
     file_contents: These are the contents of my file
-  inputs:
-    file_contents: file_contents
 
 - name: store_full_message
   image: ubuntu:20.04 

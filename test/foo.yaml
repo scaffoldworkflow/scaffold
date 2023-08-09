@@ -50,6 +50,8 @@ tasks:
   run: |
     echo "----  WRITING FILE   ----"
     cat /tmp/run/foo.txt
+    echo "----  SLEEPING FOR A BIT  ----"
+    sleep 30
   check:
     interval: 30
     image: ubuntu:20.04

@@ -116,13 +116,11 @@ func ShowCascadePage(c *gin.Context) {
 
 	isInGroup := false
 	for _, ug := range u.Groups {
-		fmt.Printf("Checking user group %s\n", ug)
 		if ug == "admin" {
 			isInGroup = true
 			break
 		}
 		for _, cg := range obj.Groups {
-			fmt.Printf("Checking cascade group: %s\n", cg)
 			if ug == cg {
 				fmt.Println("In group!")
 				isInGroup = true
