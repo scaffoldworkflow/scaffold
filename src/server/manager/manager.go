@@ -49,10 +49,16 @@ func Run() {
 	}
 
 	go func() {
-		log.Printf("Running reverse proxy at http://0.0.0.0:%d\n", config.Config.WSPort)
+		log.Printf("Running reverse proxy at %s://0.0.0.0:%d\n", config.Config.Protocol, config.Config.WSPort)
 
-		if serverErr := server.ListenAndServe(); serverErr != nil {
-			log.Println(serverErr)
+		if config.Config.TLSEnabled {
+			if serverErr := server.ListenAndServeTLS(config.Config.TLSCrtPath, config.Config.TLSKeyPath); serverErr != nil {
+				logger.Fatalf("", "Error running websocket server: %s", serverErr)
+			}
+		} else {
+			if serverErr := server.ListenAndServe(); serverErr != nil {
+				logger.Fatalf("", "Error running websocket server: %s", serverErr)
+			}
 		}
 	}()
 
@@ -60,6 +66,8 @@ func Run() {
 
 	user.VerifyAdmin()
 	auth.Nodes = make([]auth.NodeObject, 0)
+	auth.UnknownNodes = make(map[string]auth.DegradedNodeObject)
+	auth.UnknownNodes = make(map[string]auth.DegradedNodeObject)
 
 	health.IsReady = true
 
@@ -69,15 +77,84 @@ func Run() {
 	for {
 		newNodes := []auth.NodeObject{}
 		for _, n := range auth.Nodes {
-			queryURL := fmt.Sprintf("http://%s:%d/health/healthy", n.Host, n.Port)
+			queryURL := fmt.Sprintf("%s://%s:%d/health/healthy", n.Protocol, n.Host, n.Port)
 			logger.Debugf("", "Querying %s", queryURL)
 			resp, err := http.Get(queryURL)
+			if err != nil {
+				auth.UnknownNodes[n.Host] = auth.DegradedNodeObject{
+					Node:  n,
+					Count: 1,
+				}
+				continue
+			}
 			logger.Debugf("", "Got response code %d", resp.StatusCode)
-			if err != nil || resp.StatusCode >= 400 {
+			if resp.StatusCode >= 400 {
+				auth.UnhealthyNodes[n.Host] = auth.DegradedNodeObject{
+					Node:  n,
+					Count: 1,
+				}
 				continue
 			}
 			newNodes = append(newNodes, n)
 		}
+		// Check unhealthy nodes for status change
+		toDelete := []string{}
+		for _, n := range auth.UnhealthyNodes {
+			queryURL := fmt.Sprintf("%s://%s:%d/health/healthy", n.Node.Protocol, n.Node.Host, n.Node.Port)
+			logger.Debugf("", "Querying %s", queryURL)
+			resp, err := http.Get(queryURL)
+			logger.Debugf("", "Got response code %d", resp.StatusCode)
+			if err != nil {
+				auth.UnknownNodes[n.Node.Host] = auth.DegradedNodeObject{
+					Node:  n.Node,
+					Count: 1,
+				}
+				toDelete = append(toDelete, n.Node.Host)
+				continue
+			}
+			if resp.StatusCode >= 400 {
+				continue
+			}
+			newNodes = append(newNodes, n.Node)
+			toDelete = append(toDelete, n.Node.Host)
+		}
+
+		for _, key := range toDelete {
+			delete(auth.UnhealthyNodes, key)
+		}
+
+		// Check unknown nodes for status change
+		toDelete = []string{}
+		for _, n := range auth.UnknownNodes {
+			queryURL := fmt.Sprintf("%s://%s:%d/health/healthy", n.Node.Protocol, n.Node.Host, n.Node.Port)
+			logger.Debugf("", "Querying %s", queryURL)
+			resp, err := http.Get(queryURL)
+			logger.Debugf("", "Got response code %d", resp.StatusCode)
+			if err != nil {
+				val := auth.UnknownNodes[n.Node.Host]
+				val.Count += 1
+				if val.Count >= config.Config.HealthCheckLimit {
+					toDelete = append(toDelete, n.Node.Host)
+				}
+				auth.UnknownNodes[n.Node.Host] = val
+				continue
+			}
+			if resp.StatusCode >= 400 {
+				auth.UnhealthyNodes[n.Node.Host] = auth.DegradedNodeObject{
+					Node:  n.Node,
+					Count: 1,
+				}
+				toDelete = append(toDelete, n.Node.Host)
+				continue
+			}
+			newNodes = append(newNodes, n.Node)
+			toDelete = append(toDelete, n.Node.Host)
+		}
+
+		for _, key := range toDelete {
+			delete(auth.UnknownNodes, key)
+		}
+
 		auth.Nodes = newNodes
 
 		cascades, err := cascade.GetAllCascades()
@@ -92,8 +169,8 @@ func Run() {
 						if strings.HasPrefix(key, t.Name) {
 							parts := strings.Split(key, ".")
 							hostPort := taskMap[key]
-							httpClient := &http.Client{}
-							requestURL := fmt.Sprintf("http://%s/api/v1/state/%s/%s/%s", hostPort, c.Name, t.Name, parts[1])
+							httpClient := http.Client{}
+							requestURL := fmt.Sprintf("%s/api/v1/state/%s/%s/%s", hostPort, c.Name, t.Name, parts[1])
 							req, _ := http.NewRequest("GET", requestURL, nil)
 							req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
 							req.Header.Set("Content-Type", "application/json")
@@ -143,8 +220,8 @@ func Run() {
 						if strings.HasPrefix(key, checkStateName) {
 							parts := strings.Split(key, ".")
 							hostPort := taskMap[key]
-							httpClient := &http.Client{}
-							requestURL := fmt.Sprintf("http://%s/api/v1/state/%s/%s/%s", hostPort, c.Name, checkStateName, parts[1])
+							httpClient := http.Client{}
+							requestURL := fmt.Sprintf("%s/api/v1/state/%s/%s/%s", hostPort, c.Name, checkStateName, parts[1])
 							req, _ := http.NewRequest("GET", requestURL, nil)
 							req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
 							req.Header.Set("Content-Type", "application/json")
@@ -238,8 +315,8 @@ func Run() {
 						}
 
 						logger.Debugf("", "Triggering check run for %s %s", c.Name, t.Name)
-						httpClient := &http.Client{}
-						requestURL := fmt.Sprintf("http://localhost:%d/api/v1/run/%s/%s/check", config.Config.HTTPPort, c.Name, t.Name)
+						httpClient := http.Client{}
+						requestURL := fmt.Sprintf("%s://localhost:%d/api/v1/run/%s/%s/check", config.Config.Protocol, config.Config.Port, c.Name, t.Name)
 						req, _ := http.NewRequest("POST", requestURL, nil)
 						req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
 						req.Header.Set("Content-Type", "application/json")
@@ -312,8 +389,8 @@ func triggerDepends(c *cascade.Cascade, tn, status string) {
 			if !shouldTrigger || !t.AutoExecute {
 				continue
 			}
-			httpClient := &http.Client{}
-			requestURL := fmt.Sprintf("http://localhost:%d/api/v1/run/%s/%s", config.Config.HTTPPort, c.Name, t.Name)
+			httpClient := http.Client{}
+			requestURL := fmt.Sprintf("%s://localhost:%d/api/v1/run/%s/%s", config.Config.Protocol, config.Config.Port, c.Name, t.Name)
 			req, _ := http.NewRequest("POST", requestURL, nil)
 			req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
 			req.Header.Set("Content-Type", "application/json")
@@ -407,9 +484,20 @@ func SetDependsState(c *cascade.Cascade, tn string) {
 }
 
 func GetStatus(ctx *gin.Context) {
-	var nodes []string
+	nodes := make([]map[string]string, 0)
+	managerStatus := "healthy"
+	if !health.IsHealthy {
+		managerStatus = "degraded"
+	}
+	nodes = append(nodes, map[string]string{"name": config.Config.Host, "status": managerStatus, "version": constants.VERSION})
 	for _, node := range auth.Nodes {
-		nodes = append(nodes, node.Host)
+		nodes = append(nodes, map[string]string{"name": node.Host, "status": "healthy", "version": node.Version})
+	}
+	for key, node := range auth.UnknownNodes {
+		nodes = append(nodes, map[string]string{"name": key, "status": "unknown", "version": node.Node.Version})
+	}
+	for key, node := range auth.UnhealthyNodes {
+		nodes = append(nodes, map[string]string{"name": key, "status": "degraded", "version": node.Node.Version})
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"nodes": nodes})

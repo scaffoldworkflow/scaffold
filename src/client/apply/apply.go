@@ -1,4 +1,4 @@
-package cascade
+package apply
 
 import (
 	"bytes"
@@ -38,10 +38,10 @@ func DoApply(profile, fileName string) {
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		logger.Fatalf("", "Encountered error checking for cascade existance: %v", err)
+		logger.Fatalf("", "Encountered error checking for cascade existence: %v", err)
 	}
 	if resp.StatusCode >= 400 {
-		logger.Debugf("", "Got status code %s, cascade exists", resp.StatusCode)
+		logger.Debugf("", "Got status code %d, cascade exists", resp.StatusCode)
 		exists = false
 	}
 
@@ -58,7 +58,7 @@ func DoApply(profile, fileName string) {
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := httpClient.Do(req)
 		if err != nil {
-			logger.Fatalf("", "Put request failed with error: %s", err.Error)
+			logger.Fatalf("", "Put request failed with error: %s", err.Error())
 		}
 		if resp.StatusCode >= 400 {
 			logger.Fatalf("", "Put request failed with status code %v", resp.StatusCode)
@@ -72,7 +72,7 @@ func DoApply(profile, fileName string) {
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := httpClient.Do(req)
 		if err != nil {
-			logger.Fatalf("", "Put request failed with error: %s", err.Error)
+			logger.Fatalf("", "Put request failed with error: %s", err.Error())
 		}
 		if resp.StatusCode >= 400 {
 			logger.Fatalf("", "Put request failed with status code %v", resp.StatusCode)

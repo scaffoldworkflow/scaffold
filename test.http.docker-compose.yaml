@@ -1,0 +1,119 @@
+version: "3.9"
+services:
+  scaffold-manager:
+    image: "scaffold:test"
+    ports:
+      - "127.0.0.1:2997:2997"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:19999:19999"
+    environment:
+      SCAFFOLD_KILL_SERVER_PORT: "19999"
+      SCAFFOLD_RUN_MODE: "test"
+      SCAFFOLD_SLEEP: "10"
+      SCAFFOLD_HOST: "scaffold-manager"
+      SCAFFOLD_WS_PORT: "8080"
+      SCAFFOLD_LOG_LEVEL: "INFO"
+      SCAFFOLD_PROTOCOL: "http"
+      SCAFFOLD_DB: |
+        {
+          "username": "MyCoolMongoDBUsername",
+          "password": "MyCoolMongoDBPassword",
+          "name": "scaffold",
+          "host": "mongodb",
+          "port": 27017,
+          "protocol": "http"
+        }
+      SCAFFOLD_NODE: |
+        {
+          "type": "manager",
+          "manager_host": "scaffold-manager",
+          "manager_port": 2997,
+          "manager_protocol": "http",
+          "join_key": "MyCoolJoinKey12345",
+          "primary_key": "MyCoolPrimaryKey12345"
+        }
+      SCAFFOLD_FILE_STORE: |
+        {
+          "access_key": "MyCoolMinIOAccessKey",
+          "secret_key": "MyCoolMinIOSecretKey",
+          "host": "minio",
+          "port": 9090,
+          "bucket": "scaffold",
+          "region": "default-region",
+          "protocol": "http"
+        }
+    depends_on:
+      - "mongodb"
+      - "minio"
+    tty: true
+  scaffold-worker:
+    image: "scaffold:test"
+    ports:
+      - "127.0.0.1:2998:2998"
+      - "127.0.0.1:8081:8081"
+      - "127.0.0.1:29999:29999"
+    environment:
+      SCAFFOLD_KILL_SERVER_PORT: "29999"
+      SCAFFOLD_RUN_MODE: "test"
+      SCAFFOLD_PORT: "2998"
+      SCAFFOLD_HOST: "scaffold-worker"
+      SCAFFOLD_LOG_LEVEL: "INFO"
+      SCAFFOLD_WS_PORT: "8081"
+      SCAFFOLD_SLEEP: "20"
+      SCAFFOLD_PROTOCOL: "http"
+      SCAFFOLD_DB: |
+        {
+          "username": "MyCoolMongoDBUsername",
+          "password": "MyCoolMongoDBPassword",
+          "name": "scaffold",
+          "host": "mongodb",
+          "port": 27017,
+          "protocol": "http"
+        }
+      SCAFFOLD_NODE: |
+        {
+          "type": "worker",
+          "manager_host": "scaffold-manager",
+          "manager_port": 2997,
+          "manager_protocol": "http",
+          "join_key": "MyCoolJoinKey12345",
+          "primary_key": "MyCoolPrimaryKey12345"
+        }
+      SCAFFOLD_FILE_STORE: |
+        {
+          "access_key": "MyCoolMinIOAccessKey",
+          "secret_key": "MyCoolMinIOSecretKey",
+          "host": "minio",
+          "port": 9090,
+          "bucket": "scaffold",
+          "region": "default-region",
+          "protocol": "http"
+        }
+    depends_on:
+      - "scaffold-manager"
+    security_opt:
+      - seccomp:unconfined
+    privileged: true
+    tty: true
+  mongodb:
+    image: centos/mongodb-36-centos7:1
+    ports:
+      - "127.0.0.1:27017:27017"
+    environment:
+      MONGODB_DATABASE: scaffold
+      MONGODB_ADMIN_PASSWORD: MyCoolAdminPassword
+      MONGODB_USER: MyCoolMongoDBUsername
+      MONGODB_PASSWORD: MyCoolMongoDBPassword
+  minio:
+    image: bitnami/minio:2023
+    ports:
+      - "127.0.0.1:9090:9090"
+      - "127.0.0.1:9091:9091"
+    environment:
+      BITNAMI_DEBUG: "false"
+      MINIO_REGION: "default-region"
+      MINIO_ROOT_USER: MyCoolMinIOAccessKey
+      MINIO_ROOT_PASSWORD: MyCoolMinIOSecretKey
+      MINIO_CONSOLE_PORT_NUMBER: "9091"
+      MINIO_SERVER_PORT_NUMBER: "9090"
+      MINIO_API_PORT_NUMBER: "9090"

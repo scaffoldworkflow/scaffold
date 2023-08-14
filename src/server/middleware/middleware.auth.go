@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"net/http"
+	"scaffold/server/cascade"
 	"scaffold/server/config"
 	"scaffold/server/user"
+	"scaffold/server/utils"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -89,6 +91,81 @@ func EnsureNotLoggedIn() gin.HandlerFunc {
 		if usr != nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
+	}
+}
+
+// This middleware ensures that a request will be aborted with an error
+// if the user is not logged in
+func EnsureCascadeGroup(paramName string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var token string
+		var err error
+		isUI := false
+		cascadeName := c.Param(paramName)
+		cs, _ := cascade.GetCascadeByName(cascadeName)
+		if err != nil {
+			c.AbortWithStatus(http.StatusUnauthorized)
+		}
+		if cs == nil {
+			return
+		}
+
+		authString := c.Request.Header.Get("Authorization")
+		if authString == "" {
+			token, err = c.Cookie("scaffold_token")
+			if err != nil {
+				c.Redirect(http.StatusUnauthorized, "401.html")
+				return
+			}
+			isUI = true
+		} else {
+			token = strings.Split(authString, " ")[1]
+		}
+		if token == config.Config.Node.PrimaryKey {
+			return
+		}
+
+		usr, _ := user.GetUserByAPIToken(token)
+		if usr != nil {
+			if utils.Contains(usr.Groups, "admin") {
+				return
+			}
+			if cs.Groups == nil {
+				return
+			}
+			for _, group := range cs.Groups {
+				if utils.Contains(usr.Groups, group) {
+					return
+				}
+			}
+			if isUI {
+				c.Redirect(http.StatusUnauthorized, "401.html")
+				return
+			}
+			c.AbortWithStatus(http.StatusUnauthorized)
+		}
+
+		usr, _ = user.GetUserByLoginToken(token)
+		if usr != nil {
+			if utils.Contains(usr.Groups, "admin") {
+				return
+			}
+			for _, group := range cs.Groups {
+				if utils.Contains(usr.Groups, group) {
+					return
+				}
+			}
+			if isUI {
+				c.Redirect(http.StatusUnauthorized, "401.html")
+				return
+			}
+			c.AbortWithStatus(http.StatusUnauthorized)
+		}
+		if isUI {
+			c.Redirect(http.StatusUnauthorized, "401.html")
+			return
+		}
+		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 }
 
@@ -197,27 +274,29 @@ func EnsureGroupsAllowed(groups []string) gin.HandlerFunc {
 func EnsureRolesAllowed(roles []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var usr *user.User
+		var err error
+
 		authString := c.Request.Header.Get("Authorization")
-		found := false
 		if authString == "" {
 			token, err := c.Cookie("scaffold_token")
-			if err == nil {
-				usr, err = user.GetUserByLoginToken(token)
-				if err != nil {
-					found = true
-				}
+			if err != nil {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+			usr, err = user.GetUserByLoginToken(token)
+			if err != nil {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
 			}
 		} else {
-			if !found {
-				token := strings.Split(authString, " ")[1]
-				if token == config.Config.Node.PrimaryKey {
-					return
-				}
-				var err error
-				usr, err = user.GetUserByAPIToken(token)
-				if err != nil {
-					c.AbortWithStatus(http.StatusUnauthorized)
-				}
+			token := strings.Split(authString, " ")[1]
+			if token == config.Config.Node.PrimaryKey {
+				return
+			}
+			usr, err = user.GetUserByAPIToken(token)
+			if err != nil {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
 			}
 		}
 		if usr != nil {

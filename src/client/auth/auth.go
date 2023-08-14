@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/user"
 	"scaffold/client/logger"
@@ -11,14 +13,16 @@ import (
 )
 
 type ProfileObj struct {
-	Protocol string
-	Host     string
-	Port     string
-	WSPort   string
-	APIToken string
+	Protocol   string
+	Host       string
+	Port       string
+	WSPort     string
+	APIToken   string
+	Cascade    string
+	SkipVerify bool
 }
 
-func WriteProfile(profile, protocol, host, port, wsPort, apiToken string) {
+func WriteProfile(profile string, p ProfileObj) {
 	usr, _ := user.Current()
 	configDir := fmt.Sprintf("%s/.scaffold", usr.HomeDir)
 	configFile := fmt.Sprintf("%s/config", configDir)
@@ -48,13 +52,7 @@ func WriteProfile(profile, protocol, host, port, wsPort, apiToken string) {
 		logger.Debugf("", "Config unmarshalled successfully")
 	}
 
-	profileData[profile] = ProfileObj{
-		Protocol: protocol,
-		Host:     host,
-		Port:     port,
-		WSPort:   wsPort,
-		APIToken: apiToken,
-	}
+	profileData[profile] = p
 
 	yamlData, err := yaml.Marshal(profileData)
 
@@ -92,6 +90,7 @@ func ReadProfile(profile string) ProfileObj {
 
 	if val, ok := profileData[profile]; ok {
 		logger.Debugf("", "Found profile %s in config", profile)
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: val.SkipVerify}
 		return val
 	}
 	logger.Fatalf("", "No profile found with name %s", profile)

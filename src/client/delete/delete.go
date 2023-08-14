@@ -1,4 +1,4 @@
-package cascade
+package delete
 
 import (
 	"fmt"

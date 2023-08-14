@@ -14,8 +14,9 @@ const DEFAULT_CONFIG_PATH = "/home/scaffold/data/config.json"
 const ENV_PREFIX = "SCAFFOLD_"
 
 type ConfigObject struct {
-	HTTPHost          string          `json:"http_host" env:"HTTP_HOST"`
-	HTTPPort          int             `json:"http_port" env:"HTTP_PORT"`
+	Host              string          `json:"host" env:"HOST"`
+	Port              int             `json:"port" env:"PORT"`
+	Protocol          string          `json:"protocol" env:"PROTOCOL"`
 	WSPort            int             `json:"ws_port" env:"WS_PORT"`
 	LogLevel          string          `json:"log_level" env:"LOG_LEVEL"`
 	BaseURL           string          `json:"base_url" env:"BASE_URL"`
@@ -23,8 +24,13 @@ type ConfigObject struct {
 	DB                DBObject        `json:"db" env:"DB"`
 	Node              NodeObject      `json:"node" env:"NODE"`
 	HeartbeatInterval int             `json:"heartbeat_interval" env:"HEARTBEAT_INTERVAL"`
+	HealthCheckLimit  int             `json:"health_check_limit" env:"HEALTH_CHECK_LIMIT"`
 	Reset             ResetObject     `json:"reset" env:"RESET"`
 	FileStore         FileStoreObject `json:"file_store" env:"FILE_STORE"`
+	TLSEnabled        bool            `json:"tls_enabled" env:"TLS_ENABLED"`
+	TLSSkipVerify     bool            `json:"tls_skip_verify" env:"TLS_SKIP_VERIFY"`
+	TLSCrtPath        string          `json:"tls_crt_path" env:"TLS_CRT_PATH"`
+	TLSKeyPath        string          `json:"tls_key_path" env:"TLS_KEY_PATH"`
 }
 
 type FileStoreObject struct {
@@ -34,6 +40,7 @@ type FileStoreObject struct {
 	Port      int    `json:"port"`
 	Bucket    string `json:"bucket"`
 	Region    string `json:"region"`
+	Protocol  string `json:"protocol"`
 }
 
 type UserObject struct {
@@ -58,11 +65,12 @@ type ResetObject struct {
 }
 
 type NodeObject struct {
-	Type        string `json:"type"`
-	ManagerHost string `json:"manager_host"`
-	ManagerPort int    `json:"manager_port"`
-	JoinKey     string `json:"join_key"`
-	PrimaryKey  string `json:"primary_key"`
+	Type            string `json:"type"`
+	ManagerHost     string `json:"manager_host"`
+	ManagerPort     int    `json:"manager_port"`
+	JoinKey         string `json:"join_key"`
+	PrimaryKey      string `json:"primary_key"`
+	ManagerProtocol string `json:"manager_protocol"`
 }
 
 var Config ConfigObject
@@ -74,12 +82,18 @@ func LoadConfig() {
 	}
 
 	Config = ConfigObject{
-		HTTPHost:          "scaffold",
-		HTTPPort:          2997,
+		Host:              "scaffold",
+		Port:              2997,
+		Protocol:          "http",
 		WSPort:            8080,
 		LogLevel:          constants.LOG_LEVEL_INFO,
 		BaseURL:           "http://localhost:2997",
 		HeartbeatInterval: 500,
+		HealthCheckLimit:  10,
+		TLSEnabled:        false,
+		TLSSkipVerify:     false,
+		TLSCrtPath:        "/tmp/cert.crt",
+		TLSKeyPath:        "/tmp/cert.key",
 		Admin: UserObject{
 			Username: "admin",
 			Password: "admin",
@@ -98,11 +112,12 @@ func LoadConfig() {
 			Port:     587,
 		},
 		Node: NodeObject{
-			Type:        "manager",
-			ManagerHost: "scaffold-manager",
-			ManagerPort: 2997,
-			JoinKey:     "MyCoolJoinKey12345",
-			PrimaryKey:  "MyCoolPrimaryKey12345",
+			Type:            "manager",
+			ManagerHost:     "scaffold-manager",
+			ManagerPort:     2997,
+			ManagerProtocol: "http",
+			JoinKey:         "MyCoolJoinKey12345",
+			PrimaryKey:      "MyCoolPrimaryKey12345",
 		},
 		FileStore: FileStoreObject{
 			AccessKey: "MyCoolMinIOAccessKey",
@@ -111,6 +126,7 @@ func LoadConfig() {
 			Port:      9000,
 			Bucket:    "scaffold",
 			Region:    "default-region",
+			Protocol:  "http",
 		},
 	}
 

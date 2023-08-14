@@ -51,30 +51,28 @@
                     <header class="w3-container scaffold-green">
                         <h4>API Tokens</h4>
                     </header>
-                    <div class="w3-container">
-                        <table class="w3-table light w3-border theme-border-light theme-table-striped" id="api-tokens-table">
+                    <table class="w3-table light w3-border theme-border-light theme-table-striped" id="api-tokens-table">
+                        <tr>
+                            <th class="table-title w3-medium scaffold-text-green">
+                                <span class="table-title-text">Name</span>
+                            </th>
+                            <th class="table-title w3-medium scaffold-text-green">
+                                <span class="table-title-text">Created</span>
+                            </th>
+                            <th>
+                                <div class="w3-round w3-button scaffold-green" style="float:right;" onclick="openAPITokenModal()">Generate API Token</div>
+                            </th>
+                        </tr>
+                        {{ range .user.APITokens }}
                             <tr>
-                                <th class="table-title w3-medium scaffold-text-green">
-                                    <span class="table-title-text">Name</span>
-                                </th>
-                                <th class="table-title w3-medium scaffold-text-green">
-                                    <span class="table-title-text">Created</span>
-                                </th>
-                                <th>
-                                    <div class="w3-round w3-button scaffold-green" style="float:right;" onclick="openAPITokenModal()">Generate API Token</div>
-                                </th>
+                                <td>{{ .Name }}</td>
+                                <td>{{ .Created }}</td>
+                                <td class="table-link-cell">
+                                    <div class="icon"><i class="fa-solid fa-trash-can w3-large pointer-cursor" style="position:relative;top:-12px;" onclick="revokeAPIToken('{{ .Name }}')"></i></div> 
+                                </td>
                             </tr>
-                            {{ range .user.APITokens }}
-                                <tr>
-                                    <td>{{ .Name }}</td>
-                                    <td>{{ .Created }}</td>
-                                    <td class="table-link-cell">
-                                        <div class="icon"><i class="fa-solid fa-trash-can w3-large pointer-cursor" style="position:relative;top:-12px;" onclick="revokeAPIToken('{{ .Name }}')"></i></div> 
-                                    </td>
-                                </tr>
-                            {{ end }}
-                        </table>
-                    </div>
+                        {{ end }}
+                    </table>
                 </div>
             </div>
             <br>

@@ -1,9 +1,15 @@
 .variables:
-  platforms:
-    - linux/amd64
-    - linux/arm64
-    - linux/arm/v7
+  architectures:
+    - amd64
+    - arm64
   docker_org: jfcarter2358
+  oses:
+    - darwin
+    - freebsd
+    - linux
+    - openbsd
+    - windows
+
 build-docker-helpers:
   help: Build Helper Scaffold Docker image
   cmd: |
@@ -12,13 +18,44 @@ build-docker-helpers:
 build-docker:
   help: Build Scaffold Docker image
   cmd: |
+    wsc compile
+    docker build -t scaffold -f src/server/Dockerfile .
+build-docker-test:
+  help: Build Scaffold test Docker image
+  cmd: |
+    wsc compile
+    docker build -t scaffold:test -f src/server/test.Dockerfile .
+build-cli:
+  help: Build Scaffold CLI
+  cmd: |
+    # Clean up environment
     stud clean
-
     mkdir -p dist
 
-    wsc compile
+    # Enter source directory for CLI
+    cd src/client
+    
+    # Build CLI for below oses and architectures and drop the binary into dist directories
+    for arch_name in architectures:
+      for os_name in oses:
+        os_name_upper = os_name.upper()
+        arch_name_upper = arch_name.upper()
 
-    docker build -t scaffold -f src/server/Dockerfile .
+        header_string = f"** BUILDING FOR {os_name_upper}/{arch_name_upper} **"
+        header_width = len(header_string)
+        header_line = "*" * header_width
+
+        echo "{header_line}"
+        echo "{header_string}"
+        echo "{header_line}"
+
+        output_path = f"../../dist/{os_name}/{arch_name}"
+        mkdir -p "{output_path}"
+        env GOOS="{os_name}" GOARCH="{arch_name}" CGO_ENABLED=0 go build -v -o scaffold
+        mv scaffold "{output_path}"
+    
+    # Pop back up into root directory
+    cd ../..
 build-local:
   help: Build Scaffold local binaries
   cmd: |
@@ -42,9 +79,63 @@ clean:
   help: Remove build and test artifacts
   cmd: |
     rm -r dist || true
+kill-docker:
+  help: Kill docker-compose deployments
+  cmd: |
+    docker-compose down --remove-orphans
+    docker compose rm -f
 run-docker:
   help: Deploy local images of Scaffold via docker compose
   cmd: |
-    docker compose down
+    docker compose down --remove-orphans
     docker compose rm -f
     docker compose up
+run-docker-test-http:
+  help: Deploy local images of Scaffold via docker compose
+  cmd: |
+    docker compose down --remove-orphans
+    docker compose rm -f
+    docker compose -f test.http.docker-compose.yaml up
+run-docker-test-https:
+  help: Deploy local images of Scaffold via docker compose
+  cmd: |
+    docker compose down --remove-orphans
+    docker compose rm -f
+    docker compose -f test.https.docker-compose.yaml up 
+run-test-http:
+  help: Deploy local images of Scaffold via docker compose
+  cmd: |
+    ./test/run.sh 'http'
+run-test-https:
+  help: Deploy local images of Scaffold via docker compose
+  cmd: |
+    ./test/run.sh 'https'
+run-test-both:
+  help: Deploy local images of Scaffold via docker compose
+  cmd: |
+    ./test/run.sh 'both'
+gen-certs:
+  help: Generate local certificates for https testing
+  cmd: |
+    rm -rf temp
+    mkdir -p temp
+
+    echo "Generating root CA"
+    $(openssl genrsa -out temp/rootCA.key 4096)
+    $(openssl req -x509 -new -nodes -key temp/rootCA.key -subj "/C=US/ST=IL/O=Scaffold/CN=scaffold" -sha256 -days 1024 -out temp/rootCA.crt)
+    echo "Done!"
+
+    for idx, node_type in enumerate(['manager', 'worker']):
+
+      echo "Generating {node_type} certs..."
+      $(openssl genrsa -out temp/cert.{node_type}.key 2048)
+      $(openssl req -new -sha256 -key temp/cert.{node_type}.key -subj "/C=US/ST=IL/O=Scaffold/CN=scaffold-{node_type}" -out temp/cert.{node_type}.csr)
+      $(openssl x509 -req -extfile <(printf "subjectAltName=DNS:scaffold-{node_type},DNS:localhost") -in temp/cert.{node_type}.csr -CA temp/rootCA.crt -CAkey temp/rootCA.key -CAcreateserial -out temp/cert.{node_type}.crt -days 500 -sha256)
+      echo "Done!"
+
+      for cert_type in ['crt', 'key']:
+        key_name = f'SCAFFOLD_TLS_CERT_{cert_type.upper()}'
+        encoded = ?(cat temp/cert.{node_type}.{cert_type} | base64 -w 0)
+        sed_idx = idx + 1
+        sed -i 's/{key_name}:.* # {node_type}/{key_name}: "{encoded}" # {node_type}/' test.https.docker-compose.yaml
+        echo "{node_type} cert.{cert_type} set"

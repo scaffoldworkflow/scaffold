@@ -27,7 +27,7 @@ func InitBucket() {
 	// Configure to use MinIO Server
 	S3Config = &aws.Config{
 		Credentials:      credentials.NewStaticCredentials(config.Config.FileStore.AccessKey, config.Config.FileStore.SecretKey, ""),
-		Endpoint:         aws.String(fmt.Sprintf("http://%s:%d", config.Config.FileStore.Host, config.Config.FileStore.Port)),
+		Endpoint:         aws.String(fmt.Sprintf("%s://%s:%d", config.Config.FileStore.Protocol, config.Config.FileStore.Host, config.Config.FileStore.Port)),
 		Region:           aws.String(config.Config.FileStore.Region),
 		DisableSSL:       aws.Bool(false),
 		S3ForcePathStyle: aws.Bool(true),

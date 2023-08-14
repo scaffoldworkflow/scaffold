@@ -110,8 +110,8 @@ func UpdateDataStoreByName(name string, d *DataStore, is []input.Input) error {
 		postBody, _ := json.Marshal(toChange)
 		postBodyBuffer := bytes.NewBuffer(postBody)
 
-		httpClient := &http.Client{}
-		requestURL := fmt.Sprintf("http://localhost:%d/api/v1/input/%s/update", config.Config.HTTPPort, d.Name)
+		httpClient := http.Client{}
+		requestURL := fmt.Sprintf("%s://localhost:%d/api/v1/input/%s/update", config.Config.Protocol, config.Config.Port, d.Name)
 		req, _ := http.NewRequest("POST", requestURL, postBodyBuffer)
 		req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
 		resp, err := httpClient.Do(req)

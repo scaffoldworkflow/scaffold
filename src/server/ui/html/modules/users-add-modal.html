@@ -17,27 +17,27 @@
             <label>Email</label>
             <input class="w3-input" type="text" id="users-add-email">
             <label>Groups</label>
-            <br>
-            <input class="w3-input" type="text" id="group-to-add">
-            <br>
-            <div class="w3-button scaffold-green w3-round" onclick="addGroup()">Add Group</div>
-            <br>
-            <br>
-            <div class="w3-card w3-container tag-container" id="group-card">
+            <div class="asset-card" id="tags">
+                <input id="group-tags" value='[]' class="scaffoldTag" style="width:100%">
             </div>
-            <br> 
-            <br>
             <label>Roles</label>
+            <!--
             <input class="w3-input" type="text" id="role-to-add">
             <br>
             <div class="w3-button scaffold-green w3-round" onclick="addRole()">Add Role</div>
             <br>
             <br>
-            <div class="w3-card w3-container tag-container" id="role-card">
+            -->
+            <!--<div class="w3-card w3-container tag-container" id="role-card">-->
+                <div class="asset-card" id="tags">
+                    <input id="role-tags" value='[{"value":"read"}]' class="scaffoldTag" style="width:100%">
+                </div>
+                <!--
                 <div ondblclick="removeRole('read')" class="w3-tag w3-round scaffold-green user-role tag" style="padding:3px" id="role-read">
                     read&nbsp;
                 </div>
-            </div>
+                -->
+            <!--</div>-->
             <br>
             <br>
             <br>

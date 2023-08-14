@@ -1,8 +1,10 @@
+// API implements worker and manager API endpoints for Scaffold functionality
 package api
 
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -32,15 +34,17 @@ import (
 	"scaffold/server/worker"
 )
 
+// Check if the Scaffold node is healthy
 func Healthy(c *gin.Context) {
 	if health.IsHealthy {
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, gin.H{"version": constants.VERSION})
 		return
 	}
 
 	c.Status(http.StatusServiceUnavailable)
 }
 
+// Check if the Scaffold node is ready
 func Ready(c *gin.Context) {
 	if health.IsReady {
 		c.Status(http.StatusOK)
@@ -50,6 +54,8 @@ func Ready(c *gin.Context) {
 	c.Status(http.StatusServiceUnavailable)
 }
 
+// Check if a worker node is available
+// This corresponds to no containers currently running
 func Available(c *gin.Context) {
 	if health.IsAvailable {
 		c.Status(http.StatusOK)
@@ -61,11 +67,18 @@ func Available(c *gin.Context) {
 
 /*~~~~~~~~ CASCADE ~~~~~~~~*/
 
+// Create a cascade from a JSON object
 func CreateCascade(ctx *gin.Context) {
 	var c cascade.Cascade
 	if err := ctx.ShouldBindJSON(&c); err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
+	}
+
+	if c.Groups != nil {
+		if !validateUserGroup(ctx, c.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+		}
 	}
 
 	err := cascade.CreateCascade(&c)
@@ -78,6 +91,7 @@ func CreateCascade(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Created"})
 }
 
+// Delete a cascade by its name
 func DeleteCascadeByName(ctx *gin.Context) {
 	name := ctx.Param("name")
 
@@ -91,6 +105,7 @@ func DeleteCascadeByName(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
 }
 
+// Get all cascade objects that the Scaffold instance knows about
 func GetAllCascades(ctx *gin.Context) {
 	cascades, err := cascade.GetAllCascades()
 
@@ -102,14 +117,23 @@ func GetAllCascades(ctx *gin.Context) {
 		return
 	}
 
-	cascadesOut := make([]cascade.Cascade, len(cascades))
-	for idx, c := range cascades {
-		cascadesOut[idx] = *c
+	// Need to copy each cascade from pointer to value since pointers are returned
+	// weirdly (I think at least)
+	cascadesOut := make([]cascade.Cascade, 0)
+	for _, c := range cascades {
+		if c.Groups != nil {
+			if validateUserGroup(ctx, c.Groups) {
+				cascadesOut = append(cascadesOut, *c)
+			}
+			continue
+		}
+		cascadesOut = append(cascadesOut, *c)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"cascades": cascadesOut})
 }
 
+// Get a cascade by its name
 func GetCascadeByName(ctx *gin.Context) {
 	name := ctx.Param("name")
 
@@ -123,6 +147,7 @@ func GetCascadeByName(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, *c)
 }
 
+// Update a Cascade by name with a JSON object
 func UpdateCascadeByName(ctx *gin.Context) {
 	name := ctx.Param("name")
 
@@ -143,6 +168,7 @@ func UpdateCascadeByName(ctx *gin.Context) {
 
 /*~~~~~~~~ DATASTORE ~~~~~~~~*/
 
+// Create a datastore by a JSON object
 func CreateDataStore(ctx *gin.Context) {
 	var d datastore.DataStore
 	if err := ctx.ShouldBindJSON(&d); err != nil {
@@ -150,7 +176,17 @@ func CreateDataStore(ctx *gin.Context) {
 		return
 	}
 
-	err := datastore.CreateDataStore(&d)
+	c, err := cascade.GetCascadeByName(d.Name)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusNotFound)
+	}
+	if c.Groups != nil {
+		if !validateUserGroup(ctx, c.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+		}
+	}
+
+	err = datastore.CreateDataStore(&d)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -160,6 +196,7 @@ func CreateDataStore(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Created"})
 }
 
+// Delete a datastore by name
 func DeleteDataStoreByName(ctx *gin.Context) {
 	name := ctx.Param("name")
 
@@ -173,6 +210,7 @@ func DeleteDataStoreByName(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
 }
 
+// Get all datastores a Scaffold instance knows about
 func GetAllDataStores(ctx *gin.Context) {
 	datastores, err := datastore.GetAllDataStores()
 
@@ -184,14 +222,27 @@ func GetAllDataStores(ctx *gin.Context) {
 		return
 	}
 
-	datastoresOut := make([]datastore.DataStore, len(datastores))
-	for idx, d := range datastores {
-		datastoresOut[idx] = *d
+	// Need to copy each cascade from pointer to value since pointers are returned
+	// weirdly (I think at least)
+	datastoresOut := make([]datastore.DataStore, 0)
+	for _, d := range datastores {
+		c, err := cascade.GetCascadeByName(d.Name)
+		if err != nil {
+			continue
+		}
+		if c.Groups != nil {
+			if validateUserGroup(ctx, c.Groups) {
+				datastoresOut = append(datastoresOut, *d)
+			}
+			continue
+		}
+		datastoresOut = append(datastoresOut, *d)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"datastores": datastoresOut})
 }
 
+// Get a datastore by name
 func GetDataStoreByName(ctx *gin.Context) {
 	name := ctx.Param("name")
 
@@ -205,6 +256,7 @@ func GetDataStoreByName(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, *d)
 }
 
+// Update a datastore by name from a JSON object
 func UpdateDataStoreByName(ctx *gin.Context) {
 	name := ctx.Param("name")
 
@@ -214,6 +266,8 @@ func UpdateDataStoreByName(ctx *gin.Context) {
 		return
 	}
 
+	// Need to copy over cascade inputs since some weirdness happens when updating the
+	// datastore
 	inputs := []input.Input{}
 	if config.Config.Node.Type == constants.NODE_TYPE_MANAGER {
 		c, err := cascade.GetCascadeByName(name)
@@ -235,6 +289,7 @@ func UpdateDataStoreByName(ctx *gin.Context) {
 
 /*~~~~~~~~ STATE ~~~~~~~~*/
 
+// Create a state from a JSON object
 func CreateState(ctx *gin.Context) {
 	var s state.State
 	if err := ctx.ShouldBindJSON(&s); err != nil {
@@ -242,7 +297,17 @@ func CreateState(ctx *gin.Context) {
 		return
 	}
 
-	err := state.CreateState(&s)
+	c, err := cascade.GetCascadeByName(s.Cascade)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusNotFound)
+	}
+	if c.Groups != nil {
+		if !validateUserGroup(ctx, c.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+		}
+	}
+
+	err = state.CreateState(&s)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -252,6 +317,7 @@ func CreateState(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Created"})
 }
 
+// Delete a state by name
 func DeleteStateByNames(ctx *gin.Context) {
 	cn := ctx.Param("cascade")
 	tn := ctx.Param("task")
@@ -290,9 +356,19 @@ func GetAllStates(ctx *gin.Context) {
 		return
 	}
 
-	statesOut := make([]state.State, len(states))
-	for idx, s := range states {
-		statesOut[idx] = *s
+	statesOut := make([]state.State, 0)
+	for _, s := range states {
+		c, err := cascade.GetCascadeByName(s.Cascade)
+		if err != nil {
+			continue
+		}
+		if c.Groups != nil {
+			if validateUserGroup(ctx, c.Groups) {
+				statesOut = append(statesOut, *s)
+			}
+			continue
+		}
+		statesOut = append(statesOut, *s)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"states": statesOut})
@@ -353,7 +429,17 @@ func CreateInput(ctx *gin.Context) {
 		return
 	}
 
-	err := input.CreateInput(&i)
+	c, err := cascade.GetCascadeByName(i.Cascade)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusNotFound)
+	}
+	if c.Groups != nil {
+		if !validateUserGroup(ctx, c.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+		}
+	}
+
+	err = input.CreateInput(&i)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -401,9 +487,19 @@ func GetAllInputs(ctx *gin.Context) {
 		return
 	}
 
-	inputsOut := make([]input.Input, len(inputs))
-	for idx, i := range inputs {
-		inputsOut[idx] = *i
+	inputsOut := make([]input.Input, 0)
+	for _, i := range inputs {
+		c, err := cascade.GetCascadeByName(i.Cascade)
+		if err == nil {
+			continue
+		}
+		if c.Groups != nil {
+			if validateUserGroup(ctx, c.Groups) {
+				inputsOut = append(inputsOut, *i)
+			}
+			continue
+		}
+		inputsOut = append(inputsOut, *i)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"inputs": inputsOut})
@@ -482,7 +578,17 @@ func CreateTask(ctx *gin.Context) {
 		return
 	}
 
-	err := task.CreateTask(&t)
+	c, err := cascade.GetCascadeByName(t.Cascade)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusNotFound)
+	}
+	if c.Groups != nil {
+		if !validateUserGroup(ctx, c.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+		}
+	}
+
+	err = task.CreateTask(&t)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -530,9 +636,19 @@ func GetAllTasks(ctx *gin.Context) {
 		return
 	}
 
-	tasksOut := make([]task.Task, len(tasks))
-	for idx, t := range tasks {
-		tasksOut[idx] = *t
+	tasksOut := make([]task.Task, 0)
+	for _, t := range tasks {
+		c, err := cascade.GetCascadeByName(t.Cascade)
+		if err != nil {
+			continue
+		}
+		if c.Groups != nil {
+			if validateUserGroup(ctx, c.Groups) {
+				tasksOut = append(tasksOut, *t)
+			}
+			continue
+		}
+		tasksOut = append(tasksOut, *t)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"tasks": tasksOut})
@@ -715,12 +831,17 @@ func CreateRun(ctx *gin.Context) {
 	cn := ctx.Param("cascade")
 	tn := ctx.Param("task")
 
+	c, err := cascade.GetCascadeByName(cn)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
 	s, err := state.GetStateByNames(cn, tn)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
 	}
-	s.Number += 1
 
 	t, err := task.GetTaskByNames(cn, tn)
 	if err != nil {
@@ -738,6 +859,8 @@ func CreateRun(ctx *gin.Context) {
 		return
 	}
 
+	s.Number += 1
+
 	s.Status = constants.STATE_STATUS_WAITING
 
 	obj := run.Run{
@@ -745,6 +868,7 @@ func CreateRun(ctx *gin.Context) {
 		Task:   *t,
 		State:  *s,
 		Number: t.RunNumber,
+		Groups: c.Groups,
 	}
 	postBody, _ := json.Marshal(obj)
 	postBodyBuffer := bytes.NewBuffer(postBody)
@@ -755,8 +879,8 @@ func CreateRun(ctx *gin.Context) {
 		return
 	}
 
-	httpClient := &http.Client{}
-	requestURL := fmt.Sprintf("http://%s:%d/api/v1/trigger", n.Host, n.Port)
+	httpClient := http.Client{}
+	requestURL := fmt.Sprintf("%s://%s:%d/api/v1/trigger", n.Protocol, n.Host, n.Port)
 	req, _ := http.NewRequest("POST", requestURL, postBodyBuffer)
 	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
 	resp, err := httpClient.Do(req)
@@ -767,11 +891,11 @@ func CreateRun(ctx *gin.Context) {
 		utils.Error(fmt.Errorf("received trigger status code %d", resp.StatusCode), ctx, resp.StatusCode)
 	}
 	if _, ok := manager.InProgress[cn]; !ok {
-		manager.InProgress[cn] = map[string]string{fmt.Sprintf("%s.%d", tn, t.RunNumber): fmt.Sprintf("%s:%d", n.Host, n.Port)}
-		manager.ToCheck[cn] = map[string]string{fmt.Sprintf("%s.%d", tn, t.RunNumber): fmt.Sprintf("%s:%d", n.Host, n.Port)}
+		manager.InProgress[cn] = map[string]string{fmt.Sprintf("%s.%d", tn, t.RunNumber): fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)}
+		manager.ToCheck[cn] = map[string]string{fmt.Sprintf("%s.%d", tn, t.RunNumber): fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)}
 	} else {
-		manager.InProgress[cn][fmt.Sprintf("%s.%d", tn, t.RunNumber)] = fmt.Sprintf("%s:%d", n.Host, n.Port)
-		manager.ToCheck[cn][fmt.Sprintf("%s.%d", tn, t.RunNumber)] = fmt.Sprintf("%s:%d", n.Host, n.Port)
+		manager.InProgress[cn][fmt.Sprintf("%s.%d", tn, t.RunNumber)] = fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)
+		manager.ToCheck[cn][fmt.Sprintf("%s.%d", tn, t.RunNumber)] = fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)
 	}
 
 	if err := task.UpdateTaskByNames(cn, tn, t); err != nil {
@@ -797,6 +921,12 @@ func CreateRun(ctx *gin.Context) {
 func CreateCheckRun(ctx *gin.Context) {
 	cn := ctx.Param("cascade")
 	tn := ctx.Param("task")
+
+	c, err := cascade.GetCascadeByName(cn)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
 
 	t, err := task.GetTaskByNames(cn, tn)
 	if err != nil {
@@ -847,6 +977,7 @@ func CreateCheckRun(ctx *gin.Context) {
 		},
 		State:  *s,
 		Number: t.RunNumber,
+		Groups: c.Groups,
 	}
 	postBody, _ := json.Marshal(obj)
 	postBodyBuffer := bytes.NewBuffer(postBody)
@@ -857,8 +988,8 @@ func CreateCheckRun(ctx *gin.Context) {
 		return
 	}
 
-	httpClient := &http.Client{}
-	requestURL := fmt.Sprintf("http://%s:%d/api/v1/trigger", n.Host, n.Port)
+	httpClient := http.Client{}
+	requestURL := fmt.Sprintf("%s://%s:%d/api/v1/trigger", n.Protocol, n.Host, n.Port)
 	req, _ := http.NewRequest("POST", requestURL, postBodyBuffer)
 	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
 	resp, err := httpClient.Do(req)
@@ -869,11 +1000,11 @@ func CreateCheckRun(ctx *gin.Context) {
 		logger.Errorf("", "Received trigger status code %d", resp.StatusCode)
 	}
 	if _, ok := manager.InProgress[cn]; !ok {
-		manager.InProgress[cn] = map[string]string{fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber): fmt.Sprintf("%s:%d", n.Host, n.Port)}
-		manager.ToCheck[cn] = map[string]string{fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber): fmt.Sprintf("%s:%d", n.Host, n.Port)}
+		manager.InProgress[cn] = map[string]string{fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber): fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)}
+		manager.ToCheck[cn] = map[string]string{fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber): fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)}
 	} else {
-		manager.InProgress[cn][fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber)] = fmt.Sprintf("%s:%d", n.Host, n.Port)
-		manager.ToCheck[cn][fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber)] = fmt.Sprintf("%s:%d", n.Host, n.Port)
+		manager.InProgress[cn][fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber)] = fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)
+		manager.ToCheck[cn][fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber)] = fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)
 	}
 
 	if err := task.UpdateTaskByNames(cn, tn, t); err != nil {
@@ -905,8 +1036,8 @@ func ManagerKillRun(ctx *gin.Context) {
 		}
 	}
 
-	httpClient := &http.Client{}
-	requestURL := fmt.Sprintf("http://%s/api/v1/kill/%s/%s/%s", uri, cn, tn, nn)
+	httpClient := http.Client{}
+	requestURL := fmt.Sprintf("%s://%s/api/v1/kill/%s/%s/%s", uri, cn, tn, nn)
 	req, _ := http.NewRequest("DELETE", requestURL, nil)
 	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
 	resp, err := httpClient.Do(req)
@@ -928,7 +1059,7 @@ func getAvailableNode() (*auth.NodeObject, error) {
 	nodeIdx := auth.LastScheduledIdx + 1
 
 	for idx, n := range auth.Nodes {
-		queryURL := fmt.Sprintf("http://%s:%d/health/available", n.Host, n.Port)
+		queryURL := fmt.Sprintf("%s://%s:%d/health/available", n.Protocol, n.Host, n.Port)
 		resp, err := http.Get(queryURL)
 		if err != nil || resp.StatusCode >= 400 {
 			continue
@@ -947,10 +1078,10 @@ func getAvailableNode() (*auth.NodeObject, error) {
 func GetAllContainers(ctx *gin.Context) {
 	available := map[string][]string{}
 	for _, n := range auth.Nodes {
-		httpClient := &http.Client{}
-		requestURL := fmt.Sprintf("http://%s:%d/api/v1/available", n.Host, n.Port)
+		httpClient := http.Client{}
+		requestURL := fmt.Sprintf("%s://%s:%d/api/v1/available", n.Protocol, n.Host, n.Port)
 		req, _ := http.NewRequest("GET", requestURL, nil)
-		req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
+		req.Header.Set("Authorization", ctx.Request.Header.Get("X-Scaffold-API"))
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := httpClient.Do(req)
 
@@ -990,6 +1121,13 @@ func TriggerRun(ctx *gin.Context) {
 		return
 	}
 
+	if r.Groups != nil {
+		if !validateUserGroup(ctx, r.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+			return
+		}
+	}
+
 	names := strings.Split(r.Name, ".")
 
 	r.State = state.State{
@@ -1013,6 +1151,16 @@ func KillRun(ctx *gin.Context) {
 	tn := ctx.Param("task")
 	nn := ctx.Param("number")
 
+	c, err := cascade.GetCascadeByName(cn)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusNotFound)
+	}
+	if c.Groups != nil {
+		if !validateUserGroup(ctx, c.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+		}
+	}
+
 	if err := run.Kill(cn, tn, nn); err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
@@ -1025,6 +1173,16 @@ func GetRunState(ctx *gin.Context) {
 	cn := ctx.Param("cascade")
 	tn := ctx.Param("task")
 	n := ctx.Param("number")
+
+	c, err := cascade.GetCascadeByName(cn)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusNotFound)
+	}
+	if c.Groups != nil {
+		if !validateUserGroup(ctx, c.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+		}
+	}
 
 	runName := fmt.Sprintf("%s.%s.%s", cn, tn, n)
 	if container.CurrentRun.Name == runName {
@@ -1052,9 +1210,19 @@ func DownloadFile(ctx *gin.Context) {
 	name := ctx.Param("name")
 	fileName := ctx.Param("file")
 
+	c, err := cascade.GetCascadeByName(name)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusNotFound)
+	}
+	if c.Groups != nil {
+		if !validateUserGroup(ctx, c.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+		}
+	}
+
 	path := fmt.Sprintf("/tmp/%s", uuid.New().String())
 
-	err := filestore.GetFile(fmt.Sprintf("%s/%s", name, fileName), path)
+	err = filestore.GetFile(fmt.Sprintf("%s/%s", name, fileName), path)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
@@ -1077,6 +1245,16 @@ func DownloadFile(ctx *gin.Context) {
 
 func UploadFile(ctx *gin.Context) {
 	name := ctx.Param("name")
+
+	c, err := cascade.GetCascadeByName(name)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusNotFound)
+	}
+	if c.Groups != nil {
+		if !validateUserGroup(ctx, c.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+		}
+	}
 
 	file, err := ctx.FormFile("file")
 	fileName := file.Filename
@@ -1125,5 +1303,65 @@ func UploadFile(ctx *gin.Context) {
 }
 
 func GetAvailableContainers(ctx *gin.Context) {
+	output := []string{}
+
+	for idx, groups := range container.LastGroups {
+		if validateUserGroup(ctx, groups) {
+			output = append(output, container.LastRun[idx])
+		}
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{"containers": container.LastRun})
+}
+
+// HELPERS
+
+func validateUserGroup(ctx *gin.Context, groups []string) bool {
+	var token string
+	var err error
+	var usr *user.User
+
+	logger.Infof("", "Validating user against groups: %v", groups)
+
+	if len(groups) == 0 {
+		return true
+	}
+
+	// Check if we have an auth header
+	authString := ctx.Request.Header.Get("Authorization")
+	if authString == "" {
+		// Check if the request is coming from a logged in UI user
+		token, err = ctx.Cookie("scaffold_token")
+		if err != nil {
+			return false
+		}
+		usr, _ = user.GetUserByLoginToken(token)
+		if usr == nil {
+			return false
+		}
+	} else {
+		token = strings.Split(authString, " ")[1]
+	}
+
+	// Is the request coming from a node itself?
+	if token == config.Config.Node.PrimaryKey {
+		return true
+	}
+
+	// Get the user via the information
+	usr, _ = user.GetUserByAPIToken(token)
+	if usr == nil {
+		return false
+	}
+
+	if utils.Contains(usr.Groups, "admin") {
+		return true
+	}
+	for _, group := range groups {
+		if utils.Contains(usr.Groups, group) {
+			return true
+		}
+	}
+
+	return false
 }

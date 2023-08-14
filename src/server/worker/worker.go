@@ -8,6 +8,7 @@ import (
 	"scaffold/server/auth"
 	"scaffold/server/cmd"
 	"scaffold/server/config"
+	"scaffold/server/constants"
 	"scaffold/server/container"
 	"scaffold/server/filestore"
 	"scaffold/server/health"
@@ -37,11 +38,13 @@ func Run() {
 	PrimaryKey = config.Config.Node.PrimaryKey
 
 	obj := auth.NodeJoinObject{
-		Name:    config.Config.HTTPHost,
-		Host:    config.Config.HTTPHost,
-		Port:    config.Config.HTTPPort,
-		WSPort:  config.Config.WSPort,
-		JoinKey: JoinKey,
+		Name:     config.Config.Host,
+		Host:     config.Config.Host,
+		Port:     config.Config.Port,
+		WSPort:   config.Config.WSPort,
+		Protocol: config.Config.Protocol,
+		JoinKey:  JoinKey,
+		Version:  constants.VERSION,
 	}
 	postBody, err := json.Marshal(obj)
 	if err != nil {
@@ -49,8 +52,8 @@ func Run() {
 	}
 	postBodyBuffer := bytes.NewBuffer(postBody)
 
-	httpClient := &http.Client{}
-	requestURL := fmt.Sprintf("http://%s:%d/auth/join", config.Config.Node.ManagerHost, config.Config.Node.ManagerPort)
+	httpClient := http.Client{}
+	requestURL := fmt.Sprintf("%s://%s:%d/auth/join", config.Config.Node.ManagerProtocol, config.Config.Node.ManagerHost, config.Config.Node.ManagerPort)
 	req, _ := http.NewRequest("POST", requestURL, postBodyBuffer)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := httpClient.Do(req)
@@ -70,6 +73,7 @@ func Run() {
 }
 
 func PollQueue() {
+	container.InitContainers()
 	for {
 		if !health.IsAvailable {
 			time.Sleep(250 * time.Millisecond)
@@ -128,12 +132,15 @@ func PollQueue() {
 						Display:  p.Display,
 					},
 					Number: container.CurrentRun.Number,
+					Groups: c.Groups,
 				}
 				parts := strings.Split(c.Name, ".")
 				nameParts := strings.Split(parts[1], "-")
 				if !strings.HasSuffix(nameParts[0], "CHECK") {
+					logger.Debugf("", "Adding groups %v to LastGroups", c.Groups)
 					container.LastRun = append(container.LastRun, container.CurrentRun.Name)
 					container.LastImage = append(container.LastImage, container.CurrentRun.Task.Image)
+					container.LastGroups = append(container.LastGroups, c.Groups)
 				}
 			}
 			logger.Debugf("", "current run: %v", container.CurrentRun)

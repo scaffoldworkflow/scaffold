@@ -28,8 +28,8 @@ func CreateInput(i *Input) error {
 	return err
 }
 
-func DeleteInputByNames(cascade, input string) error {
-	filter := bson.M{"cascade": cascade, "input": input}
+func DeleteInputByNames(cascade, name string) error {
+	filter := bson.M{"cascade": cascade, "name": name}
 
 	collection := mongodb.Collections[constants.MONGODB_INPUT_COLLECTION_NAME]
 	ctx := mongodb.Ctx
@@ -41,7 +41,7 @@ func DeleteInputByNames(cascade, input string) error {
 	}
 
 	if result.DeletedCount != 1 {
-		return fmt.Errorf("no input found with names %s, %s", cascade, input)
+		return fmt.Errorf("no input found with names %s, %s", cascade, name)
 	}
 
 	return nil
@@ -76,8 +76,8 @@ func GetAllInputs() ([]*Input, error) {
 	return inputs, err
 }
 
-func GetInputByNames(cascade, input string) (*Input, error) {
-	filter := bson.M{"cascade": cascade, "input": input}
+func GetInputByNames(cascade, name string) (*Input, error) {
+	filter := bson.M{"cascade": cascade, "name": name}
 
 	inputs, err := FilterInputs(filter)
 
@@ -86,11 +86,11 @@ func GetInputByNames(cascade, input string) (*Input, error) {
 	}
 
 	if len(inputs) == 0 {
-		return nil, fmt.Errorf("no input found with names %s, %s", cascade, input)
+		return nil, fmt.Errorf("no input found with names %s, %s", cascade, name)
 	}
 
 	if len(inputs) > 1 {
-		return nil, fmt.Errorf("multiple inputs found with names %s, %s", cascade, input)
+		return nil, fmt.Errorf("multiple inputs found with names %s, %s", cascade, name)
 	}
 
 	return inputs[0], nil
@@ -108,8 +108,8 @@ func GetInputsByCascade(cascade string) ([]*Input, error) {
 	return inputs, nil
 }
 
-func UpdateInputByNames(cascade, input string, i *Input) error {
-	filter := bson.M{"cascade": cascade, "input": input}
+func UpdateInputByNames(cascade, name string, i *Input) error {
+	filter := bson.M{"cascade": cascade, "name": name}
 
 	collection := mongodb.Collections[constants.MONGODB_INPUT_COLLECTION_NAME]
 	ctx := mongodb.Ctx
@@ -123,7 +123,7 @@ func UpdateInputByNames(cascade, input string, i *Input) error {
 	}
 
 	if result.ModifiedCount != 1 {
-		return fmt.Errorf("no input found with names %s, %s", cascade, input)
+		return fmt.Errorf("no input found with names %s, %s", cascade, name)
 	}
 
 	return nil

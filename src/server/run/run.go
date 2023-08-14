@@ -33,6 +33,7 @@ type Run struct {
 	State    state.State `json:"state"`
 	Previous state.State `json:"previous"`
 	Number   int         `json:"number"`
+	Groups   []string    `json:"groups"`
 }
 
 func setErrorStatus(r *Run, output string) {

@@ -1,0 +1,13 @@
+{
+    "username": "read-only",
+    "password": "read-only",
+    "given_name": "read-only",
+    "family_name": "read-only",
+    "email": "read-only@foo.com",
+    "groups": [
+        "foo"
+    ],
+    "roles": [
+        "read"
+    ]
+}

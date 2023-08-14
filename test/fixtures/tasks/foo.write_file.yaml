@@ -1,0 +1,43 @@
+auto_execute: false
+cascade: foo
+check:
+  env: null
+  image: ''
+  inputs: null
+  interval: 0
+  load:
+    env: null
+    file: null
+  run: ''
+  run_number: 0
+  store:
+    env: null
+    file: null
+  updated: ''
+depends_on:
+  always: null
+  error: null
+  success: null
+env:
+  file_contents: These are the contents of my file
+image: ubuntu:20.04
+inputs: null
+load:
+  env: null
+  file: null
+name: write_file
+run: 'echo "${file_contents}" > /tmp/run/foo.txt
+
+  echo "Sleeping for a bit..."
+
+  sleep 10
+
+  '
+run_number: 0
+should_rm: false
+store:
+  env: null
+  file:
+  - foo.txt
+updated: '2023-08-14T21:22:16Z'
+verb: ''

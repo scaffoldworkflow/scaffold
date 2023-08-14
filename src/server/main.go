@@ -3,8 +3,11 @@
 package main
 
 import (
+	"context"
+	"crypto/tls"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"scaffold/server/config"
 	"scaffold/server/constants"
 	"scaffold/server/logger"
@@ -17,18 +20,20 @@ import (
 
 var router *gin.Engine
 
-func main() {
+func run(ctx context.Context, channel chan struct{}) {
 	// Set Gin to production mode
 	gin.SetMode(gin.ReleaseMode)
 
 	config.LoadConfig()
 	logger.SetLevel(config.Config.LogLevel)
 
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: config.Config.TLSSkipVerify}
+
 	router = gin.New()
 	router.Use(gin.LoggerWithFormatter(logger.ConsoleLogFormatter))
 	router.Use(gin.Recovery())
 
-	logger.Infof("", "Running with port: %d", config.Config.HTTPPort)
+	logger.Infof("", "Running with port: %d", config.Config.Port)
 
 	router.LoadHTMLGlob("templates/*")
 	initializeRoutes()
@@ -41,6 +46,28 @@ func main() {
 		go worker.Run()
 	}
 
-	routerPort := fmt.Sprintf(":%d", config.Config.HTTPPort)
-	router.Run(routerPort)
+	routerPort := fmt.Sprintf(":%d", config.Config.Port)
+	if config.Config.TLSEnabled {
+		logger.Infof("", "Running with TLS loaded from %s and %s", config.Config.TLSCrtPath, config.Config.TLSKeyPath)
+		go router.RunTLS(routerPort, config.Config.TLSCrtPath, config.Config.TLSKeyPath)
+	} else {
+		go router.Run(routerPort)
+	}
+	for {
+		select {
+		case <-ctx.Done(): // if cancel() execute
+			channel <- struct{}{}
+			return
+		default:
+			// foobar
+		}
+
+		time.Sleep(1 * time.Second)
+	}
+}
+
+func main() {
+	channel := make(chan struct{})
+	ctx, _ := context.WithCancel(context.Background())
+	run(ctx, channel)
 }

@@ -1,0 +1,14 @@
+{
+    "username": "foo",
+    "password": "foo",
+    "given_name": "foo",
+    "family_name": "foo",
+    "email": "foo@foo.com",
+    "groups": [
+        "foo"
+    ],
+    "roles": [
+        "read",
+        "write"
+    ]
+}

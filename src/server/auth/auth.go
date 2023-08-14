@@ -25,22 +25,34 @@ type PasswordResetObject struct {
 }
 
 type NodeJoinObject struct {
-	Name    string `json:"name"`
-	Host    string `json:"host"`
-	Port    int    `json:"port"`
-	WSPort  int    `json:"ws_port"`
-	JoinKey string `json:"join_key"`
+	Name     string `json:"name"`
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	WSPort   int    `json:"ws_port"`
+	Protocol string `json:"protocol"`
+	JoinKey  string `json:"join_key"`
+	Version  string `json:"version"`
 }
 
 type NodeObject struct {
-	Name    string `json:"name" bson:"name"`
-	Host    string `json:"host" bson:"host"`
-	Port    int    `json:"port" bson:"port"`
-	WSPort  int    `json:"ws_port" bson:"ws_port"`
-	Healthy bool   `json:"healthy" bson:"healthy"`
+	Name      string `json:"name" bson:"name"`
+	Host      string `json:"host" bson:"host"`
+	Port      int    `json:"port" bson:"port"`
+	WSPort    int    `json:"ws_port" bson:"ws_port"`
+	Protocol  string `json:"protocol"`
+	Healthy   bool   `json:"healthy" bson:"healthy"`
+	Available bool   `json:"available" bson:"available"`
+	Version   string `json:"version" bson:"version"`
+}
+
+type DegradedNodeObject struct {
+	Count int
+	Node  NodeObject
 }
 
 var Nodes []NodeObject
+var UnknownNodes map[string]DegradedNodeObject
+var UnhealthyNodes map[string]DegradedNodeObject
 var LastScheduledIdx = 0
 
 func PerformLogin(c *gin.Context) {
@@ -209,7 +221,14 @@ func JoinNode(ctx *gin.Context) {
 
 	if n.JoinKey == config.Config.Node.JoinKey {
 		logger.Debugf("", "Joining node %s, %d, %d", n.Host, n.Port, n.WSPort)
-		Nodes = append(Nodes, NodeObject{Host: n.Host, Port: n.Port, WSPort: n.WSPort, Healthy: true})
+		Nodes = append(Nodes, NodeObject{
+			Host:     n.Host,
+			Port:     n.Port,
+			WSPort:   n.WSPort,
+			Healthy:  true,
+			Version:  n.Version,
+			Protocol: n.Protocol,
+		})
 		ctx.Status(http.StatusOK)
 		return
 	}

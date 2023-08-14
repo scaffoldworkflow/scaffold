@@ -19,13 +19,13 @@ tasks:
   image: ubuntu:20.04
   run: |
     echo "${file_contents}" > /tmp/run/foo.txt
+    echo "Sleeping for a bit..."
+    sleep 10
   store:
     file:
       - foo.txt
   env:
     file_contents: These are the contents of my file
-  inputs:
-    file_contents: file_contents
 
 - name: store_full_message
   image: ubuntu:20.04 
@@ -51,9 +51,8 @@ tasks:
     echo "----  WRITING FILE   ----"
     cat /tmp/run/foo.txt
     echo "----  SLEEPING FOR A BIT  ----"
-    sleep 30
   check:
-    interval: 30
+    interval: 20
     image: ubuntu:20.04
     run: |
       echo "Writing data to display"
@@ -101,7 +100,7 @@ tasks:
           {
             "kind": "table",
             "name": "Example Table",
-            "header": ["foo", "bar", "baz"]
+            "header": ["foo", "bar", "baz"],
             "data": [
               [0, 1, 2],
               [3, 4, 5],
@@ -117,12 +116,4 @@ tasks:
       EOM
       )
       echo "${display_contents}" > /tmp/run/.display
-
-      echo "Running check"
-
-      for i in {1..30}
-      do
-        display_contents="$(cat /tmp/run/.display | jq ".[1].data = \"${i}\"")" && echo "${display_contents}" > /tmp/run/.display
-        sleep 1
-      done
   auto_execute: true

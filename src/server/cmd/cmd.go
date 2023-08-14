@@ -275,33 +275,18 @@ func StartWSServer() {
 	}
 
 	go func() {
-		log.Printf("running http://0.0.0.0:%d\n", config.Config.WSPort)
+		log.Printf("running %s://0.0.0.0:%d\n", config.Config.Protocol, config.Config.WSPort)
 
-		if serverErr := server.ListenAndServe(); serverErr != nil {
-			log.Println(serverErr)
+		if config.Config.TLSEnabled {
+			if serverErr := server.ListenAndServeTLS(config.Config.TLSCrtPath, config.Config.TLSKeyPath); serverErr != nil {
+				logger.Fatalf("", "Error running websocket server: %s", serverErr)
+			}
+		} else {
+			if serverErr := server.ListenAndServe(); serverErr != nil {
+				logger.Fatalf("", "Error running websocket server: %s", serverErr)
+			}
 		}
-		fmt.Printf("Server exited!")
 	}()
-
-	// check process state
-	// go func() {
-	// 	ticker := time.NewTicker(time.Duration(checkProcInterval) * time.Second)
-	// 	for range ticker.C {
-	// 		if execCmd != nil {
-	// 			state, err := execCmd.Process.Wait()
-	// 			exec.Command("bash", "-c", rmiCommand).CombinedOutput()
-	// 			if err != nil {
-	// 				return
-	// 			}
-
-	// 			if state.ExitCode() != -1 {
-	// 				ptmx.Close()
-	// 				ptmx = nil
-	// 				execCmd = nil
-	// 			}
-	// 		}
-	// 	}
-	// }()
 
 	// wait for run server
 	time.Sleep(time.Duration(waitTime) * time.Microsecond)

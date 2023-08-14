@@ -34,15 +34,22 @@ right_panel_width = 500
 function toggleCurrentState() {
     let sidebar = document.getElementById("current-state")
     if (sidebar.className.indexOf("show") == -1) {
+        // Close input
+        let input = document.getElementById("current-input")
+        input.classList.remove("show");
+        $("#current-input").css("left", `calc(100%)`)
+        // Close legend
+        let legend = document.getElementById("current-legend")
+        legend.classList.remove("show");
+        $("#current-legend").css("left", `calc(100%)`)
+        // Show state
         sidebar.classList.add("show");
         sidebar.classList.remove("right-slide-out-500");
-        void sidebar.offsetWidth;
         sidebar.classList.add("right-slide-in-500")
         $("#current-state").css("left", `calc(100% - ${right_panel_width}px)`)
     } else {
         sidebar.classList.remove("show");
         sidebar.classList.remove("right-slide-in-500");
-        void sidebar.offsetWidth;
         sidebar.classList.add("right-slide-out-500")
         $("#current-state").css("left", `calc(100%)`)
     }
@@ -51,17 +58,48 @@ function toggleCurrentState() {
 function toggleCurrentInput() {
     let sidebar = document.getElementById("current-input")
     if (sidebar.className.indexOf("show") == -1) {
+        // Close state
+        let state = document.getElementById("current-state")
+        state.classList.remove("show");
+        $("#current-state").css("left", `calc(100%)`)
+        // Close legend
+        let legend = document.getElementById("current-legend")
+        legend.classList.remove("show");
+        $("#current-legend").css("left", `calc(100%)`)
+        // Show input
         sidebar.classList.add("show");
         sidebar.classList.remove("right-slide-out-500");
-        void sidebar.offsetWidth;
         sidebar.classList.add("right-slide-in-500")
         $("#current-input").css("left", `calc(100% - ${right_panel_width}px)`)
     } else {
         sidebar.classList.remove("show");
         sidebar.classList.remove("right-slide-in-500");
-        void sidebar.offsetWidth;
         sidebar.classList.add("right-slide-out-500")
         $("#current-input").css("left", `calc(100%)`)
+    }
+}
+
+function toggleCurrentLegend() {
+    let sidebar = document.getElementById("current-legend")
+    if (sidebar.className.indexOf("show") == -1) {
+        // Close state
+        let state = document.getElementById("current-state")
+        state.classList.remove("show");
+        $("#current-state").css("left", `calc(100%)`)
+        // Close input
+        let input = document.getElementById("current-input")
+        input.classList.remove("show");
+        $("#current-input").css("left", `calc(100%)`)
+        // Show legend
+        sidebar.classList.add("show");
+        sidebar.classList.remove("right-slide-out-500");
+        sidebar.classList.add("right-slide-in-500")
+        $("#current-legend").css("left", `calc(100% - ${right_panel_width}px)`)
+    } else {
+        sidebar.classList.remove("show");
+        sidebar.classList.remove("right-slide-in-500");
+        sidebar.classList.add("right-slide-out-500")
+        $("#current-legend").css("left", `calc(100%)`)
     }
 }
 

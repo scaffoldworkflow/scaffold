@@ -32,19 +32,37 @@ function updateStatuses() {
                 '<th class="table-title w3-medium scaffold-text-green">' +
                     '<span class="table-title-text">Status</span>' +
                 '</th>' +
+                '<th class="table-title w3-medium scaffold-text-green">' +
+                    '<span class="table-title-text">Version</span>' +
+                '</th>' +
             '</tr>'
 
-            for (var i = 0; i < result.nodes.length; i++) {
-                serviceStatusColor = "scaffold-text-green"
-                serviceStatusText = "Up"
+            let is_healthy = true
+            let down_count = 0
+
+            for (let i = 0; i < result.nodes.length; i++) {
+                serviceStatusColor = healthColors[result.nodes[i].status]
+                serviceStatusText = healthText[result.nodes[i].status]
+                serviceStatusVersion = result.nodes[i].version
+                if (result.nodes[i].status != 'healthy') {
+                    is_healthy = false
+                    down_count += 1
+                }
                 tableInnerHTML += '<tr>' +
-                    '<td>' + result.nodes[i] + '</td>' +
+                    '<td>' + result.nodes[i].name + '</td>' +
                     '<td class="' + serviceStatusColor + '">' + serviceStatusText + '</td>' +
+                    '<td class="' + serviceStatusColor + '">' + serviceStatusVersion + '</td>' +
                 '</tr>'
             }
             $("#status-table").html(tableInnerHTML)
             $("#status-icon").removeClass(allHealthClasses)
-            $("#status-icon").addClass(healthIcons["healthy"] + " " + healthColors["healthy"])
+            if (down_count == result.nodes.length) {
+                $("#status-icon").addClass(healthIcons["unhealthy"] + " " + healthColors["unhealthy"])
+            } else if (is_healthy) {
+                $("#status-icon").addClass(healthIcons["healthy"] + " " + healthColors["healthy"])
+            } else {
+                $("#status-icon").addClass(healthIcons["degraded"] + " " + healthColors["healthy"])
+            }
         },
         error: function (result) {
             $("#status-icon").removeClass(allHealthClasses)

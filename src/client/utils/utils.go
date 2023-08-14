@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"scaffold/client/auth"
 	"scaffold/client/config"
 	"scaffold/client/logger"
 )
 
-func SendPost(uri, path string, data map[string]interface{}) (map[string]interface{}, error) {
+func SendPost(uri, path string, data map[string]interface{}, p auth.ProfileObj) (map[string]interface{}, error) {
 	if data == nil {
 		data = make(map[string]interface{})
 	}
@@ -45,7 +46,7 @@ func SendPost(uri, path string, data map[string]interface{}) (map[string]interfa
 	return obj, nil
 }
 
-func SendPut(uri, path string, data map[string]interface{}) (map[string]interface{}, error) {
+func SendPut(uri, path string, data map[string]interface{}, p auth.ProfileObj) (map[string]interface{}, error) {
 	if data == nil {
 		data = make(map[string]interface{})
 	}
@@ -80,7 +81,7 @@ func SendPut(uri, path string, data map[string]interface{}) (map[string]interfac
 	return obj, nil
 }
 
-func SendDelete(uri, path string) (map[string]interface{}, error) {
+func SendDelete(uri, path string, p auth.ProfileObj) (map[string]interface{}, error) {
 	var obj map[string]interface{}
 
 	httpClient := &http.Client{}
@@ -109,7 +110,7 @@ func SendDelete(uri, path string) (map[string]interface{}, error) {
 	return obj, nil
 }
 
-func SendGet(uri, path string) (map[string]interface{}, error) {
+func SendGet(uri, path string, p auth.ProfileObj) (map[string]interface{}, error) {
 	var obj map[string]interface{}
 
 	httpClient := &http.Client{}
@@ -136,4 +137,13 @@ func SendGet(uri, path string) (map[string]interface{}, error) {
 		return nil, err
 	}
 	return obj, nil
+}
+
+func Contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }

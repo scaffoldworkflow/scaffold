@@ -220,102 +220,150 @@ Infrastructure management is an interesting problem to tackle. Many organization
     - deregister_old
     ```
 
-## TODO
+## ROADMAP
 
-### CLI
+### v0.1.0
 
-- **Authentication**
-    - [x] Generate API token from CLI
-    - [x] Read/write token from/to a `~/.scaffold/creds` file
+- **CLI**
 
-- **Cascade Interaction**
+    - __Miscellaneous__
 
-    - [x] Upload cascade
-    - [x] Delete cascade
-    - [x] Update cascade
-    - [ ] Better presentation to user (e.g. connection opened, connection closed)
+        - [ ] Log level configuration
+        - [x] CLI version command
+        - [x] CLI get Scaffold version
 
-- **Run Interaction**
+    - __Authentication__
 
-    - [ ] Get task output
-    - [ ] List tasks and status by cascade
-    - [ ] Get task statuses by cascade and task name
-    - [x] Exec into run
-    - [x] List available exec runs
+        - [x] Generate API token from CLI
+        - [x] Read/write token from/to a `~/.scaffold/creds` file
 
-- **File Interaction**
+    - __Cascade Interaction__
 
-    - [ ] Upload a file
-    - [ ] Download a file
+        - [x] Upload cascade
+        - [x] Delete cascade
+        - [x] Update cascade
+        - [x] Set cascade context in profile
 
-- **Configuration**
-    - [x] Read/write config from/to a `~/.scaffold/config` file
+    - __Object Interaction__
 
-### Server
+        - [x] Get cascades
+        - [x] Get cascade by name
+        - [x] Describe cascade
+        - [x] Get datastores
+        - [x] Get datastore by name
+        - [x] Describe datastore
+        - [x] Get states
+        - [x] Get state by name
+        - [x] Describe state
+        - [x] Get tasks
+        - [x] Get task by name
+        - [x] Describe task
 
--  **Dependency Interaction**
+    - __RUN Interaction__
 
-    - [x] Input changes set dependent tasks to `not_started`
-    - [x] Run starts set dependent tasks to `not_started`
+        - [x] Exec into run
+        - [x] List available exec runs
 
--  **Worker Improvements**
+    - __File Interaction__
 
-    - [x] Worker node directory and image cleanup
-    - [x] Task kill ability
-    - [x] Exec into finished container (if still around)
-    - [x] Handle `no space left on device` if it happens
-    - [ ] Check task kill ability
+        - [x] Upload a file
+        - [x] Download a file
 
--  **Security Improvements**
-    - [x] Hash and salt api tokens
-    - [x] Hash and salt login tokens
-    - [x] Cascade group-based access
-        - [x] Files
-        - [x] Cascades
-    - [ ] Run with HTTPS
-    - [x] Implement basic auth for API token request
-    - [ ] Group based access for container exec
+    - __Configuration__
 
--  **File UI**
+        - [x] Read/write config from/to a `~/.scaffold/config` file
 
-    - [x] Files list page
-    - [x] File upload
-    - [x] File download
+- **Server**
 
--  **UI Improvements**
+    -  __Dependency Interaction__
 
-    - [x] Fix cascade search
-    - [x] Task search to highlight tasks containing search string
-    - [x] Display Cascade links
-    - [x] Display current Cascade state
-    - [ ] Move task status to right slide in
-    - [ ] Change auto-execute from cascade page
-    - [ ] Add group and role removal from user create page
-    - [ ] Add legend to cascade page
-    - [ ] Fix user search
+        - [x] Input changes set dependent tasks to `not_started`
+        - [x] Run starts set dependent tasks to `not_started`
 
--  **Task Display Improvements**
+    -  __Worker Improvements__
 
-    - [x] Task store and show previous state
-    - [x] Task formatted display
-        - Write specific format JSON to /tmp/run/.display in container to setup display in UI
-            - [x] Tables
-            - [x] Single value
-            - [x] Pre-formatted value
-    - [ ] Tasks nodes on cascade page should be left-aligned
-    - [ ] Previous should display one less than run number
+        - [x] Worker node directory and image cleanup
+        - [x] Task kill ability
+        - [x] Exec into finished container (if still around)
+        - [x] Handle `no space left on device` if it happens
 
--  **Documentation**
+    -  __Security Improvements__
+        - [x] Hash and salt api tokens
+        - [x] Hash and salt login tokens
+        - [x] Cascade group-based access
+            - [x] Files
+            - [x] Cascades
+        - [x] Run with HTTPS
+        - [x] Implement basic auth for API token request
+        - [x] Group based access for container exec
 
-    - [ ] Setup readthedocs
-    - [ ] Write documentation
+    -  __File UI__
 
--  **Cascade Improvements**
+        - [x] Files list page
+        - [x] File upload
+        - [x] File download
 
-    - [x] Add check recurring tasks
-    - [x] Selective auto-execute
-    - [x] On success, on error, and always tasks
+    -  __UI Improvements__
 
--  **Manager Improvements**
-    - [x] Proxy websocket exec requests
-    - [x] Save worker proxy port on join
+        - [x] Fix cascade search
+        - [x] Task search to highlight tasks containing search string
+        - [x] Display Cascade links
+        - [x] Display current Cascade state
+        - [x] Add group and role removal from user create page
+        - [x] Add legend to cascade page
+        - [x] Fix user search
+        - [x] Task store and show previous state
+        - [x] Task formatted display
+            - Write specific format JSON to /tmp/run/.display in container to setup display in UI
+                - [x] Tables
+                - [x] Single value
+                - [x] Pre-formatted value
+        - [x] Previous should display one less than run number
+        - [x] Fix status page to show more than just healthy nodes
+
+    -  __Documentation__
+
+        - [ ] Setup readthedocs
+        - [ ] Write documentation
+
+    -  __Cascade Improvements__
+
+        - [x] Add check recurring tasks
+        - [x] Selective auto-execute
+        - [x] On success, on error, and always tasks
+
+    -  __Manager Improvements__
+
+        - [x] Proxy websocket exec requests
+        - [x] Save worker proxy port on join
+        - [x] Serve version endpoint
+    
+    - __Testing__
+
+        - [x] Basic CLI configure interaction testing
+        - [x] Basic CLI apply interaction testing
+        - [x] Basic CLI get interaction testing
+        - [x] Group-based access testing
+        - [x] Run trigger testing
+        - [x] Cascade REST testing
+        - [x] DataStore REST testing
+        - [x] Input REST testing
+        - [x] State REST testing
+        - [x] Task REST testing
+        - [x] >= 50% test coverage
+
+### v0.2.0
+
+- **Server**
+    - __Testing__
+
+        - [ ] 75% test coverage
+
+    -  __UI Improvements__
+
+        - [ ] Move task status to right slide in
+        - [ ] Change auto-execute from cascade page
+
+    -  __Worker Improvements__
+
+        - [ ] Check task kill ability

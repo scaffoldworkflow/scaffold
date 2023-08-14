@@ -1,0 +1,11 @@
+{
+    "username": "no-group",
+    "password": "no-group",
+    "given_name": "no-group",
+    "family_name": "no-group",
+    "email": "no-group@no-group.com",
+    "groups": [],
+    "roles": [
+        "read", "write"
+    ]
+}

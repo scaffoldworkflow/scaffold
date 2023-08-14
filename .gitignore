@@ -3,3 +3,7 @@ src/server/ui-dist
 .python-version
 temp
 test/\.*\.yaml
+src/client/cli
+__pycache__
+.pytest_cache
+ca

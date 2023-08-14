@@ -6,10 +6,17 @@ var healthIcons = {
 }
 
 var healthColors = {
-	'healthy': 'scaffoldxt-green',
+	'healthy': 'scaffold-text-green',
 	'degraded': 'scaffold-text-yellow',
 	'unhealthy': 'scaffold-text-red',
-	'unknown': 'scaffold-text-green'
+	'unknown': 'scaffold-text-charcoal'
+}
+
+var healthText = {
+	'healthy': 'Up',
+	'degraded': 'Degraded',
+	'unhealthy': 'Down',
+	'unknown': 'Unknown'
 }
 
 var icons = {

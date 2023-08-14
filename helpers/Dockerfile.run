@@ -16,7 +16,8 @@ RUN apt-get update \
     gnupg \
     lsb-release \
     tzdata \
-    software-properties-common
+    software-properties-common \
+    sudo
 
 RUN adduser --disabled-password scaffold
 

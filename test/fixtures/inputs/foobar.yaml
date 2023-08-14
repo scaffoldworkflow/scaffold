@@ -1,0 +1,5 @@
+name: foobar
+cascade: foobar
+description: foobar
+default: foobar
+type: text

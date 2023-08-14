@@ -21,7 +21,7 @@ func basicAuth(username, password string) string {
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
-func DoConfig(host, port, protocol, wsPort, profile, username, password string) {
+func DoConfig(host, port, protocol, wsPort, profile, username, password string, skipVerify bool) {
 	uri := fmt.Sprintf("%s://%s:%s/auth/token/%s/client", protocol, host, port, username)
 
 	var obj TokenResponse
@@ -46,7 +46,17 @@ func DoConfig(host, port, protocol, wsPort, profile, username, password string) 
 		logger.Fatalf("", "Encountered error unmarshalling token JSON: %s", err.Error())
 	}
 
-	auth.WriteProfile(profile, protocol, host, port, wsPort, obj.Token)
+	p := auth.ProfileObj{
+		Protocol:   protocol,
+		Host:       host,
+		Port:       port,
+		WSPort:     wsPort,
+		APIToken:   obj.Token,
+		Cascade:    "default",
+		SkipVerify: skipVerify,
+	}
+
+	auth.WriteProfile(profile, p)
 
 	logger.Successf("", "Successfully configured profile '%s'", profile)
 }

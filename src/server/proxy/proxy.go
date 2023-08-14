@@ -1,68 +1,3 @@
-// package proxy
-
-// import (
-// 	"fmt"
-// 	"net/http"
-// 	"net/http/httputil"
-// 	"net/url"
-
-// 	"github.com/gin-gonic/gin"
-// )
-
-// var Proxies map[string]*httputil.ReverseProxy
-
-// func CreateProxy(workerIP string, workerPort int) *httputil.ReverseProxy {
-// 	target, _ := url.Parse("https://%s:%s/api/v1/exec")
-// 	director := func(req *http.Request) {
-// 		req.URL = target
-// 		req.Header["my-header"] = []string{req.Header.Get("my-header")}
-// 		delete(req.Header, "My-Header")
-// 		req.Header["Authorization"] = []string{"MYCUSTOMHEADER"}
-// 	}
-// 	return &httputil.ReverseProxy{Director: director, Transport: &http.Transport{
-// 		Proxy: http.ProxyFromEnvironment,
-// 		Dial: (&net.Dialer{
-// 			Timeout:   30 * time.Second,
-// 			KeepAlive: 30 * time.Second,
-// 		}).Dial,
-// 		TLSHandshakeTimeout: 10 * time.Second,
-// 		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
-// 	}}
-// }
-
-// type ProxyConfig struct {
-// 	Host    string `json:"host"`
-// 	Port    string `json:"port"`
-// 	Cascade string `json:"cascade"`
-// 	Run     string `json:"run"`
-// 	Version string `json:"version"`
-// }
-
-// func Proxy(ctx *gin.Context) {
-// 	host := ctx.Query("host")
-// 	port := ctx.Query("port")
-// 	cascade := ctx.Query("cascade")
-// 	run := ctx.Query("run")
-// 	version := ctx.Query("version")
-
-// 	remote, err := url.Parse(fmt.Sprintf("http://%s:%s", host, port))
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	proxy := httputil.NewSingleHostReverseProxy(remote)
-// 	proxy.Director = func(req *http.Request) {
-// 		req.Header = ctx.Request.Header
-// 		req.Host = remote.Host
-// 		req.URL.Scheme = remote.Scheme
-// 		req.URL.Host = remote.Host
-// 		req.URL.Path = fmt.Sprintf("/ws/%s/%s/%s", cascade, run, version)
-// 	}
-
-// 	proxy.ServeHTTP(ctx.Writer, ctx.Request)
-// }
-
-// Package websocketproxy is a reverse proxy for WebSocket connections.
 package proxy
 
 import (
@@ -72,7 +7,10 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"scaffold/server/cascade"
 	"scaffold/server/logger"
+	"scaffold/server/user"
+	"scaffold/server/utils"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -124,13 +62,40 @@ func NewProxy() *WebsocketProxy {
 		vars := mux.Vars(r)
 		host := vars["host"]
 		port := vars["port"]
-		cascade := vars["cascade"]
+		cascadeName := vars["cascade"]
 		run := vars["run"]
 		version := vars["version"]
 
-		logger.Tracef("Trying to exec with information %s, %s, %s, %s, %s", host, port, cascade, run, version)
+		c, err := cascade.GetCascadeByName(cascadeName)
+		if err != nil {
+			log.Fatalln(err)
+		}
 
-		url, err := url.Parse(fmt.Sprintf("ws://%s:%s/ws/%s/%s/%s", host, port, cascade, run, version))
+		authString := r.Header.Get("Authorization")
+		if authString == "" {
+			log.Fatalln("No auth header present")
+		}
+		token := strings.Split(authString, " ")[1]
+
+		usr, _ := user.GetUserByAPIToken(token)
+
+		if usr == nil {
+			log.Fatalln("No user present that matches auth information")
+		}
+		isValid := false
+		for _, group := range c.Groups {
+			if utils.Contains(usr.Groups, group) {
+				isValid = true
+				break
+			}
+		}
+		if !isValid {
+			log.Fatalln("User is not permitted to access this container")
+		}
+
+		logger.Tracef("Trying to exec with information %s, %s, %s, %s, %s", host, port, cascadeName, run, version)
+
+		url, err := url.Parse(fmt.Sprintf("ws://%s:%s/ws/%s/%s/%s", host, port, cascadeName, run, version))
 		if err != nil {
 			log.Fatalln(err)
 		}

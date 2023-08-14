@@ -1,0 +1,5 @@
+cascade: foo
+default: John Doe
+description: Name to write with greeting
+name: name
+type: password

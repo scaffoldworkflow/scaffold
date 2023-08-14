@@ -1,16 +1,11 @@
 version: v1
 name: bar
 inputs:
-  - name: name
-    description: Name to write with greeting
-    type: password 
-    default: "John Doe"
-  - name: greeting
-    description: Greeting to write out
-    type: text 
-    default: "Hello, "
+  - name: input_1
+    description: Input 1
+    type: text
+    default: "input_1"
 links:
-  website: https://johnfcarter.tech
   google: https://google.com
 groups:
   - bar
@@ -18,12 +13,21 @@ tasks:
 - name: write_file
   image: ubuntu:20.04
   run: |
-    echo "${file_contents}" > /tmp/run/bar.txt
+    echo "${hello}" > /tmp/run/bar.txt
+    echo "Hello is ${hello}"
+    echo "input_1 is "${input_1}"
+  env:
+    hello: world
+  load:
+    file:
+      - bar1.txt
+    env:
+      - input_1
   store:
     file:
-      - bar.txt
-  env:
-    file_contents: These are the contents of my file
+      - bar2.txt
+    env:
+      - hello
 
 - name: store_full_message
   image: ubuntu:20.04 

@@ -7,6 +7,23 @@
 // import data.js
 
 var users
+var groupTagify
+var roleTagify
+
+$(document).ready(
+    function() {
+        var groupInput = document.getElementById('group-tags'),
+        groupTagify = new Tagify(groupInput, {
+                id: 'group_tags',
+            }
+        )
+        var roleInput = document.getElementById('role-tags'),
+        roleTagify = new Tagify(roleInput, {
+                id: 'role_tags',
+            }
+        )
+    }
+)
 
 function addGroup() {
     groupName = $("#group-to-add").val()
@@ -51,43 +68,58 @@ function getUsers() {
 
 function render() {
     var prefix = $("#search").val();
-    var tempUsers = JSON.parse(JSON.stringify(users));
     prefix = prefix.toLowerCase();
-    if (prefix != "") {
-        for (var idx = tempUsers.length - 1; idx >= 0; idx--) {
-            if (tempUsers[idx].name.toLowerCase().indexOf(prefix) == -1) {
-                tempUsers.splice(idx, 1)
-            }
-        }
-    }
-    var table = document.getElementById('users-table');
-    var tableHTMLString = '<tr><th class="table-title w3-medium scaffold-text-green"><span class="table-title-text">Username</span></th><th class="table-title w3-medium scaffold-text-green"><span class="table-title-text">Email</span></th><th class="table-title w3-medium scaffold-text-green"><span class="table-title-text">Given Name</span></th><th class="table-title w3-medium scaffold-text-green"><span class="table-title-text">Family Name</span></th><th><div class="w3-round w3-button scaffold-green"></div></th></tr>' +
-        tempUsers.map(function (user) {
-            return '<tr>' +
-                '<td>' + user.username + '</td>' +
-                '<td>' + user.email + '</td>' +
-                '<td>' + user.given_name + '</td>' +
-                '<td>' + user.family_name + '</td>' +
-                '<td class="table-link-cell">' +
-                '<a href="/ui/user/' + user.username + '" class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;"><i class="fa-solid fa-link"></i></a>' +
-                '</td>' +
-                '</tr>'
-        }).join('');
 
-    table.innerHTML = tableHTMLString;
+    if (prefix == "") {
+        for (let idx = 0; idx < users.users.length; idx++) {
+            let name = users.users[idx].username
+            $(`#users-row-${name}`).removeClass("table-hide")
+            $(`#users-row-${name}`).addClass("table-show")
+        }
+        return
+    }
+
+    for (let idx = 0; idx < users.users.length; idx++) {
+        let name = users.users[idx].username
+        if (name.toLowerCase().indexOf(prefix) == -1) {
+            $(`#users-row-${name}`).removeClass("table-show")
+            $(`#users-row-${name}`).addClass("table-hide")
+            continue
+        }
+        $(`#users-row-${name}`).removeClass("table-hide")
+        $(`#users-row-${name}`).addClass("table-show")
+    } 
 }
 
 function addUser() {
-    roles = []
-    roleElements = $('.user-role')
-    for (let i = 0; i < roleElements.length; i++) {
-        roles.push($(roleElements[i]).text().trim())
+    // roles = []
+    // roleElements = $('.user-role')
+    // for (let i = 0; i < roleElements.length; i++) {
+    //     roles.push($(roleElements[i]).text().trim())
+    // }
+
+    // groups= []
+    // groupElements = $('.user-group')
+    // for (let i = 0; i < groupElements.length; i++) {
+    //     groups.push($(groupElements[i]).text().trim())
+    // }
+
+    groupData = []
+    if (document.getElementById('group-tags').value != "") {
+        groupData = JSON.parse(document.getElementById('group-tags').value)
+    }
+    groups = []
+    for (var i = 0; i < groupData.length; i++) {
+        groups.push(groupData[i]["value"])
     }
 
-    groups= []
-    groupElements = $('.user-group')
-    for (let i = 0; i < groupElements.length; i++) {
-        groups.push($(groupElements[i]).text().trim())
+    roleData = []
+    if (document.getElementById('role-tags').value != "") {
+        roleData = JSON.parse(document.getElementById('role-tags').value)
+    }
+    roles = []
+    for (var i = 0; i < roleData.length; i++) {
+        roles.push(roleData[i]["value"])
     }
 
     data = {
