@@ -27,15 +27,15 @@ function render() {
     prefix = prefix.toLowerCase();
     
     if (prefix == "") {
-        for (let idx = 0; idx < cascades.cascades.length; idx++) {
-            let name = cascades.cascades[idx].name
+        for (let idx = 0; idx < cascades.length; idx++) {
+            let name = cascades[idx].name
             $(`#cascades-row-${name}`).removeClass("table-hide")
             $(`#cascades-row-${name}`).addClass("table-show")
         }
         return
     }
-    for (let idx = 0; idx < cascades.cascades.length; idx++) {
-        let name = cascades.cascades[idx].name
+    for (let idx = 0; idx < cascades.length; idx++) {
+        let name = cascades[idx].name
         if (name.toLowerCase().indexOf(prefix) == -1) {
             $(`#cascades-row-${name}`).removeClass("table-show")
             $(`#cascades-row-${name}`).addClass("table-hide")

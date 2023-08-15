@@ -1,8 +1,8 @@
 cascade: foo
 display: []
-finished: '2023-08-14T21:22:12Z'
+finished: ''
 number: 2
-output: exit status 125
-started: '2023-08-14T21:22:12Z'
-status: error
+output: ''
+started: ''
+status: waiting
 task: write_file

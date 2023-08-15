@@ -71,16 +71,16 @@ function render() {
     prefix = prefix.toLowerCase();
 
     if (prefix == "") {
-        for (let idx = 0; idx < users.users.length; idx++) {
-            let name = users.users[idx].username
+        for (let idx = 0; idx < users.length; idx++) {
+            let name = users[idx].username
             $(`#users-row-${name}`).removeClass("table-hide")
             $(`#users-row-${name}`).addClass("table-show")
         }
         return
     }
 
-    for (let idx = 0; idx < users.users.length; idx++) {
-        let name = users.users[idx].username
+    for (let idx = 0; idx < users.length; idx++) {
+        let name = users[idx].username
         if (name.toLowerCase().indexOf(prefix) == -1) {
             $(`#users-row-${name}`).removeClass("table-show")
             $(`#users-row-${name}`).addClass("table-hide")

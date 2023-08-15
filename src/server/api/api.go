@@ -111,7 +111,8 @@ func GetAllCascades(ctx *gin.Context) {
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			ctx.JSON(http.StatusNoContent, gin.H{"cascades": []interface{}{}})
+			ctx.JSON(http.StatusNoContent, []interface{}{})
+			return
 		}
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
@@ -130,7 +131,7 @@ func GetAllCascades(ctx *gin.Context) {
 		cascadesOut = append(cascadesOut, *c)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"cascades": cascadesOut})
+	ctx.JSON(http.StatusOK, cascadesOut)
 }
 
 // Get a cascade by its name
@@ -216,7 +217,8 @@ func GetAllDataStores(ctx *gin.Context) {
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			ctx.JSON(http.StatusNoContent, gin.H{"datastores": []interface{}{}})
+			ctx.JSON(http.StatusNoContent, []interface{}{})
+			return
 		}
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
@@ -239,7 +241,7 @@ func GetAllDataStores(ctx *gin.Context) {
 		datastoresOut = append(datastoresOut, *d)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"datastores": datastoresOut})
+	ctx.JSON(http.StatusOK, datastoresOut)
 }
 
 // Get a datastore by name
@@ -350,7 +352,8 @@ func GetAllStates(ctx *gin.Context) {
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			ctx.JSON(http.StatusNoContent, gin.H{"states": []interface{}{}})
+			ctx.JSON(http.StatusNoContent, []interface{}{})
+			return
 		}
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
@@ -371,7 +374,7 @@ func GetAllStates(ctx *gin.Context) {
 		statesOut = append(statesOut, *s)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"states": statesOut})
+	ctx.JSON(http.StatusOK, statesOut)
 }
 
 func GetStateByNames(ctx *gin.Context) {
@@ -481,7 +484,7 @@ func GetAllInputs(ctx *gin.Context) {
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			ctx.JSON(http.StatusNoContent, gin.H{"inputs": []interface{}{}})
+			ctx.JSON(http.StatusNoContent, []interface{}{})
 		}
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
@@ -502,7 +505,7 @@ func GetAllInputs(ctx *gin.Context) {
 		inputsOut = append(inputsOut, *i)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"inputs": inputsOut})
+	ctx.JSON(http.StatusOK, inputsOut)
 }
 
 func GetInputByNames(ctx *gin.Context) {
@@ -630,7 +633,8 @@ func GetAllTasks(ctx *gin.Context) {
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			ctx.JSON(http.StatusNoContent, gin.H{"tasks": []interface{}{}})
+			ctx.JSON(http.StatusNoContent, []interface{}{})
+			return
 		}
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
@@ -651,7 +655,7 @@ func GetAllTasks(ctx *gin.Context) {
 		tasksOut = append(tasksOut, *t)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"tasks": tasksOut})
+	ctx.JSON(http.StatusOK, tasksOut)
 }
 
 func GetTaskByNames(ctx *gin.Context) {
@@ -737,7 +741,8 @@ func GetAllUsers(ctx *gin.Context) {
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			ctx.JSON(http.StatusNoContent, gin.H{"users": []interface{}{}})
+			ctx.JSON(http.StatusNoContent, []interface{}{})
+			return
 		}
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
@@ -748,7 +753,7 @@ func GetAllUsers(ctx *gin.Context) {
 		usersOut[idx] = *u
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"users": usersOut})
+	ctx.JSON(http.StatusOK, usersOut)
 }
 
 func GetUserByUsername(ctx *gin.Context) {
@@ -1096,11 +1101,11 @@ func GetAllContainers(ctx *gin.Context) {
 				logger.Errorf("", "Error reading body: %s", err.Error())
 				continue
 			}
-			var data map[string][]string
+			var data []string
 			json.Unmarshal(body, &data)
 
-			if len(data["containers"]) > 0 {
-				available[fmt.Sprintf("%s:%d", n.Host, n.WSPort)] = data["containers"]
+			if len(data) > 0 {
+				available[fmt.Sprintf("%s:%d", n.Host, n.WSPort)] = data
 			}
 			resp.Body.Close()
 		}
@@ -1187,19 +1192,19 @@ func GetRunState(ctx *gin.Context) {
 	runName := fmt.Sprintf("%s.%s.%s", cn, tn, n)
 	if container.CurrentRun.Name == runName {
 		logger.Debugf("", "Run %s is currently running", runName)
-		ctx.JSON(http.StatusOK, gin.H{"state": container.CurrentRun.State})
+		ctx.JSON(http.StatusOK, container.CurrentRun.State)
 		return
 	}
 	for _, r := range worker.RunQueue {
 		if r.Name == runName {
 			logger.Debugf("", "Run %s is waiting in queue", runName)
-			ctx.JSON(http.StatusOK, gin.H{"state": r.State})
+			ctx.JSON(http.StatusOK, r.State)
 			return
 		}
 	}
 	if r, ok := container.CompletedRuns[runName]; ok {
 		logger.Debugf("", "Run %s is completed", runName)
-		ctx.JSON(http.StatusOK, gin.H{"state": r.State})
+		ctx.JSON(http.StatusOK, r.State)
 		delete(container.CompletedRuns, runName)
 		return
 	}
@@ -1311,7 +1316,7 @@ func GetAvailableContainers(ctx *gin.Context) {
 		}
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"containers": container.LastRun})
+	ctx.JSON(http.StatusOK, container.LastRun)
 }
 
 // HELPERS

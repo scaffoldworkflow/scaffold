@@ -81,7 +81,7 @@ func getJSON(p auth.ProfileObj, uri, object string) []byte {
 }
 
 func listCascades(data []byte) {
-	var cascades map[string][]objects.Cascade
+	var cascades []objects.Cascade
 
 	err := json.Unmarshal(data, &cascades)
 	if err != nil {
@@ -90,14 +90,14 @@ func listCascades(data []byte) {
 
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
 	fmt.Fprintln(w, "NAME \tVERSION \tGROUPS \tCREATED \tUPDATED \t")
-	for _, c := range cascades["cascades"] {
+	for _, c := range cascades {
 		fmt.Fprintln(w, fmt.Sprintf("%s  \t%s \t%s \t%s \t%s ", c.Name, c.Version, strings.Join(c.Groups, ","), c.Created, c.Updated))
 	}
 	w.Flush()
 }
 
 func listDataStores(data []byte) {
-	var datastores map[string][]objects.DataStore
+	var datastores []objects.DataStore
 
 	err := json.Unmarshal(data, &datastores)
 	if err != nil {
@@ -106,14 +106,14 @@ func listDataStores(data []byte) {
 
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
 	fmt.Fprintln(w, "NAME \tCREATED \tUPDATED ")
-	for _, d := range datastores["datastores"] {
+	for _, d := range datastores {
 		fmt.Fprintln(w, fmt.Sprintf("%s \t%s \t%s ", d.Name, d.Created, d.Updated))
 	}
 	w.Flush()
 }
 
 func listStates(data []byte, context string) {
-	var states map[string][]objects.State
+	var states []objects.State
 
 	err := json.Unmarshal(data, &states)
 	if err != nil {
@@ -122,7 +122,7 @@ func listStates(data []byte, context string) {
 
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
 	fmt.Fprintln(w, "TASK \tCASCADE \tSTATUS \tSTARTED \tFINISHED \t")
-	for _, s := range states["states"] {
+	for _, s := range states {
 		if s.Cascade == context {
 			fmt.Fprintln(w, fmt.Sprintf("%s \t%s \t%s \t%s \t%s ", s.Task, s.Cascade, s.Status, s.Started, s.Finished))
 		}
@@ -131,7 +131,7 @@ func listStates(data []byte, context string) {
 }
 
 func listTasks(data []byte, context string) {
-	var tasks map[string][]objects.Task
+	var tasks []objects.Task
 
 	err := json.Unmarshal(data, &tasks)
 	if err != nil {
@@ -143,7 +143,7 @@ func listTasks(data []byte, context string) {
 
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
 	fmt.Fprintln(w, "NAME \tCASCADE \tIMAGE \tRUN NUMBER \tUPDATED \t")
-	for _, t := range tasks["tasks"] {
+	for _, t := range tasks {
 		if t.Cascade == context {
 			fmt.Fprintln(w, fmt.Sprintf("%s \t%s \t%s \t%d \t%s ", t.Name, t.Cascade, t.Image, t.RunNumber, t.Updated))
 		}

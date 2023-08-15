@@ -188,10 +188,10 @@ func Run() {
 									continue
 								}
 								var s state.State
-								var temp map[string]map[string]interface{}
+								var temp map[string]interface{}
 								json.Unmarshal(body, &temp)
 
-								tempBytes, _ := json.Marshal(temp["state"])
+								tempBytes, _ := json.Marshal(temp)
 								json.Unmarshal(tempBytes, &s)
 
 								state.UpdateStateByNames(c.Name, t.Name, &s)
@@ -239,12 +239,12 @@ func Run() {
 									continue
 								}
 								var s state.State
-								var temp map[string]map[string]interface{}
+								var temp map[string]interface{}
 								json.Unmarshal(body, &temp)
 
 								logger.Debugf("", "Raw worker state: %v", temp)
 
-								tempBytes, _ := json.Marshal(temp["state"])
+								tempBytes, _ := json.Marshal(temp)
 								json.Unmarshal(tempBytes, &s)
 
 								logger.Debugf("", "Got state from worker: %v", &s)
