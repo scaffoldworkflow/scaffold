@@ -105,6 +105,7 @@ function toggleCurrentLegend() {
 
 function updateDatastore() {
     $("#current-state-div").empty()
+    theme = localStorage.getItem('scaffold-theme');
 
     for (let [key, value] of Object.entries(datastore.env)) {
         shouldShow = true
@@ -120,10 +121,10 @@ function updateDatastore() {
         if (!shouldShow) {
             continue
         }
-        html = `<div class="w3-bar-item light theme-base w3-border-bottom theme-border-light">
+        html = `<div class="w3-bar-item ${theme} theme-base w3-border-bottom theme-border-light">
             <b>${key}</b>
         </div>
-        <div class="w3-bar-item light theme-light w3-border-bottom theme-border-base">
+        <div class="w3-bar-item ${theme} theme-light w3-border-bottom theme-border-base">
             ${value}
         </div>`
         $("#current-state-div").append(html)

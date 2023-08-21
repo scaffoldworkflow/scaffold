@@ -44,8 +44,9 @@ function getInputs(trigger) {
 
 function loadInputData() {
     $("#current-input-div").empty()
+    theme = localStorage.getItem('scaffold-theme');
 
-    let html = `<div class="w3-bar-item light scaffold-green w3-border-bottom theme-border-light w3-button" onclick="saveInputs()" >
+    let html = `<div class="w3-bar-item ${theme} scaffold-green w3-border-bottom theme-border-light w3-button" onclick="saveInputs()" >
         <i class="fa-solid fa-floppy-disk" id="save-icon"></i>&nbsp;Save input changes
     </div>`
     $("#current-input-div").append(html)
@@ -53,12 +54,12 @@ function loadInputData() {
     for (let idx = 0; idx < inputs.length; idx++) {
         let i = inputs[idx]
         let value = datastore.env[i.name]
-        let html = `<div class="w3-bar-item light theme-base w3-border-bottom theme-border-light">
+        let html = `<div class="w3-bar-item ${theme} theme-base w3-border-bottom theme-border-light">
             <b>${i.description}</b>
         </div>
-        <div class="w3-bar-item light theme-light w3-border-bottom theme-border-light">
+        <div class="w3-bar-item ${theme} theme-light w3-border-bottom theme-border-light">
             <input
-                class="w3-input"
+                class="w3-input ${theme} theme-light"
                 type="${i.type}"
                 id="${i.name}"
             >

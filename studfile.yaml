@@ -9,28 +9,63 @@
     - linux
     - openbsd
     - windows
-
+  platforms:
+    - linux/amd64
+    - linux/arm64
+    - linux/arm/v7
+  image_version: 0.1.0
+  cli_version: 0.1.0
+set-server-version:
+  help: Update server version constant from VERSION file
+  cmd: |
+    version = ?(cat src/server/VERSION).strip()
+    sed -i 's/const VERSION = ".*"/const VERSION = "{version}"/' src/server/constants/constants.go
+set-cli-version:
+  help: Update server version constant from VERSION file
+  cmd: |
+    version = ?(cat src/client/VERSION).strip()
+    sed -i 's/const VERSION = ".*"/const VERSION = "{version}"/' src/client/constants/constants.go
 build-docker-helpers:
   help: Build Helper Scaffold Docker image
   cmd: |
+    stud set-server-version
+
     docker build -t scaffold-build -f helpers/Dockerfile.build .
     docker build -t scaffold-run -f helpers/Dockerfile.run .
 build-docker:
   help: Build Scaffold Docker image
   cmd: |
+    stud set-server-version
     wsc compile
     docker build -t scaffold -f src/server/Dockerfile .
 build-docker-test:
   help: Build Scaffold test Docker image
   cmd: |
+    stud set-server-version
     wsc compile
     docker build -t scaffold:test -f src/server/test.Dockerfile .
+publish:
+  help: Publish Scaffold image
+  cmd: |
+    stud set-server-version
+    
+    wsc compile
+
+    platform_string = ','.join(platforms)
+    version = ?(cat src/server/VERSION).strip()
+
+    print(f"Running build command: docker buildx build --platform {platform_string} -t {docker_org}/scaffold:{version} -f src/server/Dockerfile --push .")
+    docker buildx build --platform {platform_string} -t {docker_org}/scaffold:{version} -f src/server/Dockerfile --push .
+
+    print('Done!')
 build-cli:
   help: Build Scaffold CLI
   cmd: |
     # Clean up environment
     stud clean
     mkdir -p dist
+
+    stud set-cli-version
 
     # Enter source directory for CLI
     cd src/client
@@ -56,25 +91,6 @@ build-cli:
     
     # Pop back up into root directory
     cd ../..
-build-local:
-  help: Build Scaffold local binaries
-  cmd: |
-    stud clean
-    mkdir dist
-
-    cd src/server
-    env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -v -o scaffold
-    mkdir ../../dist/scaffold
-    mv scaffold ../../dist/scaffold/scaffold
-    cp launch.sh ../../dist/scaffold/launch-scaffold.sh
-    chmod +x ../../dist/scaffold/launch-scaffold.sh
-    cd ../..
-
-    wsc compile
-    cp -r src/server/ui-dist/templates dist/templates
-    cp -r src/server/ui-dist/static dist/static
-
-    print('Done!')
 clean:
   help: Remove build and test artifacts
   cmd: |

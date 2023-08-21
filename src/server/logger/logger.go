@@ -11,6 +11,7 @@ import (
 )
 
 var LogLevel = 0
+var LogFormat = constants.LOG_FORMAT_CONSOLE
 
 var ConsoleLogFormatter = func(param gin.LogFormatterParams) string {
 	if param.Latency > time.Minute {
@@ -134,6 +135,15 @@ func SetLevel(level string) {
 	LogLevel = levelInt
 }
 
+func SetFormat(format string) {
+	formats := []string{constants.LOG_FORMAT_CONSOLE, constants.LOG_FORMAT_JSON}
+	formatInt := sliceIndex(formats, format)
+	if formatInt == -1 {
+		Fatalf("Unknown log level %s", format)
+	}
+	LogFormat = format
+}
+
 func Logf(level, formatter, timestamp, format string, args ...interface{}) string {
 	if formatter == constants.LOG_FORMAT_JSON {
 		log := map[string]interface{}{
@@ -168,7 +178,8 @@ func Debug(timestamp, message string) {
 		if timestamp == "" {
 			timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 		}
-		fmt.Printf("%s[DEBUG  ]%s [%s] :: %s\n", constants.COLOR_CYAN, constants.COLOR_NONE, timestamp, message)
+		fmt.Print(Logf(constants.LOG_LEVEL_DEBUG, LogFormat, timestamp, message))
+		// fmt.Printf("%s[DEBUG  ]%s [%s] :: %s\n", constants.COLOR_CYAN, constants.COLOR_NONE, timestamp, message)
 	}
 }
 
@@ -177,7 +188,8 @@ func Debugf(timestamp, format string, args ...interface{}) {
 		if timestamp == "" {
 			timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 		}
-		fmt.Printf("%s[DEBUG  ]%s [%s] :: %s\n", constants.COLOR_CYAN, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
+		fmt.Print(Logf(constants.LOG_LEVEL_DEBUG, LogFormat, timestamp, format, args...))
+		// fmt.Printf("%s[DEBUG  ]%s [%s] :: %s\n", constants.COLOR_CYAN, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
 	}
 }
 
@@ -196,7 +208,8 @@ func Error(timestamp, message string) {
 		if timestamp == "" {
 			timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 		}
-		fmt.Printf("%s[ERROR  ]%s [%s] :: %s\n", constants.COLOR_RED, constants.COLOR_NONE, timestamp, message)
+		fmt.Print(Logf(constants.LOG_LEVEL_ERROR, LogFormat, timestamp, message))
+		// fmt.Printf("%s[ERROR  ]%s [%s] :: %s\n", constants.COLOR_RED, constants.COLOR_NONE, timestamp, message)
 	}
 }
 
@@ -205,7 +218,8 @@ func Errorf(timestamp, format string, args ...interface{}) {
 		if timestamp == "" {
 			timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 		}
-		fmt.Printf("%s[ERROR  ]%s [%s] :: %s\n", constants.COLOR_RED, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
+		fmt.Print(Logf(constants.LOG_LEVEL_ERROR, LogFormat, timestamp, format, args...))
+		// fmt.Printf("%s[ERROR  ]%s [%s] :: %s\n", constants.COLOR_RED, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
 	}
 }
 
@@ -224,7 +238,8 @@ func Fatal(timestamp, message string) {
 		if timestamp == "" {
 			timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 		}
-		fmt.Printf("%s[FATAL  ]%s [%s] :: %s\n", constants.COLOR_RED, constants.COLOR_NONE, timestamp, message)
+		fmt.Print(Logf(constants.LOG_LEVEL_FATAL, LogFormat, timestamp, message))
+		// fmt.Printf("%s[FATAL  ]%s [%s] :: %s\n", constants.COLOR_RED, constants.COLOR_NONE, timestamp, message)
 		os.Exit(1)
 	}
 }
@@ -234,7 +249,8 @@ func Fatalf(timestamp, format string, args ...interface{}) {
 		if timestamp == "" {
 			timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 		}
-		fmt.Printf("%s[FATAL  ]%s [%s] :: %s\n", constants.COLOR_RED, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
+		fmt.Print(Logf(constants.LOG_LEVEL_FATAL, LogFormat, timestamp, format, args...))
+		// fmt.Printf("%s[FATAL  ]%s [%s] :: %s\n", constants.COLOR_RED, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
 		os.Exit(1)
 	}
 }
@@ -254,7 +270,8 @@ func Info(timestamp, message string) {
 		if timestamp == "" {
 			timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 		}
-		fmt.Printf("%s[INFO   ]%s [%s] :: %s\n", constants.COLOR_GREEN, constants.COLOR_NONE, timestamp, message)
+		fmt.Print(Logf(constants.LOG_LEVEL_INFO, LogFormat, timestamp, message))
+		// fmt.Printf("%s[INFO   ]%s [%s] :: %s\n", constants.COLOR_GREEN, constants.COLOR_NONE, timestamp, message)
 	}
 }
 
@@ -263,7 +280,8 @@ func Infof(timestamp, format string, args ...interface{}) {
 		if timestamp == "" {
 			timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 		}
-		fmt.Printf("%s[INFO   ]%s [%s] :: %s\n", constants.COLOR_GREEN, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
+		fmt.Print(Logf(constants.LOG_LEVEL_INFO, LogFormat, timestamp, format, args...))
+		// fmt.Printf("%s[INFO   ]%s [%s] :: %s\n", constants.COLOR_GREEN, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
 	}
 }
 
@@ -282,7 +300,8 @@ func Success(timestamp, message string) {
 		if timestamp == "" {
 			timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 		}
-		fmt.Printf("%s[SUCCESS]%s [%s] :: %s\n", constants.COLOR_GREEN, constants.COLOR_NONE, timestamp, message)
+		fmt.Print(Logf(constants.LOG_LEVEL_SUCCESS, LogFormat, timestamp, message))
+		// fmt.Printf("%s[SUCCESS]%s [%s] :: %s\n", constants.COLOR_GREEN, constants.COLOR_NONE, timestamp, message)
 	}
 }
 
@@ -291,7 +310,8 @@ func Successf(timestamp, format string, args ...interface{}) {
 		if timestamp == "" {
 			timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 		}
-		fmt.Printf("%s[SUCCESS]%s [%s] :: %s\n", constants.COLOR_GREEN, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
+		fmt.Print(Logf(constants.LOG_LEVEL_SUCCESS, LogFormat, timestamp, format, args...))
+		// fmt.Printf("%s[SUCCESS]%s [%s] :: %s\n", constants.COLOR_GREEN, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
 	}
 }
 
@@ -310,7 +330,8 @@ func Trace(timestamp, message string) {
 		if timestamp == "" {
 			timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 		}
-		fmt.Printf("%s[TRACE  ]%s [%s] :: %s\n", constants.COLOR_BLUE, constants.COLOR_NONE, timestamp, message)
+		fmt.Print(Logf(constants.LOG_LEVEL_TRACE, LogFormat, timestamp, message))
+		// fmt.Printf("%s[TRACE  ]%s [%s] :: %s\n", constants.COLOR_BLUE, constants.COLOR_NONE, timestamp, message)
 	}
 }
 
@@ -319,7 +340,8 @@ func Tracef(timestamp, format string, args ...interface{}) {
 		if timestamp == "" {
 			timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 		}
-		fmt.Printf("%s[TRACE  ]%s [%s] :: %s\n", constants.COLOR_BLUE, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
+		fmt.Print(Logf(constants.LOG_LEVEL_TRACE, LogFormat, timestamp, format, args...))
+		// fmt.Printf("%s[TRACE  ]%s [%s] :: %s\n", constants.COLOR_BLUE, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
 	}
 }
 
@@ -338,7 +360,8 @@ func Warn(timestamp, message string) {
 		if timestamp == "" {
 			timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 		}
-		fmt.Printf("%s[WARN   ]%s [%s] :: %s\n", constants.COLOR_YELLOW, constants.COLOR_NONE, timestamp, message)
+		fmt.Print(Logf(constants.LOG_LEVEL_WARN, LogFormat, timestamp, message))
+		// fmt.Printf("%s[WARN   ]%s [%s] :: %s\n", constants.COLOR_YELLOW, constants.COLOR_NONE, timestamp, message)
 	}
 }
 
@@ -347,7 +370,8 @@ func Warnf(timestamp, format string, args ...interface{}) {
 		if timestamp == "" {
 			timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 		}
-		fmt.Printf("%s[WARN   ]%s [%s] :: %s\n", constants.COLOR_YELLOW, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
+		fmt.Print(Logf(constants.LOG_LEVEL_WARN, LogFormat, timestamp, format, args...))
+		// fmt.Printf("%s[WARN   ]%s [%s] :: %s\n", constants.COLOR_YELLOW, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
 	}
 }
 

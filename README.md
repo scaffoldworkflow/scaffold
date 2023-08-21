@@ -353,6 +353,10 @@ Infrastructure management is an interesting problem to tackle. Many organization
         - [x] Task REST testing
         - [x] >= 50% test coverage
 
+    - __Logging__
+        
+        - [ ] Configure log format
+
 ### v0.2.0
 
 - **Server**

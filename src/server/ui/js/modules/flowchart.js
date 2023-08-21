@@ -255,13 +255,15 @@ function renderNodes(cardID) {
         
     } while (tasks == null || states == null)
 
+    theme = localStorage.getItem('scaffold-theme');
+
     for (let i = 0; i < node_data.length; i++) {
         current_status = getStatusFromName(node_data[i].name, states)
         color = state_colors[current_status]
         dependedOn = checkIfDependedOn(node_data[i].name, tasks)
         dependsOn = checkIfDependsOn(node_data[i].name, tasks)
         html = `<div 
-            class="w3-round w3-border theme-border-light ${color} light"
+            class="w3-round w3-border theme-border-light ${color} ${theme}"
             style="cursor:pointer;width:${node_data[i].w}px;height:${h}px;top:${node_data[i].y-hh}px;left:${node_data[i].x-node_data[i].hw}px;position:absolute;text-align:center;vertical-align:middle;line-height:${h}px;z-index:995;"
             id="${node_data[i].name}"
             ondblclick="changeStateName('${node_data[i].name}')">

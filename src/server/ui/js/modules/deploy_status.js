@@ -27,6 +27,8 @@ function updateStatuses() {
         success: function (result) {
             tableInnerHTML = '<tr>' +
                 '<th class="table-title w3-medium scaffold-text-green">' +
+                '</th>' +
+                '<th class="table-title w3-medium scaffold-text-green">' +
                     '<span class="table-title-text">Service</span>' +
                 '</th>' +
                 '<th class="table-title w3-medium scaffold-text-green">' +
@@ -43,15 +45,17 @@ function updateStatuses() {
             for (let i = 0; i < result.nodes.length; i++) {
                 serviceStatusColor = healthColors[result.nodes[i].status]
                 serviceStatusText = healthText[result.nodes[i].status]
+                serviceStatusIcon = healthIcons[result.nodes[i].status]
                 serviceStatusVersion = result.nodes[i].version
                 if (result.nodes[i].status != 'healthy') {
                     is_healthy = false
                     down_count += 1
                 }
                 tableInnerHTML += '<tr>' +
+                    '<td class="status-table-icon ' + serviceStatusColor + ' ' + serviceStatusIcon + '">' + '</td>' +
                     '<td>' + result.nodes[i].name + '</td>' +
-                    '<td class="' + serviceStatusColor + '">' + serviceStatusText + '</td>' +
-                    '<td class="' + serviceStatusColor + '">' + serviceStatusVersion + '</td>' +
+                    '<td class="status-table-status">' + serviceStatusText + '</td>' +
+                    '<td>' + serviceStatusVersion + '</td>' +
                 '</tr>'
             }
             $("#status-table").html(tableInnerHTML)
@@ -65,6 +69,18 @@ function updateStatuses() {
             }
         },
         error: function (result) {
+            tableElements = $('.status-table-icon')
+            for (let i = 0; i < tableElements.length; i++) {
+                $(tableElements[i]).removeClass(allHealthClasses)
+                $(tableElements[i]).addClass(healthColors['unknown'])
+                $(tableElements[i]).addClass(healthIcons['unknown'])
+            }
+
+            tableElements = $('.status-table-status')
+            for (let i = 0; i < tableElements.length; i++) {
+                $(tableElements[i]).text(healthText['unknown'])
+            }
+
             $("#status-icon").removeClass(allHealthClasses)
             $("#status-icon").addClass(healthIcons["unknown"] + " " + healthColors["unknown"])
         }

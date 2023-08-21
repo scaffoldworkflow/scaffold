@@ -88,6 +88,7 @@ func LoadConfig() {
 		Protocol:          "http",
 		WSPort:            8080,
 		LogLevel:          constants.LOG_LEVEL_INFO,
+		LogFormat:         constants.LOG_FORMAT_CONSOLE,
 		BaseURL:           "http://localhost:2997",
 		HeartbeatInterval: 500,
 		HealthCheckLimit:  10,

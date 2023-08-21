@@ -1,3 +1,5 @@
+// import theme.js
+
 function doReset() {
     password = $("#password").val();
     confirm_password = $("#confirm_password").val();

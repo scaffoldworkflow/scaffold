@@ -26,6 +26,7 @@ func run(ctx context.Context, channel chan struct{}) {
 
 	config.LoadConfig()
 	logger.SetLevel(config.Config.LogLevel)
+	logger.SetFormat(config.Config.LogFormat)
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: config.Config.TLSSkipVerify}
 
