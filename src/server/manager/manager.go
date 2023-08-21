@@ -483,6 +483,15 @@ func SetDependsState(c *cascade.Cascade, tn string) {
 	}
 }
 
+//
+//	@Summary		Get status of all nodes
+//	@Description	Get status from all nodes
+//	@tags			manager
+//	@tags			health
+//	@accept			json
+//	@produce		json
+//	@Success		200	{object}	object
+//	@Router			/health/status [get]
 func GetStatus(ctx *gin.Context) {
 	nodes := make([]map[string]string, 0)
 	managerStatus := "healthy"

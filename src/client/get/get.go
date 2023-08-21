@@ -41,7 +41,7 @@ func DoGet(profile, object, context string) {
 	data := getJSON(p, uri, object)
 	if len(parts) == 2 {
 		logger.Debugf("", "data is individual objects, editing JSON response")
-		data = []byte(fmt.Sprintf(`{"%ss":[%s]}`, parts[0], string(data)))
+		data = []byte(fmt.Sprintf(`[%s]`, string(data)))
 	}
 	logger.Debugf("", "JSON response: %s", string(data))
 

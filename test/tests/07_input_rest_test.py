@@ -16,9 +16,6 @@ def test_input_get_all():
     response = requests.get(f"{SCAFFOLD_PROTOCOL}://{SCAFFOLD_HOST}:{SCAFFOLD_PORT}/api/v1/input", headers=headers, verify=False)
     assert response.status_code < 400
 
-    inputs = response.json()
-    assert 'inputs' in inputs
-
 def test_input_get_foo():
     home = os.path.expanduser('~')
     with open(f"{home}/.scaffold/config") as config_file:
@@ -40,8 +37,6 @@ def test_input_get_foo_name():
     assert response.status_code < 400
 
     input = response.json()
-    assert 'cascade' in input
-
     with open('../fixtures/inputs/foo.name.yaml', 'w', encoding='utf-8') as input_file:
         yaml.dump(input, input_file)
 

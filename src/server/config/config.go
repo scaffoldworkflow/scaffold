@@ -19,6 +19,7 @@ type ConfigObject struct {
 	Protocol          string          `json:"protocol" env:"PROTOCOL"`
 	WSPort            int             `json:"ws_port" env:"WS_PORT"`
 	LogLevel          string          `json:"log_level" env:"LOG_LEVEL"`
+	LogFormat         string          `json:"log_format" env:"LOG_FORMAT"`
 	BaseURL           string          `json:"base_url" env:"BASE_URL"`
 	Admin             UserObject      `json:"admin" env:"ADMIN"`
 	DB                DBObject        `json:"db" env:"DB"`

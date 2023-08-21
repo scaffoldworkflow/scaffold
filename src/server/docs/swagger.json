@@ -1,0 +1,2033 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Scaffold workflow tool",
+        "title": "Scaffold Swagger API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "John Carter",
+            "url": "https://github.com/jfcarter2358/scaffold/issues",
+            "email": "jfcarter2358@gmail.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/license/mit/"
+        },
+        "version": "2.0"
+    },
+    "paths": {
+        "/api/v1/cascade": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get all cascades",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "cascade"
+                ],
+                "summary": "Get all cascades",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/cascade.Cascade"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Create a cascade from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "cascade"
+                ],
+                "summary": "Create a cascade",
+                "parameters": [
+                    {
+                        "description": "Cascade Data",
+                        "name": "cascade",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/cascade.Cascade"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cascade/{cascade_name}": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get a cascade by its name",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "cascade"
+                ],
+                "summary": "Get a cascade",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/cascade.Cascade"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Update a cascade from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "cascade"
+                ],
+                "summary": "Update a cascade",
+                "parameters": [
+                    {
+                        "description": "Cascade Data",
+                        "name": "cascade",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/cascade.Cascade"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Delete a cascade by its name",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "cascade"
+                ],
+                "summary": "Delete a cascade",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/datastore": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get all datastores",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "datastore"
+                ],
+                "summary": "Get all datastores",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/datastore.DataStore"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Create a datastore from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "datastore"
+                ],
+                "summary": "Create a datastore",
+                "parameters": [
+                    {
+                        "description": "DataStore Data",
+                        "name": "datastore",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/datastore.DataStore"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/datastore/{datastore_name}": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get a datastore by its name",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "datastore"
+                ],
+                "summary": "Get a datastore",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/datastore.DataStore"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Update a datastore from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "datastore"
+                ],
+                "summary": "Update a datastore",
+                "parameters": [
+                    {
+                        "description": "DataStore Data",
+                        "name": "datastore",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/datastore.DataStore"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Delete a datastore by its name",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "datastore"
+                ],
+                "summary": "Delete a datastore",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/input": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get all inputs",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "input"
+                ],
+                "summary": "Get all inputs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/input.Input"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Create a input from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "input"
+                ],
+                "summary": "Create a input",
+                "parameters": [
+                    {
+                        "description": "Input Data",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/input.Input"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/input/{cascade_name}": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get inputs by their cascade",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "input"
+                ],
+                "summary": "Get inputs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/input.Input"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Delete inputs by their cascade",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "input"
+                ],
+                "summary": "Delete inputs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/input/{cascade_name}/{input_name}": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get a input by its name and its cascade",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "input"
+                ],
+                "summary": "Get a input",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/input.Input"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Update a input from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "input"
+                ],
+                "summary": "Update a input",
+                "parameters": [
+                    {
+                        "description": "Input Data",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/input.Input"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/input/{input_name}": {
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Delete a input by its name and its cascade",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "input"
+                ],
+                "summary": "Delete a input",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/state": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get all states",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "state"
+                ],
+                "summary": "Get all states",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/state.State"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Create a state from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "state"
+                ],
+                "summary": "Create a state",
+                "parameters": [
+                    {
+                        "description": "State Data",
+                        "name": "state",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/state.State"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/state/{cascade_name}": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get states by their cascade",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "state"
+                ],
+                "summary": "Get states",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/state.State"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Delete states by their cascade",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "state"
+                ],
+                "summary": "Delete states",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/state/{cascade_name}/{state_name}": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get a state by its name and its cascade",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "state"
+                ],
+                "summary": "Get a state",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/state.State"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Update a state from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "state"
+                ],
+                "summary": "Update a state",
+                "parameters": [
+                    {
+                        "description": "State Data",
+                        "name": "state",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/state.State"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Delete a state by its name and its cascade",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "state"
+                ],
+                "summary": "Delete a state",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/task": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get all tasks",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "task"
+                ],
+                "summary": "Get all tasks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/task.Task"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Create a task from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "task"
+                ],
+                "summary": "Create a task",
+                "parameters": [
+                    {
+                        "description": "Task Data",
+                        "name": "task",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/task.Task"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/task/{cascade_name}": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get tasks by their cascade",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "task"
+                ],
+                "summary": "Get tasks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/task.Task"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Delete tasks by their cascade",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "task"
+                ],
+                "summary": "Delete tasks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/task/{cascade_name}/{task_name}": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get a task by its name and its cascade",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "task"
+                ],
+                "summary": "Get a task",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/task.Task"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Update a task from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "task"
+                ],
+                "summary": "Update a task",
+                "parameters": [
+                    {
+                        "description": "Task Data",
+                        "name": "task",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/task.Task"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/task/{task_name}": {
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Delete a task by its name and its cascade",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "task"
+                ],
+                "summary": "Delete a task",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get all users",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "user"
+                ],
+                "summary": "Get all users",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/user.User"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Create a user from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "user"
+                ],
+                "summary": "Create a user",
+                "parameters": [
+                    {
+                        "description": "User Data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/{user_name}": {
+            "put": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Update a user from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "user"
+                ],
+                "summary": "Update a user",
+                "parameters": [
+                    {
+                        "description": "User Data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/{username}": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get a user by its username",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "user"
+                ],
+                "summary": "Get a user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/user.User"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Delete a user by its username",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "user"
+                ],
+                "summary": "Delete a user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/token/{username}/{token_name}": {
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Generate an API token for a user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "user"
+                ],
+                "summary": "Generate API Token",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Revoke an API token for a user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "user"
+                ],
+                "summary": "Revoke API Token",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/health/available": {
+            "get": {
+                "description": "Get status from node succeeding if not containers are running",
+                "tags": [
+                    "worker",
+                    "health"
+                ],
+                "summary": "Check if a worker node is available",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "503": {
+                        "description": "Service Unavailable"
+                    }
+                }
+            }
+        },
+        "/health/healthy": {
+            "get": {
+                "description": "Get node health",
+                "tags": [
+                    "manager",
+                    "worker",
+                    "health"
+                ],
+                "summary": "Check if a node is healthy",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "503": {
+                        "description": "Service Unavailable"
+                    }
+                }
+            }
+        },
+        "/health/ready": {
+            "get": {
+                "description": "Get node readiness",
+                "tags": [
+                    "manager",
+                    "worker",
+                    "health"
+                ],
+                "summary": "Check if a node is ready",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "503": {
+                        "description": "Service Unavailable"
+                    }
+                }
+            }
+        },
+        "/health/status": {
+            "get": {
+                "description": "Get status from all nodes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "health"
+                ],
+                "summary": "Get status of all nodes",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "cascade.Cascade": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "inputs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/input.Input"
+                    }
+                },
+                "links": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/task.Task"
+                    }
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "datastore.DataStore": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "env": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                }
+            }
+        },
+        "input.Input": {
+            "type": "object",
+            "properties": {
+                "cascade": {
+                    "type": "string"
+                },
+                "default": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "state.State": {
+            "type": "object",
+            "properties": {
+                "cascade": {
+                    "type": "string"
+                },
+                "display": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
+                },
+                "finished": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "integer"
+                },
+                "output": {
+                    "type": "string"
+                },
+                "started": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "task": {
+                    "type": "string"
+                }
+            }
+        },
+        "task.Task": {
+            "type": "object",
+            "properties": {
+                "auto_execute": {
+                    "type": "boolean"
+                },
+                "cascade": {
+                    "type": "string"
+                },
+                "check": {
+                    "$ref": "#/definitions/task.TaskCheck"
+                },
+                "depends_on": {
+                    "$ref": "#/definitions/task.TaskDependsOn"
+                },
+                "env": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "image": {
+                    "type": "string"
+                },
+                "inputs": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "load": {
+                    "$ref": "#/definitions/task.TaskLoadStore"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "run": {
+                    "type": "string"
+                },
+                "run_number": {
+                    "type": "integer"
+                },
+                "should_rm": {
+                    "type": "boolean"
+                },
+                "store": {
+                    "$ref": "#/definitions/task.TaskLoadStore"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "verb": {
+                    "type": "string"
+                }
+            }
+        },
+        "task.TaskCheck": {
+            "type": "object",
+            "properties": {
+                "env": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "image": {
+                    "type": "string"
+                },
+                "inputs": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "interval": {
+                    "type": "integer"
+                },
+                "load": {
+                    "$ref": "#/definitions/task.TaskLoadStore"
+                },
+                "run": {
+                    "type": "string"
+                },
+                "run_number": {
+                    "type": "integer"
+                },
+                "store": {
+                    "$ref": "#/definitions/task.TaskLoadStore"
+                },
+                "updated": {
+                    "type": "string"
+                }
+            }
+        },
+        "task.TaskDependsOn": {
+            "type": "object",
+            "properties": {
+                "always": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "error": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "success": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "task.TaskLoadStore": {
+            "type": "object",
+            "properties": {
+                "env": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "file": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "user.APIToken": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.User": {
+            "type": "object",
+            "properties": {
+                "api_tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/user.APIToken"
+                    }
+                },
+                "created": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "family_name": {
+                    "type": "string"
+                },
+                "given_name": {
+                    "type": "string"
+                },
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "login_token": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "reset_token": {
+                    "type": "string"
+                },
+                "reset_token_created": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

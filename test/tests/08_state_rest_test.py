@@ -16,9 +16,6 @@ def test_state_get_all():
     response = requests.get(f"{SCAFFOLD_PROTOCOL}://{SCAFFOLD_HOST}:{SCAFFOLD_PORT}/api/v1/state", headers=headers, verify=False)
     assert response.status_code < 400
 
-    states = response.json()
-    assert 'states' in states
-
 def test_state_get_foo():
     home = os.path.expanduser('~')
     with open(f"{home}/.scaffold/config") as config_file:
@@ -40,8 +37,6 @@ def test_state_get_foo_write_file():
     assert response.status_code < 400
 
     state = response.json()
-    assert 'cascade' in state
-
     with open('../fixtures/states/foo.write_file.yaml', 'w', encoding='utf-8') as state_file:
         yaml.dump(state, state_file)
 

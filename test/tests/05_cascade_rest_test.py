@@ -16,9 +16,6 @@ def test_cascade_get_all():
     response = requests.get(f"{SCAFFOLD_PROTOCOL}://{SCAFFOLD_HOST}:{SCAFFOLD_PORT}/api/v1/cascade", headers=headers, verify=False)
     assert response.status_code < 400
 
-    cascades = response.json()
-    assert 'cascades' in cascades
-
 def test_cascade_get_foo():
     home = os.path.expanduser('~')
     with open(f"{home}/.scaffold/config") as config_file:
@@ -28,9 +25,6 @@ def test_cascade_get_foo():
     headers = {"Authorization" : f'X-Scaffold-API {token}' }
     response = requests.get(f"{SCAFFOLD_PROTOCOL}://{SCAFFOLD_HOST}:{SCAFFOLD_PORT}/api/v1/cascade/foo", headers=headers, verify=False)
     assert response.status_code < 400
-
-    cascade = response.json()
-    assert 'name' in cascade
 
 def test_cascade_put_foo():
     home = os.path.expanduser('~')

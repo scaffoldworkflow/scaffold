@@ -1,6 +1,6 @@
-created: '2023-08-15T14:09:18Z'
+created: '2023-08-21T16:44:47Z'
 env:
-  MESSAGE: 'Hello, greeting
+  MESSAGE: 'Hello, John Doe
 
     '
   greeting: 'Hello, '
@@ -8,4 +8,4 @@ env:
 files:
 - foo.txt
 name: foo
-updated: '2023-08-15T14:10:20Z'
+updated: '2023-08-21T16:45:57Z'

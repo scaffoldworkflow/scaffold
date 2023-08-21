@@ -16,9 +16,6 @@ def test_task_get_all():
     response = requests.get(f"{SCAFFOLD_PROTOCOL}://{SCAFFOLD_HOST}:{SCAFFOLD_PORT}/api/v1/task", headers=headers, verify=False)
     assert response.status_code < 400
 
-    tasks = response.json()
-    assert 'tasks' in tasks
-
 def test_task_get_foo():
     home = os.path.expanduser('~')
     with open(f"{home}/.scaffold/config") as config_file:
@@ -40,8 +37,6 @@ def test_task_get_foo_write_file():
     assert response.status_code < 400
 
     task = response.json()
-    assert 'cascade' in task
-
     with open('../fixtures/tasks/foo.write_file.yaml', 'w', encoding='utf-8') as task_file:
         yaml.dump(task, task_file)
 

@@ -66,6 +66,17 @@ func run(ctx context.Context, channel chan struct{}) {
 	}
 }
 
+//	@title			Scaffold Swagger API
+//	@version		2.0
+//	@description	Scaffold workflow tool
+//	@termsOfService	http://swagger.io/terms/
+
+//	@contact.name	John Carter
+//	@contact.url	https://github.com/jfcarter2358/scaffold/issues
+//	@contact.email	jfcarter2358@gmail.com
+
+//	@license.name	MIT
+//	@license.url	https://opensource.org/license/mit/
 func main() {
 	channel := make(chan struct{})
 	ctx, _ := context.WithCancel(context.Background())

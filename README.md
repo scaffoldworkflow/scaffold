@@ -325,6 +325,7 @@ Infrastructure management is an interesting problem to tackle. Many organization
 
         - [ ] Setup readthedocs
         - [ ] Write documentation
+        - [x] Swagger docs
 
     -  __Cascade Improvements__
 

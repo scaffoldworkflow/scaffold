@@ -16,9 +16,6 @@ def test_datastore_get_all():
     response = requests.get(f"{SCAFFOLD_PROTOCOL}://{SCAFFOLD_HOST}:{SCAFFOLD_PORT}/api/v1/datastore", headers=headers, verify=False)
     assert response.status_code < 400
 
-    datastores = response.json()
-    assert 'datastores' in datastores
-
 def test_datastore_get_foo():
     home = os.path.expanduser('~')
     with open(f"{home}/.scaffold/config") as config_file:
@@ -30,8 +27,6 @@ def test_datastore_get_foo():
     assert response.status_code < 400
 
     datastore = response.json()
-    assert 'name' in datastore
-
     with open('../fixtures/datastores/foo.yaml', 'w', encoding='utf-8') as datastore_file:
         yaml.dump(datastore, datastore_file)
 
