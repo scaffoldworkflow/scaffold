@@ -1,4 +1,4 @@
-FROM scaffold-build
+FROM scaffold:build
 
 # Copy in server source
 COPY src/server /scaffold-build
@@ -8,7 +8,7 @@ RUN env GOOS=linux CGO_ENABLED=0 go test -c -cover -covermode=count -coverpkg=./
 
 # **************************************************************** #
 
-FROM scaffold-run
+FROM scaffold:run
 
 # Copy built binary
 COPY --from=0 /scaffold-build/scaffold ./

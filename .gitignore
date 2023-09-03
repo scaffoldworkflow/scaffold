@@ -7,3 +7,4 @@ src/client/cli
 __pycache__
 .pytest_cache
 ca
+docs/build

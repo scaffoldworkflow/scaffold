@@ -1,4 +1,4 @@
-FROM scaffold-build
+FROM jfcarter2358/scaffold:build
 
 # Copy in server source
 COPY src/server /scaffold-build
@@ -8,7 +8,7 @@ RUN env GOOS=linux CGO_ENABLED=0 go build -v -o scaffold
 
 # **************************************************************** #
 
-FROM scaffold-run
+FROM jfcarter2358/scaffold:run
 
 # Copy built binary
 COPY --from=0 /scaffold-build/scaffold ./

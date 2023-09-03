@@ -30,8 +30,8 @@ build-docker-helpers:
   cmd: |
     stud set-server-version
 
-    docker build -t scaffold-build -f helpers/Dockerfile.build .
-    docker build -t scaffold-run -f helpers/Dockerfile.run .
+    docker build -t scaffold:build -f helpers/Dockerfile.build .
+    docker build -t scaffold:run -f helpers/Dockerfile.run .
 build-docker:
   help: Build Scaffold Docker image
   cmd: |
@@ -53,6 +53,12 @@ publish:
 
     platform_string = ','.join(platforms)
     version = ?(cat src/server/VERSION).strip()
+
+    print(f"Running build command: docker buildx build --platform {platform_string} -t {docker_org}/scaffold:build -f helpers/Dockerfile.build --push .")
+    docker buildx build --platform {platform_string} -t {docker_org}/scaffold:build -f helpers/Dockerfile.build --push .
+
+    print(f"Running build command: docker buildx build --platform {platform_string} -t {docker_org}/scaffold:run -f helpers/Dockerfile.run --push .")
+    docker buildx build --platform {platform_string} -t {docker_org}/scaffold:run -f helpers/Dockerfile.run --push .
 
     print(f"Running build command: docker buildx build --platform {platform_string} -t {docker_org}/scaffold:{version} -f src/server/Dockerfile --push .")
     docker buildx build --platform {platform_string} -t {docker_org}/scaffold:{version} -f src/server/Dockerfile --push .
@@ -155,3 +161,8 @@ gen-certs:
         sed_idx = idx + 1
         sed -i 's/{key_name}:.* # {node_type}/{key_name}: "{encoded}" # {node_type}/' test.https.docker-compose.yaml
         echo "{node_type} cert.{cert_type} set"
+docs:
+  help: Generate Scaffold documentation
+  cmd: |
+    cd docs
+    make html
