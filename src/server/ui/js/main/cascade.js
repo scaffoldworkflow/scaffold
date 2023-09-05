@@ -1,4 +1,4 @@
-// import flowchart.js
+// import workflow.js
 // import material.js
 // import theme.js
 // import modal.js
@@ -9,9 +9,10 @@
 // import input.js
 // import accordion.js
 
-stateIntervalMilliSeconds = "500"
+stateIntervalMilliSeconds = 500
+workflowIntervalMilliSeconds = 50
 
-tasks = []
+tasks = {}
 states = []
 datastore = {}
 link_data = []
@@ -20,16 +21,69 @@ structure = {}
 elements = []
 positions = {}
 
-it = 20
-il = 20
-w = 200
-h = 50
-p = 50
-hw = w / 2
-hh = h / 2
-m = 10
-
 right_panel_width = 500
+
+var workflow
+
+pin_colors = {
+    "Success": "#A3BE8C",
+    "Error": "#BF616A",
+    "Always": "#5E81AC",
+}
+
+// var workflow
+
+var state_colors = {
+    "not_started": "scaffold-charcoal",
+    "success": "scaffold-green",
+    "error": "scaffold-red",
+    "running": "scaffold-blue",
+    "waiting": "scaffold-yellow"
+}
+
+var state_icons = {
+    "not_started": '<i class="w3-medium fa-regular fa-circle"></i>',
+    "success": '<i class="w3-medium fa-solid fa-circle-check"></i>',
+    "error": '<i class="w3-medium fa-solid fa-circle-exclamation"></i>',
+    "running": '<i class="w3-medium fa-sharp fa-solid fa-spinner"></i>',
+    "waiting": '<i class="w3-medium fa-solid fa-clock"></i>'
+}
+
+var state_colors_hex = {
+    "not_started": "#373F51",
+    "success": "#A3BE8C",
+    "error": "#BF616A",
+    "running": "#5E81AC",
+    "waiting": "#EBCB8B"
+}
+
+var state_text_colors = {
+    "not_started": "scaffold-text-charcoal",
+    "success": "scaffold-text-green",
+    "error": "scaffold-text-red",
+    "running": "scaffold-text-blue",
+    "waiting": "scaffold-text-yellow"
+}
+
+color_keys = ["not_started", "success", "error", "running", "waiting"]
+
+var hidden = []
+
+function render() {
+    let prefix = $("#search").val();
+    prefix = prefix.toLowerCase();
+
+    if (prefix == "") {
+        hidden = []
+    } else {
+        for (let [key, task] of Object.entries(tasks)) {
+            if (key.toLowerCase().indexOf(prefix) == -1) {
+                hidden.push(key)
+            }
+        }
+    }
+    updateNodes()
+}
 
 function toggleCurrentState() {
     let sidebar = document.getElementById("current-state")
@@ -159,9 +213,49 @@ function getTasks() {
         type: "GET",
         contentType: "application/json",
         success: function (result) {
-            tasks = result
+            rawTasks = result
+            for (let task of rawTasks) {
+                let status = getStatusFromName(task.name)
+                tasks[task.name] = {
+                    "title": {
+                        "background_color": state_colors_hex[status],
+                        "foreground_color": "#ffffff",
+                        "text": `${state_icons[status]}&nbsp;&nbsp;${task.name}` 
+                    },
+                    "out": {},
+                    "func": "changeStateName"
+                }
+            }
+            for (let task of rawTasks) {
+                if (task.depends_on.success != null && task.depends_on.success != undefined && task.depends_on.success.length > 0) {
+                    for (let name of task.depends_on.success) {
+                        if (tasks[name].out['Success'] !== undefined) {
+                            tasks[name].out['Success'].push(task.name)
+                        } else {
+                            tasks[name].out['Success'] = [task.name]
+                        }
+                    }
+                }
+                if (task.depends_on.error != null && task.depends_on.error != undefined && task.depends_on.error.length > 0) {
+                    for (let name of task.depends_on.error) {
+                        if (tasks[name].out['Error'] !== undefined) {
+                            tasks[name].out['Error'].push(task.name)
+                        } else {
+                            tasks[name].out['Error'] = [task.name]
+                        }
+                    }
+                }
+                if (task.depends_on.always != null && task.depends_on.always != undefined && task.depends_on.always.length > 0) {
+                    for (let name of task.depends_on.always) {
+                        if (tasks[name].out['Always'] !== undefined) {
+                            tasks[name].out['Always'].push(task.name)
+                        } else {
+                            tasks[name].out['Always'] = [task.name]
+                        }
+                    }
+                }
+            }
             getStates(true)
-            
         },
         error: function (result) {
             console.log(result)
@@ -180,7 +274,10 @@ function getStates(shouldInit) {
         success: function (result) {
             states = result 
             if (shouldInit) {
-                initFlowchart("cascade-canvas", "cascade-card")
+                workflow = new Workflow("cascade-canvas", "cascade-card", "", "", 995, "light theme-light", tasks, pin_colors)
+                setInterval(function() {
+                    workflow.UpdateWorkflow()
+                }, workflowIntervalMilliSeconds);
                 setInterval(updateStateStatus, stateIntervalMilliSeconds)
             }
         },
@@ -188,6 +285,17 @@ function getStates(shouldInit) {
             console.log(result)
         }
     });
+}
+
+function getStatusFromName(n, states) {
+    if (states != undefined) {
+        for (let state of states) {
+            if (state.task == n) {
+                return state.status
+            }
+        }
+    }
+    return "not_started"
 }
 
 function triggerRun() {
@@ -209,6 +317,34 @@ function triggerRun() {
     }
 }
 
+function updateNodes() {
+    for (let [key, task] of Object.entries(tasks)) {
+        $(`#${key}`).css("filter", `brightness(100%)`)
+
+        if (hidden.includes(key)) {
+            $(`#${key}`).css("filter", `brightness(50%)`)
+        }
+    }
+}
+
+function updateStates() {
+    if (states != undefined) {
+        for (let state of states) {
+            if (state.task.startsWith('SCAFFOLD_CHECK') || state.task.startsWith('SCAFFOLD_PREVIOUS')) {
+                continue
+            }
+            let color = state_colors_hex[state.status]
+            let icon = state_icons[state.status]
+            let current_color = $(`#${state.task}-header`).css('background-color')
+            if (color == current_color) {
+                continue
+            }
+            $(`#${state.task}-header`).css('background-color', color)
+            $(`#${state.task}-header-text`).html(`${icon}&nbsp;&nbsp;${state.task}` )
+        }
+    }
+}
+
 $(document).ready(
     function () {
         // let width = $( document ).width();
@@ -219,10 +355,22 @@ $(document).ready(
         // $("#spinner").css("display", "block")
         // $("#page-darken").css("opacity", "1")
 
+        
+
         getTasks()
+
         setInterval(function() {
             getStates(false)
         }, stateIntervalMilliSeconds)
-        setInterval(getDatastore, stateIntervalMilliSeconds)
+
+        setInterval(function() {
+            getDatastore()
+        }, stateIntervalMilliSeconds)
+
+        setInterval(function() {
+            updateStates()
+        }, workflowIntervalMilliSeconds)
+
+        
     }
 )

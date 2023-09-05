@@ -2,7 +2,7 @@
 
 
 const Workflow = class {
-    constructor(canvas_id, parent_id, canvas_style, node_style, node_z_index, tasks, pin_colors) {
+    constructor(canvas_id, parent_id, canvas_style, node_style, node_z_index, class_string, tasks, pin_colors) {
         this.padding = 50
         this.initial_width = 200
 
@@ -17,7 +17,7 @@ const Workflow = class {
         this.node_z_index = 995
         this.margin = 10
         this.input_color = "#888888"
-        this.class_string = ""
+        this.class_string = class_string
         this.shadow_color = "#000000"
         this.max_deflection = 10
         this.active = {
@@ -92,7 +92,7 @@ const Workflow = class {
                 rows += `<tr>
                         <td></td>
                         <td></td>
-                        <td class="w3-text-green w3-right-align" style="color:${this.pin_colors[outputs[i]]}">${outputs[i]}</td>
+                        <td class="w3-right-align" style="color:${this.pin_colors[outputs[i]]}">${outputs[i]}</td>
                         <td class="w3-right-align"><i class="fa-solid fa-circle-dot" style="color:${this.pin_colors[outputs[i]]}"></i></td>
                     </tr>`
             }
@@ -225,7 +225,7 @@ const Workflow = class {
 
         let node_structure = this.BuildNodeStructure(this.structure)
 
-        let data = this.GetXY(node_structure, this.padding, this.padding)
+        let data = this.GetXY(node_structure, this.canvas.offset().left + this.padding, this.canvas.offset().top + this.padding)
         let positions = data.positions
 
         for (let [key, val] of Object.entries(positions)) {
@@ -254,9 +254,7 @@ const Workflow = class {
 
             let func_def = ""
             if (this.tasks[key].func != undefined) {
-                console.log(`Adding double click function to ${key}`)
                 func_def = `ondblclick="${this.tasks[key].func}('${key}')"`
-                console.log(func_def)
             }
 
             if (outputs.length == 0) {
@@ -275,14 +273,14 @@ const Workflow = class {
                     rows += `<tr>
                             <td></td>
                             <td></td>
-                            <td class="w3-text-green w3-right-align" style="color:${this.pin_colors[outputs[i]]}">${outputs[i]}</td>
+                            <td class="w3-right-align" style="color:${this.pin_colors[outputs[i]]}">${outputs[i]}</td>
                             <td class="w3-right-align"><i class="fa-solid fa-circle-dot" style="color:${this.pin_colors[outputs[i]]}" data-pin="${key}.${outputs[i]}"></i></td>
                         </tr>`
                 }
             }
             let html = `<div class="w3-round-large w3-border w3-card w3-border ${this.class_string}" style="position:fixed;z-index:995;left:${val.x}px;top:${val.y}px;" id="${key}" ${func_def}>
                         <header class="w3-container w3-round-large" style="background-color:${bg_color}" id="${key}-header">
-                            <h3 style="color:${fg_color}">${this.tasks[key].title.text}</h3>
+                            <h3 id="${key}-header-text" style="color:${fg_color}">${this.tasks[key].title.text}</h3>
                         </header>
                         <div>
                             <table class="w3-table">
@@ -307,7 +305,7 @@ const Workflow = class {
             pin_idx = Object.keys(this.tasks[node_name].out).indexOf(pin_name)
         }
 
-        let offset_x = this.nodes[node_name].x
+        let offset_x = this.nodes[node_name].x 
         if (pin_name != "Input") {
             offset_x += $(`#${node_name}`).width() - 46
         } else {
@@ -320,7 +318,7 @@ const Workflow = class {
 
 
         let x = offset_x
-        let y = offset_y
+        let y = offset_y - this.canvas.offset().top
         return {x: x, y: y}
     }
 

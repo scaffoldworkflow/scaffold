@@ -1,11 +1,11 @@
 var CurrentStateName
 
 function updateStateStatus() {
-    let ids = ["state-header", "output-header", "status-header", "code-header"]
+    let ids = ["cascade-state-header", "cascade-output-header", "cascade-status-header", "cascade-code-header"]
     for (let k = 0; k < color_keys.length; k++) {
-        $(`#check-header`).removeClass(state_colors[color_keys[k]])
+        $(`#cascade-check-header`).removeClass(state_colors[color_keys[k]])
     }
-    $(`#check-header`).addClass(state_colors['not_started'])
+    $(`#cascade-check-header`).addClass(state_colors['not_started'])
     $("#state-check").text('')
     for (let k = 0; k < color_keys.length; k++) {
         $(`#previous-header`).removeClass(state_colors[color_keys[k]])
@@ -13,48 +13,44 @@ function updateStateStatus() {
     $(`#previous-header`).addClass(state_colors['not_started'])
     $("#state-previous").text('')
     if (CurrentStateName != "" && states != undefined) {
-        for (let i = 0; i < states.length; i++) {
-            if (states[i].task == CurrentStateName) {
-                let color = state_colors[states[i].status]
-                let text_color = state_text_colors[states[i].status]
-                for (let j = 0; j < ids.length; j++) {
-                    for (let k = 0; k < color_keys.length; k++) {
-                        $(`#${ids[j]}`).removeClass(state_colors[color_keys[k]])
+        for (let state of states) {
+            if (state.task == CurrentStateName) {
+                let color = state_colors[state.status]
+                let text_color = state_text_colors[state.status]
+                for (let id of ids) {
+                    for (let color of color_keys) {
+                        $(`#${id}`).removeClass(state_colors[color])
                     }
                 }
-                for (let j = 0; j < ids.length; j++) {
-                    $(`#${ids[j]}`).addClass(color)
+                for (let id of ids) {
+                    $(`#${id}`).addClass(color)
                 }
-                for (let k = 0; k < color_keys.length; k++) {
-                    $(`#${states[i].task}`).removeClass(state_colors[color_keys[k]])
-                }
-                $(`#${states[i].task}`).addClass(color)
-                $("#state-run").text(`Run: ${states[i].number}`)
-                $("#state-name").text(states[i].task)
-                $("#state-status").text(`Status: ${states[i].status}`)
-                $("#state-started").text(`Started: ${states[i].started}`)
-                $("#state-finished").text(`Finished: ${states[i].finished}`)
-                $("#state-output").text(states[i].output)
-                buildDisplay(states[i].display, "current", color, text_color)
+                $("#state-run").text(`Run: ${state.number}`)
+                $("#state-name").text(state.task)
+                $("#state-status").text(`Status: ${state.status}`)
+                $("#state-started").text(`Started: ${state.started}`)
+                $("#state-finished").text(`Finished: ${state.finished}`)
+                $("#state-output").text(state.output)
+                buildDisplay(state.display, "current", color, text_color)
                 continue
             }
-            if (states[i].task == `SCAFFOLD_CHECK-${CurrentStateName}`) {
-                for (let k = 0; k < color_keys.length; k++) {
-                    $(`#check-header`).removeClass(state_colors[color_keys[k]])
+            if (state.task == `SCAFFOLD_CHECK-${CurrentStateName}`) {
+                for (let color of color_keys) {
+                    $(`#cascade-check-header`).removeClass(state_colors[color])
                 }
-                $("#check-run").text(`Run: ${states[i].number}`)
-                $(`#check-header`).addClass(state_colors[states[i].status])
-                $("#state-check").text(states[i].output)
+                $("#check-run").text(`Run: ${state.number}`)
+                $(`#cascade-check-header`).addClass(state_colors[state.status])
+                $("#state-check").text(state.output)
                 // buildDisplay(states[i].display, "check", state_colors[states[i].status])
                 continue
             }
-            if (states[i].task == `SCAFFOLD_PREVIOUS-${CurrentStateName}`) {
-                for (let k = 0; k < color_keys.length; k++) {
-                    $(`#previous-header`).removeClass(state_colors[color_keys[k]])
+            if (state.task == `SCAFFOLD_PREVIOUS-${CurrentStateName}`) {
+                for (let color of color_keys) {
+                    $(`#previous-header`).removeClass(state_colors[color])
                 }
-                $("#previous-run").text(`Run: ${states[i].number}`)
-                $(`#previous-header`).addClass(state_colors[states[i].status])
-                $("#state-previous").text(states[i].output)
+                $("#previous-run").text(`Run: ${state.number}`)
+                $(`#previous-header`).addClass(state_colors[state.status])
+                $("#state-previous").text(state.output)
                 // buildDisplay(states[i].display, "previous", state_colors[states[i].status])
                 continue
             }
