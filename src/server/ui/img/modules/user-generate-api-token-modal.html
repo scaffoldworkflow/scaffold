@@ -1,0 +1,26 @@
+<div id="user-generate-api-token-modal" class="w3-modal">
+    <div class="w3-modal-content w3-animate-top w3-card-4 w3-round light theme-light w3-border theme-border-light w3-round">
+        <header class="w3-container scaffold-green">
+            <span onclick="closeModal('user-generate-api-token-modal')" class="w3-button w3-display-topright">&times;</span>
+            <h4>Generate API Token</h4>
+        </header>
+        <div class="w3-container">
+            <br>
+            <label>Name</label>
+            <input class="w3-input w3-round light theme-light" type="text" id="user-generate-api-token-name">
+            <br>
+            <div class="w3-card w3-round w3-padding" id="api-token-card" style="width:100%;">
+                <div id="api-token-field"></div>
+            </div>
+            <br>
+            <br>
+            <button class="w3-button scaffold-green w3-round w3-right" onclick="generateAPIToken()" id="api-token-generate-button">Generate</button>
+            <button class="w3-button scaffold-red w3-round w3-right" style="margin-right:8px;" onclick="closeModal('user-generate-api-token-modal')" id="api-token-cancel-button">Cancel</button>
+            <!-- <button class="w3-button scaffold-green w3-round w3-right" onclick="closeAPITokenModal()" id="api-token-done-button" style="display:none;">Copy Token <i class="fa-solid fa-copy"></i></button> -->
+            <button class="w3-button scaffold-green w3-round w3-right" onclick="closeAPITokenModal()" id="api-token-done-button" style="display:none;">Done</button>
+
+            <br>
+            <br>
+        </div>
+    </div>
+</div>

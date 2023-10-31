@@ -21,8 +21,10 @@ type TaskDependsOn struct {
 }
 
 type TaskLoadStore struct {
-	Env  []string `json:"env" bson:"env"`
-	File []string `json:"file" bson:"file"`
+	Env            []string `json:"env" bson:"env"`
+	File           []string `json:"file" bson:"file"`
+	EnvPassthrough []string `json:"env_passthrough" bson:"env_passthrough"`
+	Mounts         []string `json:"mounts" bson:"mounts"`
 }
 
 type TaskCheck struct {

@@ -25,12 +25,22 @@ func InitBucket() {
 	bucket := aws.String(config.Config.FileStore.Bucket)
 
 	// Configure to use MinIO Server
-	S3Config = &aws.Config{
-		Credentials:      credentials.NewStaticCredentials(config.Config.FileStore.AccessKey, config.Config.FileStore.SecretKey, ""),
-		Endpoint:         aws.String(fmt.Sprintf("%s://%s:%d", config.Config.FileStore.Protocol, config.Config.FileStore.Host, config.Config.FileStore.Port)),
-		Region:           aws.String(config.Config.FileStore.Region),
-		DisableSSL:       aws.Bool(false),
-		S3ForcePathStyle: aws.Bool(true),
+	var S3Config *aws.Config
+	if config.Config.FileStore.AccessKey != "" && config.Config.FileStore.SecretKey != "" {
+		S3Config = &aws.Config{
+			Credentials:      credentials.NewStaticCredentials(config.Config.FileStore.AccessKey, config.Config.FileStore.SecretKey, ""),
+			Endpoint:         aws.String(fmt.Sprintf("%s://%s:%d", config.Config.FileStore.Protocol, config.Config.FileStore.Host, config.Config.FileStore.Port)),
+			Region:           aws.String(config.Config.FileStore.Region),
+			DisableSSL:       aws.Bool(false),
+			S3ForcePathStyle: aws.Bool(true),
+		}
+	} else {
+		S3Config = &aws.Config{
+			Endpoint:         aws.String(fmt.Sprintf("%s://%s:%d", config.Config.FileStore.Protocol, config.Config.FileStore.Host, config.Config.FileStore.Port)),
+			Region:           aws.String(config.Config.FileStore.Region),
+			DisableSSL:       aws.Bool(false),
+			S3ForcePathStyle: aws.Bool(true),
+		}
 	}
 	session, err := session.NewSession(S3Config)
 	if err != nil {

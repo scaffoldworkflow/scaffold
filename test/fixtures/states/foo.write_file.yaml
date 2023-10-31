@@ -2,17 +2,7 @@ cascade: foo
 display: []
 finished: ''
 number: 2
-output: '
-
-
-
-
-  --------------------------------
-
-
-  Sleeping for a bit...
-
-  '
-started: '2023-08-21T16:45:57Z'
-status: running
+output: ''
+started: ''
+status: waiting
 task: write_file

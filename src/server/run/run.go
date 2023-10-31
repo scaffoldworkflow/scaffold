@@ -145,10 +145,16 @@ func StartRun(r *Run) (bool, error) {
 		logger.Infof("", "No running container with name %s exists, skipping removal\n", containerName)
 	}
 
-	podmanCommand := "podman run --privileged -d --security-opt label=disabled "
+	podmanCommand := "podman run --privileged -d --security-opt label=disabled --network=host --device /dev/net/tun:/dev/net/tun "
 
 	podmanCommand += fmt.Sprintf("--name %s ", containerName)
 	podmanCommand += fmt.Sprintf("--mount type=bind,src=%s,dst=/tmp/run ", runDir)
+	for _, m := range r.Task.Load.Mounts {
+		podmanCommand += fmt.Sprintf("--mount type=bind,src=%s,dst=%s ", m, m)
+	}
+	for _, e := range r.Task.Load.EnvPassthrough {
+		podmanCommand += fmt.Sprintf("--env %s=\"${%s}\" ", e, e)
+	}
 	podmanCommand += r.Task.Image
 	podmanCommand += " bash -c /tmp/run/.run.sh"
 

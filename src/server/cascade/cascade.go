@@ -105,7 +105,7 @@ func DeleteCascadeByName(name string) error {
 }
 
 func GetAllCascades() ([]*Cascade, error) {
-	filter := bson.D{{}}
+	filter := bson.M{}
 
 	cascades, err := FilterCascades(filter)
 

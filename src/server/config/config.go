@@ -2,8 +2,11 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
+	"net"
+	"net/url"
 	"os"
 	"reflect"
 	"scaffold/server/constants"
@@ -14,24 +17,25 @@ const DEFAULT_CONFIG_PATH = "/home/scaffold/data/config.json"
 const ENV_PREFIX = "SCAFFOLD_"
 
 type ConfigObject struct {
-	Host              string          `json:"host" env:"HOST"`
-	Port              int             `json:"port" env:"PORT"`
-	Protocol          string          `json:"protocol" env:"PROTOCOL"`
-	WSPort            int             `json:"ws_port" env:"WS_PORT"`
-	LogLevel          string          `json:"log_level" env:"LOG_LEVEL"`
-	LogFormat         string          `json:"log_format" env:"LOG_FORMAT"`
-	BaseURL           string          `json:"base_url" env:"BASE_URL"`
-	Admin             UserObject      `json:"admin" env:"ADMIN"`
-	DB                DBObject        `json:"db" env:"DB"`
-	Node              NodeObject      `json:"node" env:"NODE"`
-	HeartbeatInterval int             `json:"heartbeat_interval" env:"HEARTBEAT_INTERVAL"`
-	HealthCheckLimit  int             `json:"health_check_limit" env:"HEALTH_CHECK_LIMIT"`
-	Reset             ResetObject     `json:"reset" env:"RESET"`
-	FileStore         FileStoreObject `json:"file_store" env:"FILE_STORE"`
-	TLSEnabled        bool            `json:"tls_enabled" env:"TLS_ENABLED"`
-	TLSSkipVerify     bool            `json:"tls_skip_verify" env:"TLS_SKIP_VERIFY"`
-	TLSCrtPath        string          `json:"tls_crt_path" env:"TLS_CRT_PATH"`
-	TLSKeyPath        string          `json:"tls_key_path" env:"TLS_KEY_PATH"`
+	Host               string          `json:"host"`
+	Port               int             `json:"port"`
+	Protocol           string          `json:"protocol"`
+	WSPort             int             `json:"ws_port" env:"WS_PORT"`
+	LogLevel           string          `json:"log_level" env:"LOG_LEVEL"`
+	LogFormat          string          `json:"log_format" env:"LOG_FORMAT"`
+	BaseURL            string          `json:"base_url" env:"BASE_URL"`
+	Admin              UserObject      `json:"admin" env:"ADMIN"`
+	DBConnectionString string          `json:"db_connection_string" env:"DB_CONNECTION_STRING"`
+	DB                 DBObject        `json:"db"`
+	Node               NodeObject      `json:"node" env:"NODE"`
+	HeartbeatInterval  int             `json:"heartbeat_interval" env:"HEARTBEAT_INTERVAL"`
+	HeartbeatBackoff   int             `json:"heartbeat_backoff" env:"HEARTBEAT_BACKOFF"`
+	Reset              ResetObject     `json:"reset" env:"RESET"`
+	FileStore          FileStoreObject `json:"file_store" env:"FILESTORE"`
+	TLSEnabled         bool            `json:"tls_enabled" env:"TLS_ENABLED"`
+	TLSSkipVerify      bool            `json:"tls_skip_verify" env:"TLS_SKIP_VERIFY"`
+	TLSCrtPath         string          `json:"tls_crt_path" env:"TLS_CRT_PATH"`
+	TLSKeyPath         string          `json:"tls_key_path" env:"TLS_KEY_PATH"`
 }
 
 type FileStoreObject struct {
@@ -51,6 +55,7 @@ type UserObject struct {
 }
 
 type DBObject struct {
+	Protocol string `json:"protocol"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Name     string `json:"name"`
@@ -83,15 +88,15 @@ func LoadConfig() {
 	}
 
 	Config = ConfigObject{
-		Host:              "scaffold",
-		Port:              2997,
-		Protocol:          "http",
+		Host:              "",
+		Port:              -1,
+		Protocol:          "",
+		BaseURL:           "http://localhost:2997",
 		WSPort:            8080,
 		LogLevel:          constants.LOG_LEVEL_INFO,
 		LogFormat:         constants.LOG_FORMAT_CONSOLE,
-		BaseURL:           "http://localhost:2997",
 		HeartbeatInterval: 500,
-		HealthCheckLimit:  10,
+		HeartbeatBackoff:  10,
 		TLSEnabled:        false,
 		TLSSkipVerify:     false,
 		TLSCrtPath:        "/tmp/cert.crt",
@@ -100,13 +105,8 @@ func LoadConfig() {
 			Username: "admin",
 			Password: "admin",
 		},
-		DB: DBObject{
-			Username: "myCoolMongoDBUsername",
-			Password: "myCoolMongoDBPassword",
-			Name:     "scaffold",
-			Host:     "mongodb",
-			Port:     27017,
-		},
+		DBConnectionString: "mongodb://MyCoolMongoDBUsername:MyCoolMongoDBPassword@mongodb:27017/scaffold",
+		DB:                 DBObject{},
 		Reset: ResetObject{
 			Email:    "",
 			Password: "",
@@ -154,6 +154,7 @@ func LoadConfig() {
 		if value != "" {
 			val, present := os.LookupEnv(ENV_PREFIX + value)
 			if present {
+				// log.Printf("Found ENV var %s with value %s", ENV_PREFIX+value, val)
 				w := reflect.ValueOf(&Config).Elem().FieldByName(t.Field(i).Name)
 				x := getAttr(&Config, t.Field(i).Name).Kind().String()
 				if w.IsValid() {
@@ -213,6 +214,8 @@ func LoadConfig() {
 
 	// defer the closing of our jsonFile so that we can parse it later on
 	defer jsonFile.Close()
+
+	breakConfigFields()
 }
 
 func getAttr(obj interface{}, fieldName string) reflect.Value {
@@ -226,4 +229,48 @@ func getAttr(obj interface{}, fieldName string) reflect.Value {
 		panic("not found:" + fieldName)
 	}
 	return curField
+}
+
+func breakConfigFields() {
+	baseURL, err := url.Parse(Config.BaseURL)
+	if err != nil {
+		panic(err)
+	}
+	baseHost, basePortString, err := net.SplitHostPort(baseURL.Host)
+	if err != nil {
+		panic(err)
+	}
+	basePort, err := strconv.Atoi(basePortString)
+	if err != nil {
+		panic(err)
+	}
+	baseProtocol := baseURL.Scheme
+
+	Config.Host = baseHost
+	Config.Port = basePort
+	Config.Protocol = baseProtocol
+
+	mongoURL, err := url.Parse(Config.DBConnectionString)
+
+	mongoHost, mongoPortString, err := net.SplitHostPort(baseURL.Host)
+	mongoPort, err := strconv.Atoi(mongoPortString)
+	if err != nil {
+		panic(err)
+	}
+	mongoProtocol := baseURL.Scheme
+
+	mongoUsername := mongoURL.User.Username()
+	mongoPassword, isSet := mongoURL.User.Password()
+	if !isSet {
+		panic(errors.New("credentials not provided to DB connection string"))
+	}
+
+	mongoName := mongoURL.Path[1:len(mongoURL.Path)]
+
+	Config.DB.Host = mongoHost
+	Config.DB.Port = mongoPort
+	Config.DB.Username = mongoUsername
+	Config.DB.Password = mongoPassword
+	Config.DB.Name = mongoName
+	Config.DB.Protocol = mongoProtocol
 }

@@ -2,7 +2,6 @@ package mongodb
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"scaffold/server/config"
 	"scaffold/server/constants"
@@ -23,7 +22,7 @@ var Collections map[string]*mongo.Collection
 var Ctx = context.TODO()
 
 func InitCollections() {
-	clientOptions := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", config.Config.DB.Username, config.Config.DB.Password, config.Config.DB.Host, config.Config.DB.Port, config.Config.DB.Name))
+	clientOptions := options.Client().ApplyURI(config.Config.DBConnectionString)
 	client, err := mongo.Connect(Ctx, clientOptions)
 	if err != nil {
 		log.Fatal(err)

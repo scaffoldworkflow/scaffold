@@ -9,3 +9,4 @@ __pycache__
 ca
 docs/build
 .vscode
+rendered.yaml

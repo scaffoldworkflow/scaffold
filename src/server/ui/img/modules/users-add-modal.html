@@ -1,0 +1,50 @@
+<div id="users-add-modal" class="w3-modal">
+    <div class="w3-modal-content w3-animate-top w3-card-4 w3-round light theme-light w3-border theme-border-light w3-round">
+        <header class="w3-container scaffold-green">
+            <span onclick="closeModal('users-add-modal')" class="w3-button w3-display-topright">&times;</span>
+            <h4>Add User</h4>
+        </header>
+        <div class="w3-container">
+            <br>
+            <label>Username</label>
+            <input class="w3-input w3-round light theme-light" type="text" id="users-add-username">
+            <label>Password</label>
+            <input class="w3-input w3-round light theme-light" type="password" id="users-add-password">
+            <label>Given Name</label>
+            <input class="w3-input w3-round light theme-light" type="text" id="users-add-given-name">
+            <label>Family Name</label>
+            <input class="w3-input w3-round light theme-light" type="text" id="users-add-family-name">
+            <label>Email</label>
+            <input class="w3-input w3-round light theme-light" type="text" id="users-add-email">
+            <label>Groups</label>
+            <div class="groups-card w3-round" id="tags">
+                <input id="group-tags" value='[]' class="scaffoldTag" style="width:100%">
+            </div>
+            <label>Roles</label>
+            <!--
+            <input class="w3-input" type="text" id="role-to-add">
+            <br>
+            <div class="w3-button scaffold-green w3-round" onclick="addRole()">Add Role</div>
+            <br>
+            <br>
+            -->
+            <!--<div class="w3-card w3-container tag-container" id="role-card">-->
+                <div class="roles-card w3-round" id="tags">
+                    <input id="role-tags" value='[{"value":"read"}]' class="scaffoldTag" style="width:100%">
+                </div>
+                <!--
+                <div ondblclick="removeRole('read')" class="w3-tag w3-round scaffold-green user-role tag" style="padding:3px" id="role-read">
+                    read&nbsp;
+                </div>
+                -->
+            <!--</div>-->
+            <br>
+            <br>
+            <br>
+            <button class="w3-button scaffold-green w3-round w3-right" onclick="addUser()">Add User</button>
+            <button class="w3-button scaffold-red w3-round w3-right" style="margin-right:8px;" onclick="closeModal('users-add-modal')">Cancel</button>
+            <br>
+            <br>
+        </div>
+    </div>
+</div>

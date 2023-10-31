@@ -1,0 +1,40 @@
+<div class="w3-card-4 w3-round light theme-light w3-border theme-border-light">
+    <div class="w3-container scaffold-green w3-round cascade-title">
+        <h4>Cascades</h4>
+        <input id="search" class="w3-input w3-round search-bar light theme-light" type="text" name="search" placeholder="Search Cascades" oninput="render()" style="margin-top:8px;margin-bottom:8px;">
+    </div>
+    <table class="w3-table light w3-border theme-border-light theme-table-striped" id="cascades-table">
+        <tr>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Name</span>
+            </th>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Created</span>
+            </th>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Updated</span>
+            </th>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Version</span>
+            </th>
+            <th>
+                <span class="table-title-text"></span>
+            </th>
+        </tr>
+        {{ range .cascades }}
+            {{ if .in_group }}
+            <tr id="cascades-row-{{ .name }}" class="table-show">
+                <td>{{ .name }}</td>
+                <td>{{ .created }}</td>
+                <td>{{ .updated }}</td>
+                <td>{{ .version }}</td>
+                <td class="table-link-cell">
+                    <a href="/ui/cascades/{{ .name }}" class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;">
+                        <i class="fa-solid fa-link"></i>
+                    </a>
+                </td>
+            </tr>
+            {{ end }}
+        {{ end }}
+    </table>
+</div>

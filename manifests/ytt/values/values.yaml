@@ -1,0 +1,79 @@
+#@data/values
+---
+scaffold:
+  namespace: scaffold
+  base_url: http://scaffold-manager:2997
+  ws_port: 8080
+  image: scaffold #! jfcarter2358/scaffold:0.1.0
+  logging:
+    level: TRACE
+    format: console
+  admin:
+    username: admin
+    password: admin
+  nodes:
+    keys:
+      join: MyCoolJoinKey12345
+      primary: MyCoolPrimaryKey12345
+    manager:
+      crt: #! base64 encoded manager cert.crt
+      key: #! base64 encoded manager cert.key
+      env: ~
+    workers:
+      count: 1
+      certs:
+      - crt: #! base64 encoded worker-<n> cert.crt
+        key: #! base64 encoded worker-<n> cert.key
+      env:
+      - FOO: BAR
+  heartbeat:
+    interval: 500 #! Number of ms to wait before checking worker health
+    backoff: 10 #! Number of times to retry before marking worker as down
+  reset:
+    email: ""
+    password: ""
+    host: smtp.gmail.com
+    port: 587
+  tls:
+    enabled: false
+    skip_verify: true
+  service:
+    type: LoadBalancer
+    ws_port: 8080
+
+
+filestore:
+  container:
+    enabled: true
+    image: bitnami/minio:2023
+    debug: false
+    ui_port: 9091
+  credentials:
+    access_key:
+    secret_key:
+  connection:
+    host: minio
+    port: 27017
+    bucket: scaffold
+    region: default-region
+    protocol: http
+
+document_store:
+  container:
+    enabled: true
+    image: centos/mongodb-36-centos7:1
+    port: 27017
+    database: scaffold
+    admin_password:
+    username:
+    password:
+  connection_string: 
+
+k8s:
+  image_pull_secret:
+    enabled: false
+    username:
+    password: 
+  #! image_pull_policy: Always
+  image_pull_policy: Never
+  create_namespace: false

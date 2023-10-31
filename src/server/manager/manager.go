@@ -133,7 +133,7 @@ func Run() {
 			if err != nil {
 				val := auth.UnknownNodes[n.Node.Host]
 				val.Count += 1
-				if val.Count >= config.Config.HealthCheckLimit {
+				if val.Count >= config.Config.HeartbeatBackoff {
 					toDelete = append(toDelete, n.Node.Host)
 				}
 				auth.UnknownNodes[n.Node.Host] = val
