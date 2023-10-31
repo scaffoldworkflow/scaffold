@@ -63,13 +63,13 @@
 				
 				<option value="file3">scaffold/server/api/datastore.go (33.9%)</option>
 				
-				<option value="file4">scaffold/server/api/health.go (58.3%)</option>
+				<option value="file4">scaffold/server/api/health.go (25.0%)</option>
 				
-				<option value="file5">scaffold/server/api/helpers.go (77.5%)</option>
+				<option value="file5">scaffold/server/api/helpers.go (70.0%)</option>
 				
 				<option value="file6">scaffold/server/api/input.go (60.8%)</option>
 				
-				<option value="file7">scaffold/server/api/run.go (56.7%)</option>
+				<option value="file7">scaffold/server/api/run.go (22.8%)</option>
 				
 				<option value="file8">scaffold/server/api/state.go (65.7%)</option>
 				
@@ -83,7 +83,7 @@
 				
 				<option value="file13">scaffold/server/cmd/cmd.go (9.9%)</option>
 				
-				<option value="file14">scaffold/server/config/config.go (63.9%)</option>
+				<option value="file14">scaffold/server/config/config.go (67.4%)</option>
 				
 				<option value="file15">scaffold/server/container/container.go (33.3%)</option>
 				
@@ -91,15 +91,15 @@
 				
 				<option value="file17">scaffold/server/docs/docs.go (100.0%)</option>
 				
-				<option value="file18">scaffold/server/filestore/filestore.go (64.0%)</option>
+				<option value="file18">scaffold/server/filestore/filestore.go (32.0%)</option>
 				
 				<option value="file19">scaffold/server/input/input.go (80.6%)</option>
 				
-				<option value="file20">scaffold/server/logger/logger.go (41.5%)</option>
+				<option value="file20">scaffold/server/logger/logger.go (35.4%)</option>
 				
-				<option value="file21">scaffold/server/main.go (78.6%)</option>
+				<option value="file21">scaffold/server/main.go (75.0%)</option>
 				
-				<option value="file22">scaffold/server/manager/manager.go (72.7%)</option>
+				<option value="file22">scaffold/server/manager/manager.go (32.8%)</option>
 				
 				<option value="file23">scaffold/server/middleware/middleware.auth.go (40.9%)</option>
 				
@@ -111,9 +111,9 @@
 				
 				<option value="file27">scaffold/server/proxy/proxy.go (0.0%)</option>
 				
-				<option value="file28">scaffold/server/routes.go (99.1%)</option>
+				<option value="file28">scaffold/server/routes.go (100.0%)</option>
 				
-				<option value="file29">scaffold/server/run/run.go (71.7%)</option>
+				<option value="file29">scaffold/server/run/run.go (0.0%)</option>
 				
 				<option value="file30">scaffold/server/state/state.go (80.6%)</option>
 				
@@ -123,7 +123,7 @@
 				
 				<option value="file33">scaffold/server/utils/utils.go (39.5%)</option>
 				
-				<option value="file34">scaffold/server/worker/worker.go (87.5%)</option>
+				<option value="file34">scaffold/server/worker/worker.go (50.0%)</option>
 				
 				</select>
 			</div>
@@ -809,8 +809,8 @@ import (
 //        @success                200
 //        @failure                503
 //        @router                        /health/healthy [get]
-func Healthy(c *gin.Context) <span class="cov10" title="215">{
-        if health.IsHealthy </span><span class="cov10" title="215">{
+func Healthy(c *gin.Context) <span class="cov10" title="100">{
+        if health.IsHealthy </span><span class="cov10" title="100">{
                 c.JSON(http.StatusOK, gin.H{"version": constants.VERSION})
                 return
         }</span>
@@ -842,13 +842,13 @@ func Ready(c *gin.Context) <span class="cov0" title="0">{
 //        @success                200
 //        @failure                503
 //        @router                        /health/available [get]
-func Available(c *gin.Context) <span class="cov5" title="11">{
-        if health.IsAvailable </span><span class="cov4" title="7">{
+func Available(c *gin.Context) <span class="cov0" title="0">{
+        if health.IsAvailable </span><span class="cov0" title="0">{
                 c.Status(http.StatusOK)
                 return
         }</span>
 
-        <span class="cov3" title="4">c.Status(http.StatusServiceUnavailable)</span>
+        <span class="cov0" title="0">c.Status(http.StatusServiceUnavailable)</span>
 }
 </pre>
 		
@@ -869,30 +869,30 @@ import (
         "scaffold/server/utils"
 )
 
-func getAvailableNode() (*auth.NodeObject, error) <span class="cov4" title="11">{
+func getAvailableNode() (*auth.NodeObject, error) <span class="cov2" title="3">{
         if len(auth.Nodes) == 0 </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("no nodes to schedule runs on")
         }</span>
-        <span class="cov4" title="11">nodeIdx := auth.LastScheduledIdx + 1
+        <span class="cov2" title="3">nodeIdx := auth.LastScheduledIdx + 1
 
-        for idx, n := range auth.Nodes </span><span class="cov4" title="11">{
+        for idx, n := range auth.Nodes </span><span class="cov2" title="3">{
                 queryURL := fmt.Sprintf("%s://%s:%d/health/available", n.Protocol, n.Host, n.Port)
                 resp, err := http.Get(queryURL)
-                if err != nil || resp.StatusCode &gt;= 400 </span><span class="cov2" title="4">{
+                if err != nil || resp.StatusCode &gt;= 400 </span><span class="cov2" title="3">{
                         continue</span>
                 }
-                <span class="cov3" title="7">nodeIdx = idx
+                <span class="cov0" title="0">nodeIdx = idx
                 break</span>
         }
-        <span class="cov4" title="11">if nodeIdx &gt;= len(auth.Nodes) </span><span class="cov2" title="4">{
+        <span class="cov2" title="3">if nodeIdx &gt;= len(auth.Nodes) </span><span class="cov2" title="3">{
                 nodeIdx = 0
         }</span>
-        <span class="cov4" title="11">auth.LastScheduledIdx = nodeIdx
+        <span class="cov2" title="3">auth.LastScheduledIdx = nodeIdx
 
         return &amp;auth.Nodes[nodeIdx], nil</span>
 }
 
-func validateUserGroup(ctx *gin.Context, groups []string) bool <span class="cov10" title="733">{
+func validateUserGroup(ctx *gin.Context, groups []string) bool <span class="cov10" title="587">{
         var token string
         var err error
         var usr *user.User
@@ -904,7 +904,7 @@ func validateUserGroup(ctx *gin.Context, groups []string) bool <span class="cov1
         }</span>
 
         // Check if we have an auth header
-        <span class="cov10" title="733">authString := ctx.Request.Header.Get("Authorization")
+        <span class="cov10" title="587">authString := ctx.Request.Header.Get("Authorization")
         if authString == "" </span><span class="cov0" title="0">{
                 // Check if the request is coming from a logged in UI user
                 token, err = ctx.Cookie("scaffold_token")
@@ -915,26 +915,26 @@ func validateUserGroup(ctx *gin.Context, groups []string) bool <span class="cov1
                 if usr == nil </span><span class="cov0" title="0">{
                         return false
                 }</span>
-        } else<span class="cov10" title="733"> {
+        } else<span class="cov10" title="587"> {
                 token = strings.Split(authString, " ")[1]
         }</span>
 
         // Is the request coming from a node itself?
-        <span class="cov10" title="733">if token == config.Config.Node.PrimaryKey </span><span class="cov7" title="146">{
+        <span class="cov10" title="587">if token == config.Config.Node.PrimaryKey </span><span class="cov0" title="0">{
                 return true
         }</span>
 
         // Get the user via the information
-        <span class="cov9" title="587">usr, _ = user.GetUserByAPIToken(token)
+        <span class="cov10" title="587">usr, _ = user.GetUserByAPIToken(token)
         if usr == nil </span><span class="cov0" title="0">{
                 return false
         }</span>
 
-        <span class="cov9" title="587">if utils.Contains(usr.Groups, "admin") </span><span class="cov8" title="178">{
+        <span class="cov10" title="587">if utils.Contains(usr.Groups, "admin") </span><span class="cov8" title="178">{
                 return true
         }</span>
         <span class="cov9" title="409">for _, group := range groups </span><span class="cov9" title="409">{
-                if utils.Contains(usr.Groups, group) </span><span class="cov7" title="159">{
+                if utils.Contains(usr.Groups, group) </span><span class="cov8" title="159">{
                         return true
                 }</span>
         }
@@ -1250,7 +1250,7 @@ import (
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/run/{cascade_name}/{task_name} [post]
-func CreateRun(ctx *gin.Context) <span class="cov4" title="8">{
+func CreateRun(ctx *gin.Context) <span class="cov10" title="3">{
         cn := ctx.Param("cascade")
         tn := ctx.Param("task")
 
@@ -1260,18 +1260,18 @@ func CreateRun(ctx *gin.Context) <span class="cov4" title="8">{
                 return
         }</span>
 
-        <span class="cov4" title="8">s, err := state.GetStateByNames(cn, tn)
+        <span class="cov10" title="3">s, err := state.GetStateByNames(cn, tn)
         if err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
                 return
         }</span>
 
-        <span class="cov4" title="8">t, err := task.GetTaskByNames(cn, tn)
+        <span class="cov10" title="3">t, err := task.GetTaskByNames(cn, tn)
         if err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
                 return
         }</span>
-        <span class="cov4" title="8">t.RunNumber += 1
+        <span class="cov10" title="3">t.RunNumber += 1
 
         previousName := fmt.Sprintf("SCAFFOLD_PREVIOUS-%s", t.Name)
         ps := *s
@@ -1282,7 +1282,7 @@ func CreateRun(ctx *gin.Context) <span class="cov4" title="8">{
                 return
         }</span>
 
-        <span class="cov4" title="8">s.Number += 1
+        <span class="cov10" title="3">s.Number += 1
 
         s.Status = constants.STATE_STATUS_WAITING
 
@@ -1302,7 +1302,7 @@ func CreateRun(ctx *gin.Context) <span class="cov4" title="8">{
                 return
         }</span>
 
-        <span class="cov4" title="8">httpClient := http.Client{}
+        <span class="cov10" title="3">httpClient := http.Client{}
         requestURL := fmt.Sprintf("%s://%s:%d/api/v1/trigger", n.Protocol, n.Host, n.Port)
         req, _ := http.NewRequest("POST", requestURL, postBodyBuffer)
         req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
@@ -1310,18 +1310,18 @@ func CreateRun(ctx *gin.Context) <span class="cov4" title="8">{
         if err != nil </span><span class="cov0" title="0">{
                 panic(err)</span>
         }
-        <span class="cov4" title="8">if resp.StatusCode &gt;= 400 </span><span class="cov0" title="0">{
+        <span class="cov10" title="3">if resp.StatusCode &gt;= 400 </span><span class="cov10" title="3">{
                 utils.Error(fmt.Errorf("received trigger status code %d", resp.StatusCode), ctx, resp.StatusCode)
         }</span>
-        <span class="cov4" title="8">if _, ok := manager.InProgress[cn]; !ok </span><span class="cov1" title="1">{
+        <span class="cov10" title="3">if _, ok := manager.InProgress[cn]; !ok </span><span class="cov1" title="1">{
                 manager.InProgress[cn] = map[string]string{fmt.Sprintf("%s.%d", tn, t.RunNumber): fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)}
                 manager.ToCheck[cn] = map[string]string{fmt.Sprintf("%s.%d", tn, t.RunNumber): fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)}
-        }</span> else<span class="cov4" title="7"> {
+        }</span> else<span class="cov6" title="2"> {
                 manager.InProgress[cn][fmt.Sprintf("%s.%d", tn, t.RunNumber)] = fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)
                 manager.ToCheck[cn][fmt.Sprintf("%s.%d", tn, t.RunNumber)] = fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)
         }</span>
 
-        <span class="cov4" title="8">if err := task.UpdateTaskByNames(cn, tn, t); err != nil </span><span class="cov0" title="0">{
+        <span class="cov10" title="3">if err := task.UpdateTaskByNames(cn, tn, t); err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
                 return
         }</span>
@@ -1331,12 +1331,12 @@ func CreateRun(ctx *gin.Context) <span class="cov4" title="8">{
         //         return
         // }
 
-        <span class="cov4" title="8">cs, err := cascade.GetCascadeByName(cn)
+        <span class="cov10" title="3">cs, err := cascade.GetCascadeByName(cn)
         if err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
                 return
         }</span>
-        <span class="cov4" title="8">manager.SetDependsState(cs, tn)
+        <span class="cov10" title="3">manager.SetDependsState(cs, tn)
 
         ctx.JSON(http.StatusOK, gin.H{"message": "OK"})</span>
 }
@@ -1354,7 +1354,7 @@ func CreateRun(ctx *gin.Context) <span class="cov4" title="8">{
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/run/{cascade_name}/{task_name}/check [post]
-func CreateCheckRun(ctx *gin.Context) <span class="cov3" title="3">{
+func CreateCheckRun(ctx *gin.Context) <span class="cov0" title="0">{
         cn := ctx.Param("cascade")
         tn := ctx.Param("task")
 
@@ -1364,12 +1364,12 @@ func CreateCheckRun(ctx *gin.Context) <span class="cov3" title="3">{
                 return
         }</span>
 
-        <span class="cov3" title="3">t, err := task.GetTaskByNames(cn, tn)
+        <span class="cov0" title="0">t, err := task.GetTaskByNames(cn, tn)
         if err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
                 return
         }</span>
-        <span class="cov3" title="3">t.Check.RunNumber += 1
+        <span class="cov0" title="0">t.Check.RunNumber += 1
 
         checkStateName := fmt.Sprintf("SCAFFOLD_CHECK-%s", tn)
 
@@ -1391,7 +1391,7 @@ func CreateCheckRun(ctx *gin.Context) <span class="cov3" title="3">{
                         return
                 }</span>
         }
-        <span class="cov3" title="3">s.Number = t.RunNumber
+        <span class="cov0" title="0">s.Number = t.RunNumber
 
         obj := run.Run{
                 Name: fmt.Sprintf("%s.%s.%d", cn, checkStateName, t.Check.RunNumber),
@@ -1424,7 +1424,7 @@ func CreateCheckRun(ctx *gin.Context) <span class="cov3" title="3">{
                 return
         }</span>
 
-        <span class="cov3" title="3">httpClient := http.Client{}
+        <span class="cov0" title="0">httpClient := http.Client{}
         requestURL := fmt.Sprintf("%s://%s:%d/api/v1/trigger", n.Protocol, n.Host, n.Port)
         req, _ := http.NewRequest("POST", requestURL, postBodyBuffer)
         req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
@@ -1432,18 +1432,18 @@ func CreateCheckRun(ctx *gin.Context) <span class="cov3" title="3">{
         if err != nil </span><span class="cov0" title="0">{
                 logger.Error("", err.Error())
         }</span>
-        <span class="cov3" title="3">if resp.StatusCode &gt;= 400 </span><span class="cov0" title="0">{
+        <span class="cov0" title="0">if resp.StatusCode &gt;= 400 </span><span class="cov0" title="0">{
                 logger.Errorf("", "Received trigger status code %d", resp.StatusCode)
         }</span>
-        <span class="cov3" title="3">if _, ok := manager.InProgress[cn]; !ok </span><span class="cov0" title="0">{
+        <span class="cov0" title="0">if _, ok := manager.InProgress[cn]; !ok </span><span class="cov0" title="0">{
                 manager.InProgress[cn] = map[string]string{fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber): fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)}
                 manager.ToCheck[cn] = map[string]string{fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber): fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)}
-        }</span> else<span class="cov3" title="3"> {
+        }</span> else<span class="cov0" title="0"> {
                 manager.InProgress[cn][fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber)] = fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)
                 manager.ToCheck[cn][fmt.Sprintf("%s.%d", checkStateName, t.Check.RunNumber)] = fmt.Sprintf("%s://%s:%d", n.Protocol, n.Host, n.Port)
         }</span>
 
-        <span class="cov3" title="3">if err := task.UpdateTaskByNames(cn, tn, t); err != nil </span><span class="cov0" title="0">{
+        <span class="cov0" title="0">if err := task.UpdateTaskByNames(cn, tn, t); err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
                 return
         }</span>
@@ -1453,7 +1453,7 @@ func CreateCheckRun(ctx *gin.Context) <span class="cov3" title="3">{
         //         return
         // }
 
-        <span class="cov3" title="3">ctx.JSON(http.StatusOK, gin.H{"message": "OK"})</span>
+        <span class="cov0" title="0">ctx.JSON(http.StatusOK, gin.H{"message": "OK"})</span>
 }
 
 //        @summary                                        Kill a run
@@ -1515,21 +1515,21 @@ func ManagerKillRun(ctx *gin.Context) <span class="cov0" title="0">{
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/trigger [post]
-func TriggerRun(ctx *gin.Context) <span class="cov5" title="11">{
+func TriggerRun(ctx *gin.Context) <span class="cov0" title="0">{
         var r run.Run
         if err := ctx.ShouldBindJSON(&amp;r); err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
                 return
         }</span>
 
-        <span class="cov5" title="11">if r.Groups != nil </span><span class="cov5" title="11">{
+        <span class="cov0" title="0">if r.Groups != nil </span><span class="cov0" title="0">{
                 if !validateUserGroup(ctx, r.Groups) </span><span class="cov0" title="0">{
                         utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
                         return
                 }</span>
         }
 
-        <span class="cov5" title="11">names := strings.Split(r.Name, ".")
+        <span class="cov0" title="0">names := strings.Split(r.Name, ".")
 
         r.State = state.State{
                 Task:     names[1],
@@ -1599,7 +1599,7 @@ func KillRun(ctx *gin.Context) <span class="cov0" title="0">{
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/state/{cascade_name}/{task_name}/{task_number} [get]
-func GetRunState(ctx *gin.Context) <span class="cov10" title="135">{
+func GetRunState(ctx *gin.Context) <span class="cov0" title="0">{
         cn := ctx.Param("cascade")
         tn := ctx.Param("task")
         n := ctx.Param("number")
@@ -1608,26 +1608,26 @@ func GetRunState(ctx *gin.Context) <span class="cov10" title="135">{
         if err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusNotFound)
         }</span>
-        <span class="cov10" title="135">if c.Groups != nil </span><span class="cov10" title="135">{
+        <span class="cov0" title="0">if c.Groups != nil </span><span class="cov0" title="0">{
                 if !validateUserGroup(ctx, c.Groups) </span><span class="cov0" title="0">{
                         utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
                 }</span>
         }
 
-        <span class="cov10" title="135">runName := fmt.Sprintf("%s.%s.%s", cn, tn, n)
-        if container.CurrentRun.Name == runName </span><span class="cov9" title="92">{
+        <span class="cov0" title="0">runName := fmt.Sprintf("%s.%s.%s", cn, tn, n)
+        if container.CurrentRun.Name == runName </span><span class="cov0" title="0">{
                 logger.Debugf("", "Run %s is currently running", runName)
                 ctx.JSON(http.StatusOK, container.CurrentRun.State)
                 return
         }</span>
-        <span class="cov7" title="43">for _, r := range worker.RunQueue </span><span class="cov7" title="34">{
-                if r.Name == runName </span><span class="cov7" title="34">{
+        <span class="cov0" title="0">for _, r := range worker.RunQueue </span><span class="cov0" title="0">{
+                if r.Name == runName </span><span class="cov0" title="0">{
                         logger.Debugf("", "Run %s is waiting in queue", runName)
                         ctx.JSON(http.StatusOK, r.State)
                         return
                 }</span>
         }
-        <span class="cov5" title="9">if r, ok := container.CompletedRuns[runName]; ok </span><span class="cov5" title="9">{
+        <span class="cov0" title="0">if r, ok := container.CompletedRuns[runName]; ok </span><span class="cov0" title="0">{
                 logger.Debugf("", "Run %s is completed", runName)
                 ctx.JSON(http.StatusOK, r.State)
                 delete(container.CompletedRuns, runName)
@@ -1801,7 +1801,7 @@ func GetAllStates(ctx *gin.Context) <span class="cov4" title="11">{
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/state/{cascade_name}/{state_name} [get]
-func GetStateByNames(ctx *gin.Context) <span class="cov6" title="45">{
+func GetStateByNames(ctx *gin.Context) <span class="cov4" title="14">{
         cn := ctx.Param("cascade")
         tn := ctx.Param("task")
 
@@ -1812,7 +1812,7 @@ func GetStateByNames(ctx *gin.Context) <span class="cov6" title="45">{
                 return
         }</span>
 
-        <span class="cov6" title="45">ctx.JSON(http.StatusOK, *s)</span>
+        <span class="cov4" title="14">ctx.JSON(http.StatusOK, *s)</span>
 }
 
 //        @summary                                        Get states
@@ -2601,7 +2601,7 @@ type Cascade struct {
         Links   map[string]string `json:"links" bson:"links"`
 }
 
-func CreateCascade(c *Cascade) error <span class="cov2" title="5">{
+func CreateCascade(c *Cascade) error <span class="cov3" title="5">{
         currentTime := time.Now().UTC()
         c.Created = currentTime.Format("2006-01-02T15:04:05Z")
         c.Updated = currentTime.Format("2006-01-02T15:04:05Z")
@@ -2610,13 +2610,13 @@ func CreateCascade(c *Cascade) error <span class="cov2" title="5">{
                 return fmt.Errorf("cascade already exists with name %s", c.Name)
         }</span>
 
-        <span class="cov2" title="5">_, err := mongodb.Collections[constants.MONGODB_CASCADE_COLLECTION_NAME].InsertOne(mongodb.Ctx, c)
+        <span class="cov3" title="5">_, err := mongodb.Collections[constants.MONGODB_CASCADE_COLLECTION_NAME].InsertOne(mongodb.Ctx, c)
 
         if err != nil </span><span class="cov0" title="0">{
                 return err
         }</span>
 
-        <span class="cov2" title="5">for _, t := range c.Tasks </span><span class="cov5" title="30">{
+        <span class="cov3" title="5">for _, t := range c.Tasks </span><span class="cov5" title="30">{
                 t.Cascade = c.Name
                 t.RunNumber = 0
                 if err := task.CreateTask(&amp;t); err != nil </span><span class="cov0" title="0">{
@@ -2624,14 +2624,14 @@ func CreateCascade(c *Cascade) error <span class="cov2" title="5">{
                 }</span>
         }
 
-        <span class="cov2" title="5">for _, i := range c.Inputs </span><span class="cov3" title="9">{
+        <span class="cov3" title="5">for _, i := range c.Inputs </span><span class="cov3" title="9">{
                 i.Cascade = c.Name
                 if err := input.CreateInput(&amp;i); err != nil </span><span class="cov0" title="0">{
                         return err
                 }</span>
         }
 
-        <span class="cov2" title="5">d := &amp;datastore.DataStore{
+        <span class="cov3" title="5">d := &amp;datastore.DataStore{
                 Name:    c.Name,
                 Env:     make(map[string]string),
                 Files:   make([]string, 0),
@@ -2643,7 +2643,7 @@ func CreateCascade(c *Cascade) error <span class="cov2" title="5">{
                 d.Env[val.Name] = val.Default
         }</span>
 
-        <span class="cov2" title="5">err = datastore.CreateDataStore(d)
+        <span class="cov3" title="5">err = datastore.CreateDataStore(d)
         return err</span>
 }
 
@@ -2676,32 +2676,32 @@ func DeleteCascadeByName(name string) error <span class="cov1" title="1">{
 
 }
 
-func GetAllCascades() ([]*Cascade, error) <span class="cov7" title="242">{
-        filter := bson.D{{}}
+func GetAllCascades() ([]*Cascade, error) <span class="cov7" title="127">{
+        filter := bson.M{}
 
         cascades, err := FilterCascades(filter)
 
         return cascades, err
 }</span>
 
-func GetCascadeByName(name string) (*Cascade, error) <span class="cov9" title="1163">{
+func GetCascadeByName(name string) (*Cascade, error) <span class="cov9" title="976">{
         filter := bson.M{"name": name}
 
         cascades, err := FilterCascades(filter)
 
-        if err != nil </span><span class="cov3" title="11">{
+        if err != nil </span><span class="cov4" title="11">{
                 return nil, err
         }</span>
 
-        <span class="cov9" title="1152">if len(cascades) == 0 </span><span class="cov0" title="0">{
+        <span class="cov9" title="965">if len(cascades) == 0 </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("no cascade found with name %s", name)
         }</span>
 
-        <span class="cov9" title="1152">if len(cascades) &gt; 1 </span><span class="cov0" title="0">{
+        <span class="cov9" title="965">if len(cascades) &gt; 1 </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("multiple cascades found with name %s", name)
         }</span>
 
-        <span class="cov9" title="1152">return cascades[0], nil</span>
+        <span class="cov9" title="965">return cascades[0], nil</span>
 }
 
 func UpdateCascadeByName(name string, c *Cascade) error <span class="cov1" title="1">{
@@ -2773,7 +2773,7 @@ func UpdateCascadeByName(name string, c *Cascade) error <span class="cov1" title
         <span class="cov1" title="1">return err</span>
 }
 
-func FilterCascades(filter interface{}) ([]*Cascade, error) <span class="cov9" title="1405">{
+func FilterCascades(filter interface{}) ([]*Cascade, error) <span class="cov10" title="1103">{
         // A slice of tasks for storing the decoded documents
         var cascades []*Cascade
 
@@ -2785,28 +2785,28 @@ func FilterCascades(filter interface{}) ([]*Cascade, error) <span class="cov9" t
                 return cascades, err
         }</span>
 
-        <span class="cov9" title="1405">for cur.Next(ctx) </span><span class="cov10" title="1582">{
+        <span class="cov10" title="1103">for cur.Next(ctx) </span><span class="cov9" title="1047">{
                 var c Cascade
                 err := cur.Decode(&amp;c)
                 if err != nil </span><span class="cov0" title="0">{
                         return cascades, err
                 }</span>
 
-                <span class="cov10" title="1582">cascades = append(cascades, &amp;c)</span>
+                <span class="cov9" title="1047">cascades = append(cascades, &amp;c)</span>
         }
 
-        <span class="cov9" title="1405">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
+        <span class="cov10" title="1103">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
                 return cascades, err
         }</span>
 
         // once exhausted, close the cursor
-        <span class="cov9" title="1405">cur.Close(ctx)
+        <span class="cov10" title="1103">cur.Close(ctx)
 
-        if len(cascades) == 0 </span><span class="cov6" title="112">{
+        if len(cascades) == 0 </span><span class="cov7" title="113">{
                 return cascades, mongo.ErrNoDocuments
         }</span>
 
-        <span class="cov9" title="1293">return cascades, nil</span>
+        <span class="cov9" title="990">return cascades, nil</span>
 }
 </pre>
 		
@@ -3089,11 +3089,11 @@ func StartWSServer() <span class="cov8" title="1">{
         go func() </span><span class="cov8" title="1">{
                 log.Printf("running %s://0.0.0.0:%d\n", config.Config.Protocol, config.Config.WSPort)
 
-                if config.Config.TLSEnabled </span><span class="cov8" title="1">{
+                if config.Config.TLSEnabled </span><span class="cov0" title="0">{
                         if serverErr := server.ListenAndServeTLS(config.Config.TLSCrtPath, config.Config.TLSKeyPath); serverErr != nil </span><span class="cov0" title="0">{
                                 logger.Fatalf("", "Error running websocket server: %s", serverErr)
                         }</span>
-                } else<span class="cov0" title="0"> {
+                } else<span class="cov8" title="1"> {
                         if serverErr := server.ListenAndServe(); serverErr != nil </span><span class="cov0" title="0">{
                                 logger.Fatalf("", "Error running websocket server: %s", serverErr)
                         }</span>
@@ -3166,8 +3166,11 @@ func windowSize(msg interface{}) (rows, cols uint16, err error) <span class="cov
 
 import (
         "encoding/json"
+        "errors"
         "io/ioutil"
         "log"
+        "net"
+        "net/url"
         "os"
         "reflect"
         "scaffold/server/constants"
@@ -3178,24 +3181,25 @@ const DEFAULT_CONFIG_PATH = "/home/scaffold/data/config.json"
 const ENV_PREFIX = "SCAFFOLD_"
 
 type ConfigObject struct {
-        Host              string          `json:"host" env:"HOST"`
-        Port              int             `json:"port" env:"PORT"`
-        Protocol          string          `json:"protocol" env:"PROTOCOL"`
-        WSPort            int             `json:"ws_port" env:"WS_PORT"`
-        LogLevel          string          `json:"log_level" env:"LOG_LEVEL"`
-        LogFormat         string          `json:"log_format" env:"LOG_FORMAT"`
-        BaseURL           string          `json:"base_url" env:"BASE_URL"`
-        Admin             UserObject      `json:"admin" env:"ADMIN"`
-        DB                DBObject        `json:"db" env:"DB"`
-        Node              NodeObject      `json:"node" env:"NODE"`
-        HeartbeatInterval int             `json:"heartbeat_interval" env:"HEARTBEAT_INTERVAL"`
-        HeartbeatBackoff  int             `json:"health_check_limit" env:"HEALTH_CHECK_LIMIT"`
-        Reset             ResetObject     `json:"reset" env:"RESET"`
-        FileStore         FileStoreObject `json:"file_store" env:"FILESTORE"`
-        TLSEnabled        bool            `json:"tls_enabled" env:"TLS_ENABLED"`
-        TLSSkipVerify     bool            `json:"tls_skip_verify" env:"TLS_SKIP_VERIFY"`
-        TLSCrtPath        string          `json:"tls_crt_path" env:"TLS_CRT_PATH"`
-        TLSKeyPath        string          `json:"tls_key_path" env:"TLS_KEY_PATH"`
+        Host               string          `json:"host"`
+        Port               int             `json:"port"`
+        Protocol           string          `json:"protocol"`
+        WSPort             int             `json:"ws_port" env:"WS_PORT"`
+        LogLevel           string          `json:"log_level" env:"LOG_LEVEL"`
+        LogFormat          string          `json:"log_format" env:"LOG_FORMAT"`
+        BaseURL            string          `json:"base_url" env:"BASE_URL"`
+        Admin              UserObject      `json:"admin" env:"ADMIN"`
+        DBConnectionString string          `json:"db_connection_string" env:"DB_CONNECTION_STRING"`
+        DB                 DBObject        `json:"db"`
+        Node               NodeObject      `json:"node" env:"NODE"`
+        HeartbeatInterval  int             `json:"heartbeat_interval" env:"HEARTBEAT_INTERVAL"`
+        HeartbeatBackoff   int             `json:"heartbeat_backoff" env:"HEARTBEAT_BACKOFF"`
+        Reset              ResetObject     `json:"reset" env:"RESET"`
+        FileStore          FileStoreObject `json:"file_store" env:"FILESTORE"`
+        TLSEnabled         bool            `json:"tls_enabled" env:"TLS_ENABLED"`
+        TLSSkipVerify      bool            `json:"tls_skip_verify" env:"TLS_SKIP_VERIFY"`
+        TLSCrtPath         string          `json:"tls_crt_path" env:"TLS_CRT_PATH"`
+        TLSKeyPath         string          `json:"tls_key_path" env:"TLS_KEY_PATH"`
 }
 
 type FileStoreObject struct {
@@ -3215,6 +3219,7 @@ type UserObject struct {
 }
 
 type DBObject struct {
+        Protocol string `json:"protocol"`
         Username string `json:"username"`
         Password string `json:"password"`
         Name     string `json:"name"`
@@ -3247,13 +3252,13 @@ func LoadConfig() <span class="cov2" title="2">{
         }</span>
 
         <span class="cov2" title="2">Config = ConfigObject{
-                Host:              "scaffold",
-                Port:              2997,
-                Protocol:          "http",
+                Host:              "",
+                Port:              -1,
+                Protocol:          "",
+                BaseURL:           "http://localhost:2997",
                 WSPort:            8080,
                 LogLevel:          constants.LOG_LEVEL_INFO,
                 LogFormat:         constants.LOG_FORMAT_CONSOLE,
-                BaseURL:           "http://localhost:2997",
                 HeartbeatInterval: 500,
                 HeartbeatBackoff:  10,
                 TLSEnabled:        false,
@@ -3264,13 +3269,8 @@ func LoadConfig() <span class="cov2" title="2">{
                         Username: "admin",
                         Password: "admin",
                 },
-                DB: DBObject{
-                        Username: "myCoolMongoDBUsername",
-                        Password: "myCoolMongoDBPassword",
-                        Name:     "scaffold",
-                        Host:     "mongodb",
-                        Port:     27017,
-                },
+                DBConnectionString: "mongodb://MyCoolMongoDBUsername:MyCoolMongoDBPassword@mongodb:27017/scaffold",
+                DB:                 DBObject{},
                 Reset: ResetObject{
                         Email:    "",
                         Password: "",
@@ -3308,23 +3308,24 @@ func LoadConfig() <span class="cov2" title="2">{
         <span class="cov2" title="2">v := reflect.ValueOf(Config)
         t := reflect.TypeOf(Config)
 
-        for i := 0; i &lt; v.NumField(); i++ </span><span class="cov10" title="36">{
+        for i := 0; i &lt; v.NumField(); i++ </span><span class="cov10" title="38">{
                 field, found := t.FieldByName(v.Type().Field(i).Name)
                 if !found </span><span class="cov0" title="0">{
                         continue</span>
                 }
 
-                <span class="cov10" title="36">value := field.Tag.Get("env")
-                if value != "" </span><span class="cov10" title="36">{
+                <span class="cov10" title="38">value := field.Tag.Get("env")
+                if value != "" </span><span class="cov9" title="30">{
                         val, present := os.LookupEnv(ENV_PREFIX + value)
-                        if present </span><span class="cov9" title="25">{
+                        if present </span><span class="cov6" title="8">{
+                                // log.Printf("Found ENV var %s with value %s", ENV_PREFIX+value, val)
                                 w := reflect.ValueOf(&amp;Config).Elem().FieldByName(t.Field(i).Name)
                                 x := getAttr(&amp;Config, t.Field(i).Name).Kind().String()
-                                if w.IsValid() </span><span class="cov9" title="25">{
+                                if w.IsValid() </span><span class="cov6" title="8">{
                                         switch x </span>{
-                                        case "int", "int64":<span class="cov3" title="3">
+                                        case "int", "int64":<span class="cov2" title="2">
                                                 i, err := strconv.ParseInt(val, 10, 64)
-                                                if err == nil </span><span class="cov3" title="3">{
+                                                if err == nil </span><span class="cov2" title="2">{
                                                         w.SetInt(i)
                                                 }</span>
                                         case "int8":<span class="cov0" title="0">
@@ -3342,7 +3343,7 @@ func LoadConfig() <span class="cov2" title="2">{
                                                 if err == nil </span><span class="cov0" title="0">{
                                                         w.SetInt(i)
                                                 }</span>
-                                        case "string":<span class="cov7" title="12">
+                                        case "string":<span class="cov2" title="2">
                                                 w.SetString(val)</span>
                                         case "float32":<span class="cov0" title="0">
                                                 i, err := strconv.ParseFloat(val, 32)
@@ -3354,17 +3355,17 @@ func LoadConfig() <span class="cov2" title="2">{
                                                 if err == nil </span><span class="cov0" title="0">{
                                                         w.SetFloat(i)
                                                 }</span>
-                                        case "bool":<span class="cov4" title="4">
+                                        case "bool":<span class="cov0" title="0">
                                                 i, err := strconv.ParseBool(val)
-                                                if err == nil </span><span class="cov4" title="4">{
+                                                if err == nil </span><span class="cov0" title="0">{
                                                         w.SetBool(i)
                                                 }</span>
-                                        default:<span class="cov5" title="6">
+                                        default:<span class="cov4" title="4">
                                                 objValue := reflect.New(field.Type)
                                                 objInterface := objValue.Interface()
                                                 err := json.Unmarshal([]byte(val), objInterface)
                                                 obj := reflect.ValueOf(objInterface)
-                                                if err == nil </span><span class="cov5" title="6">{
+                                                if err == nil </span><span class="cov4" title="4">{
                                                         w.Set(reflect.Indirect(obj).Convert(field.Type))
                                                 }</span> else<span class="cov0" title="0"> {
                                                         log.Println(err)
@@ -3376,20 +3377,66 @@ func LoadConfig() <span class="cov2" title="2">{
         }
 
         // defer the closing of our jsonFile so that we can parse it later on
-        <span class="cov2" title="2">defer jsonFile.Close()</span>
+        <span class="cov2" title="2">defer jsonFile.Close()
+
+        breakConfigFields()</span>
 }
 
-func getAttr(obj interface{}, fieldName string) reflect.Value <span class="cov9" title="25">{
+func getAttr(obj interface{}, fieldName string) reflect.Value <span class="cov6" title="8">{
         pointToStruct := reflect.ValueOf(obj) // addressable
         curStruct := pointToStruct.Elem()
         if curStruct.Kind() != reflect.Struct </span><span class="cov0" title="0">{
                 panic("not struct")</span>
         }
-        <span class="cov9" title="25">curField := curStruct.FieldByName(fieldName) // type: reflect.Value
+        <span class="cov6" title="8">curField := curStruct.FieldByName(fieldName) // type: reflect.Value
         if !curField.IsValid() </span><span class="cov0" title="0">{
                 panic("not found:" + fieldName)</span>
         }
-        <span class="cov9" title="25">return curField</span>
+        <span class="cov6" title="8">return curField</span>
+}
+
+func breakConfigFields() <span class="cov2" title="2">{
+        baseURL, err := url.Parse(Config.BaseURL)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+        <span class="cov2" title="2">baseHost, basePortString, err := net.SplitHostPort(baseURL.Host)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+        <span class="cov2" title="2">basePort, err := strconv.Atoi(basePortString)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+        <span class="cov2" title="2">baseProtocol := baseURL.Scheme
+
+        Config.Host = baseHost
+        Config.Port = basePort
+        Config.Protocol = baseProtocol
+
+        mongoURL, err := url.Parse(Config.DBConnectionString)
+
+        mongoHost, mongoPortString, err := net.SplitHostPort(baseURL.Host)
+        mongoPort, err := strconv.Atoi(mongoPortString)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+        <span class="cov2" title="2">mongoProtocol := baseURL.Scheme
+
+        mongoUsername := mongoURL.User.Username()
+        mongoPassword, isSet := mongoURL.User.Password()
+        if !isSet </span><span class="cov0" title="0">{
+                panic(errors.New("credentials not provided to DB connection string"))</span>
+        }
+
+        <span class="cov2" title="2">mongoName := mongoURL.Path[1:len(mongoURL.Path)]
+
+        Config.DB.Host = mongoHost
+        Config.DB.Port = mongoPort
+        Config.DB.Username = mongoUsername
+        Config.DB.Password = mongoPassword
+        Config.DB.Name = mongoName
+        Config.DB.Protocol = mongoProtocol</span>
 }
 </pre>
 		
@@ -3421,7 +3468,7 @@ func InitContainers() <span class="cov1" title="1">{
 }</span>
 
 func PruneContainers() <span class="cov1" title="1">{
-        for </span><span class="cov10" title="435">{
+        for </span><span class="cov10" title="200">{
                 for len(LastRun) &gt; MaxAllowed </span><span class="cov0" title="0">{
                         toDestroy := ""
                         toDestroy, LastRun = LastRun[0], LastRun[1:]
@@ -3443,7 +3490,7 @@ func PruneContainers() <span class="cov1" title="1">{
                                 }</span>
                         }
                 }
-                <span class="cov10" title="435">time.Sleep(250 * time.Millisecond)</span>
+                <span class="cov10" title="200">time.Sleep(250 * time.Millisecond)</span>
         }
 }
 </pre>
@@ -3517,7 +3564,7 @@ func GetAllDataStores() ([]*DataStore, error) <span class="cov5" title="6">{
         return datastores, err
 }</span>
 
-func GetDataStoreByName(name string) (*DataStore, error) <span class="cov9" title="30">{
+func GetDataStoreByName(name string) (*DataStore, error) <span class="cov8" title="20">{
         filter := bson.M{"name": name}
 
         datastores, err := FilterDataStores(filter)
@@ -3526,18 +3573,18 @@ func GetDataStoreByName(name string) (*DataStore, error) <span class="cov9" titl
                 return nil, err
         }</span>
 
-        <span class="cov8" title="24">if len(datastores) == 0 </span><span class="cov0" title="0">{
+        <span class="cov7" title="14">if len(datastores) == 0 </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("no datastore found with name %s", name)
         }</span>
 
-        <span class="cov8" title="24">if len(datastores) &gt; 1 </span><span class="cov0" title="0">{
+        <span class="cov7" title="14">if len(datastores) &gt; 1 </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("multiple datastores found with name %s", name)
         }</span>
 
-        <span class="cov8" title="24">return datastores[0], nil</span>
+        <span class="cov7" title="14">return datastores[0], nil</span>
 }
 
-func UpdateDataStoreByName(name string, d *DataStore, is []input.Input) error <span class="cov6" title="11">{
+func UpdateDataStoreByName(name string, d *DataStore, is []input.Input) error <span class="cov2" title="2">{
         filter := bson.M{"name": name}
 
         currentTime := time.Now().UTC()
@@ -3573,7 +3620,7 @@ func UpdateDataStoreByName(name string, d *DataStore, is []input.Input) error <s
                 }</span>
         }
 
-        <span class="cov6" title="11">collection := mongodb.Collections[constants.MONGODB_DATASTORE_COLLECTION_NAME]
+        <span class="cov2" title="2">collection := mongodb.Collections[constants.MONGODB_DATASTORE_COLLECTION_NAME]
         ctx := mongodb.Ctx
 
         opts := options.Replace().SetUpsert(true)
@@ -3584,14 +3631,14 @@ func UpdateDataStoreByName(name string, d *DataStore, is []input.Input) error <s
                 return err
         }</span>
 
-        <span class="cov6" title="11">if result.ModifiedCount != 1 </span><span class="cov0" title="0">{
+        <span class="cov2" title="2">if result.ModifiedCount != 1 </span><span class="cov0" title="0">{
                 return fmt.Errorf("no datastore found with name %s", name)
         }</span>
 
-        <span class="cov6" title="11">return nil</span>
+        <span class="cov2" title="2">return nil</span>
 }
 
-func FilterDataStores(filter interface{}) ([]*DataStore, error) <span class="cov9" title="36">{
+func FilterDataStores(filter interface{}) ([]*DataStore, error) <span class="cov9" title="26">{
         // A slice of tasks for storing the decoded documents
         var datastores []*DataStore
 
@@ -3603,28 +3650,28 @@ func FilterDataStores(filter interface{}) ([]*DataStore, error) <span class="cov
                 return datastores, err
         }</span>
 
-        <span class="cov9" title="36">for cur.Next(ctx) </span><span class="cov10" title="42">{
+        <span class="cov9" title="26">for cur.Next(ctx) </span><span class="cov10" title="32">{
                 var d DataStore
                 err := cur.Decode(&amp;d)
                 if err != nil </span><span class="cov0" title="0">{
                         return datastores, err
                 }</span>
 
-                <span class="cov10" title="42">datastores = append(datastores, &amp;d)</span>
+                <span class="cov10" title="32">datastores = append(datastores, &amp;d)</span>
         }
 
-        <span class="cov9" title="36">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
+        <span class="cov9" title="26">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
                 return datastores, err
         }</span>
 
         // once exhausted, close the cursor
-        <span class="cov9" title="36">cur.Close(ctx)
+        <span class="cov9" title="26">cur.Close(ctx)
 
         if len(datastores) == 0 </span><span class="cov5" title="6">{
                 return datastores, mongo.ErrNoDocuments
         }</span>
 
-        <span class="cov9" title="30">return datastores, nil</span>
+        <span class="cov8" title="20">return datastores, nil</span>
 }
 </pre>
 		
@@ -5717,114 +5764,124 @@ func InitBucket() <span class="cov10" title="2">{
         bucket := aws.String(config.Config.FileStore.Bucket)
 
         // Configure to use MinIO Server
-        S3Config = &amp;aws.Config{
-                Credentials:      credentials.NewStaticCredentials(config.Config.FileStore.AccessKey, config.Config.FileStore.SecretKey, ""),
-                Endpoint:         aws.String(fmt.Sprintf("%s://%s:%d", config.Config.FileStore.Protocol, config.Config.FileStore.Host, config.Config.FileStore.Port)),
-                Region:           aws.String(config.Config.FileStore.Region),
-                DisableSSL:       aws.Bool(false),
-                S3ForcePathStyle: aws.Bool(true),
+        var S3Config *aws.Config
+        if config.Config.FileStore.AccessKey != "" &amp;&amp; config.Config.FileStore.SecretKey != "" {
+                S3Config = &amp;aws.Config{
+                        Credentials:      credentials.NewStaticCredentials(config.Config.FileStore.AccessKey, config.Config.FileStore.SecretKey, ""),
+                        Endpoint:         aws.String(fmt.Sprintf("%s://%s:%d", config.Config.FileStore.Protocol, config.Config.FileStore.Host, config.Config.FileStore.Port)),
+                        Region:           aws.String(config.Config.FileStore.Region),
+                        DisableSSL:       aws.Bool(false),
+                        S3ForcePathStyle: aws.Bool(true),
+                }
+</span>        } else {
+</span>                S3Config = &amp;aws.Config{
+                        Endpoint:         aws.String(fmt.Sprintf("%s://%s:%d", config.Config.FileStore.Protocol, config.Config.FileStore.Host, config.Config.FileStore.Port)),
+        <span class="cov10" title="2">                Region:           aws.String(config.Config.FileStore.Region),
+                        DisableSSL:       aws.Bool(false),
+                        S3ForcePathStyle: aws.Bool(true),
+                }
         }
         session, err := session.NewSession(S3Config)
-        if err != nil </span><span class="cov0" title="0">{
-                panic(err)</span>
-        }
-
-        <span class="cov10" title="2">client := s3.New(session)
+        if err != nil {
+                panic(err)
+</span>        }
+</span>
+        client := s3.New(session)
 
         cparams := &amp;s3.CreateBucketInput{
-                Bucket: bucket, // Required
-        }
+</span>                Bucket: bucket, // Required
+</span>        }
 
-        buckets, err := client.ListBuckets(nil)
-        if err != nil </span><span class="cov0" title="0">{
-                panic(err)</span>
-        }
-
-        <span class="cov10" title="2">alreadyExists := false
-        for _, bucket := range buckets.Buckets </span><span class="cov1" title="1">{
-                if *bucket.Name == config.Config.FileStore.Bucket </span><span class="cov1" title="1">{
+</span>        buckets, err := client.ListBuckets(nil)
+        if err != nil {
+                panic(err)
+        <span class="cov10" title="2">}
+</span>
+        alreadyExists := false
+        for _, bucket :</span><span class="cov0" title="0">= range buckets.Buckets {
+                if *bucket.Name == config.Config.FileStore.Bucket {
                         alreadyExists = true
-                        break</span>
+                        </span>break
                 }
         }
 
-        <span class="cov10" title="2">if !alreadyExists </span><span class="cov1" title="1">{
+        if !alreadyExists {
                 // Create a new bucket using the CreateBucket call.
-                _, err := client.CreateBucket(cparams)
-                if err != nil </span><span class="cov0" title="0">{
+                _, err := cli</span><span class="cov0" title="0">ent.CreateBucket(cparams)
+                if err != </span>nil {
                         logger.Errorf("", "Encountered error with creating bucket: %v", err)
-                        // panic(err)
-                }</span>
+        <span class="cov0" title="0">                // panic(err)
+                }
         }
-}
+</span>}
 
-func GetFile(inputPath, outputPath string) error <span class="cov1" title="1">{
-        session, err := session.NewSession(S3Config)
-        if err != nil </span><span class="cov0" title="0">{
-                panic(err)</span>
+</span>func GetFile(inputPath, outputPath string) error {
+        <span class="cov0" title="0">session, err := session.NewSession(S3Config)
+        if err != nil {
+                panic(err)
         }
-        <span class="cov1" title="1">downloader := s3manager.NewDownloader(session)
+        downloader := s3manager.NewDownloader(session)
         file, err := os.Create(outputPath)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil {
                 return err
-        }</span>
+        }
 
-        <span class="cov1" title="1">defer file.Close()
+        defer file</span>.Close()
 
         _, err = downloader.Download(
                 file,
                 &amp;s3.GetObjectInput{
-                        Bucket: aws.String(config.Config.FileStore.Bucket),
-                        Key:    aws.String(inputPath),
+                        Bucket: aws.</span><span class="cov0" title="0">String(config.Config.FileStore.Bucket),
+                        Key:    a</span>ws.String(inputPath),
                 },
-        )
+        <span class="cov0" title="0">)
 
-        return err</span>
-}
+        return err
+</span>}
 
-func UploadFile(inputPath, outputPath string) error <span class="cov1" title="1">{
-        session, err := session.NewSession(S3Config)
-        if err != nil </span><span class="cov0" title="0">{
-                panic(err)</span>
+</span>func UploadFile(inputPath, outputPath string) error {
+        <span class="cov0" title="0">session, err := session.NewSession(S3Config)
+        if err != nil {
+                panic(err)
         }
-        <span class="cov1" title="1">uploader := s3manager.NewUploader(session)
+        uploader := s3manager.NewUploader(session)
         file, err := os.Open(inputPath)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil {
                 return err
-        }</span>
-
-        <span class="cov1" title="1">defer file.Close()
+        }
+</span>
+        defer file.Close()
 
         _, err = uploader.Upload(&amp;s3manager.UploadInput{
-                Bucket: aws.String(config.Config.FileStore.Bucket),
-                Key:    aws.String(outputPath),
+                Bucket: aws.S</span><span class="cov0" title="0">tring(config.Config.FileStore.Bucket),
+                Key:    aw</span>s.String(outputPath),
                 Body:   file,
-        })
+        <span class="cov0" title="0">})
 
-        return err</span>
+        return err
 }
-
-func ListObjects() (map[string]ObjectMetadata, error) <span class="cov0" title="0">{
+</span>
+fu</span>nc ListObjects() (map[string]ObjectMetadata, error) {
         session, err := session.NewSession(S3Config)
-        if err != nil </span><span class="cov0" title="0">{
-                panic(err)</span>
+        <span class="cov0" title="0">if err != nil {
+                panic(err)
         }
-        <span class="cov0" title="0">svc := s3.New(session)
+</span>        svc := s3.New(session)
 
         resp, err := svc.ListObjectsV2(&amp;s3.ListObjectsV2Input{Bucket: aws.String(config.Config.FileStore.Bucket)})
-        if err != nil </span><span class="cov0" title="0">{
-                return map[string]ObjectMetadata{}, err
-        }</span>
+        if err != nil {
+                </span>return map[string]ObjectMetadata{}, err
+        <span class="cov0" title="0">}
+</span>
+        output := make(map[string]ObjectMetadata)
 
-        <span class="cov0" title="0">output := make(map[string]ObjectMetadata)
-
-        for _, item := range resp.Contents </span><span class="cov0" title="0">{
+        for _, item := range resp.Contents {
                 output[*item.Key] = ObjectMetadata{
                         Name:     *item.Key,
                         Modified: (*item.LastModified).Format("2006-01-02T15:04:05Z"),
                 }
-        }</span>
-        <span class="cov0" title="0">return output, nil</span>
+        }
+        return output, nil
 }
 </pre>
 		
@@ -6011,12 +6068,12 @@ import (
 var LogLevel = 0
 var LogFormat = constants.LOG_FORMAT_CONSOLE
 
-var ConsoleLogFormatter = func(param gin.LogFormatterParams) string <span class="cov8" title="568">{
+var ConsoleLogFormatter = func(param gin.LogFormatterParams) string <span class="cov8" title="295">{
         if param.Latency &gt; time.Minute </span><span class="cov0" title="0">{
                 param.Latency = param.Latency.Truncate(time.Second)
         }</span>
 
-        <span class="cov8" title="568">timestamp := param.TimeStamp.Format("2006-01-02T15:04:05Z")
+        <span class="cov8" title="295">timestamp := param.TimeStamp.Format("2006-01-02T15:04:05Z")
         statusCode := param.StatusCode
         latency := param.Latency
         clientIP := param.ClientIP
@@ -6028,15 +6085,15 @@ var ConsoleLogFormatter = func(param gin.LogFormatterParams) string <span class=
         methodColor := constants.COLOR_MAGENTA
 
         level := constants.LOG_LEVEL_INFO
-        if statusCode &gt;= 400 </span><span class="cov4" title="33">{
+        if statusCode &gt;= 400 </span><span class="cov6" title="70">{
                 level = constants.LOG_LEVEL_ERROR
                 statusCodeColor = constants.COLOR_RED
         }</span>
 
-        <span class="cov8" title="568">switch method </span>{
-        case "GET":<span class="cov8" title="504">
+        <span class="cov8" title="295">switch method </span>{
+        case "GET":<span class="cov8" title="248">
                 methodColor = constants.METHOD_GET</span>
-        case "POST":<span class="cov5" title="49">
+        case "POST":<span class="cov5" title="32">
                 methodColor = constants.METHOD_POST</span>
         case "PUT":<span class="cov3" title="7">
                 methodColor = constants.METHOD_PUT</span>
@@ -6046,7 +6103,7 @@ var ConsoleLogFormatter = func(param gin.LogFormatterParams) string <span class=
                 methodColor = constants.METHOD_DELETE</span>
         }
 
-        <span class="cov8" title="568">return Logf(level,
+        <span class="cov8" title="295">return Logf(level,
                 constants.LOG_FORMAT_CONSOLE,
                 timestamp,
                 "%s%3d%s | %13v | %15s | %s%-7s%s %#v | %s",
@@ -6116,7 +6173,7 @@ var JSONLogFormatter = func(param gin.LogFormatterParams) string <span class="co
 }
 
 func sliceIndex(list []string, val string) int <span class="cov2" title="4">{
-        for i := 0; i &lt; len(list); i++ </span><span class="cov4" title="20">{
+        for i := 0; i &lt; len(list); i++ </span><span class="cov4" title="14">{
                 if list[i] == val </span><span class="cov2" title="4">{
                         return i
                 }</span>
@@ -6142,8 +6199,8 @@ func SetFormat(format string) <span class="cov1" title="2">{
         <span class="cov1" title="2">LogFormat = format</span>
 }
 
-func Logf(level, formatter, timestamp, format string, args ...interface{}) string <span class="cov10" title="2656">{
-        if formatter == constants.LOG_FORMAT_JSON </span><span class="cov9" title="2088">{
+func Logf(level, formatter, timestamp, format string, args ...interface{}) string <span class="cov10" title="911">{
+        if formatter == constants.LOG_FORMAT_JSON </span><span class="cov0" title="0">{
                 log := map[string]interface{}{
                         "level":     level,
                         "timestamp": timestamp,
@@ -6152,14 +6209,14 @@ func Logf(level, formatter, timestamp, format string, args ...interface{}) strin
                 logBytes, _ := json.Marshal(&amp;log)
                 return string(logBytes)
         }</span>
-        <span class="cov8" title="568">switch level </span>{
+        <span class="cov10" title="911">switch level </span>{
         case constants.LOG_LEVEL_DEBUG:<span class="cov0" title="0">
                 return Sdebugf(timestamp, format, args...)</span>
-        case constants.LOG_LEVEL_ERROR:<span class="cov4" title="33">
+        case constants.LOG_LEVEL_ERROR:<span class="cov7" title="94">
                 return Serrorf(timestamp, format, args...)</span>
         case constants.LOG_LEVEL_FATAL:<span class="cov0" title="0">
                 return Sfatalf(timestamp, format, args...)</span>
-        case constants.LOG_LEVEL_INFO:<span class="cov8" title="535">
+        case constants.LOG_LEVEL_INFO:<span class="cov9" title="817">
                 return Sinfof(timestamp, format, args...)</span>
         case constants.LOG_LEVEL_SUCCESS:<span class="cov0" title="0">
                 return Ssuccessf(timestamp, format, args...)</span>
@@ -6181,12 +6238,12 @@ func Debug(timestamp, message string) <span class="cov0" title="0">{
         }
 }
 
-func Debugf(timestamp, format string, args ...interface{}) <span class="cov9" title="1194">{
-        if LogLevel &gt;= constants.LOG_LEVEL_DEBUG_NUM </span><span class="cov9" title="1194">{
-                if timestamp == "" </span><span class="cov9" title="1194">{
+func Debugf(timestamp, format string, args ...interface{}) <span class="cov8" title="229">{
+        if LogLevel &gt;= constants.LOG_LEVEL_DEBUG_NUM </span><span class="cov0" title="0">{
+                if timestamp == "" </span><span class="cov0" title="0">{
                         timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
                 }</span>
-                <span class="cov9" title="1194">fmt.Print(Logf(constants.LOG_LEVEL_DEBUG, LogFormat, timestamp, format, args...))</span>
+                <span class="cov0" title="0">fmt.Print(Logf(constants.LOG_LEVEL_DEBUG, LogFormat, timestamp, format, args...))</span>
                 // fmt.Printf("%s[DEBUG  ]%s [%s] :: %s\n", constants.COLOR_CYAN, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
         }
 }
@@ -6201,12 +6258,12 @@ func Sdebugf(timestamp, format string, args ...interface{}) string <span class="
         <span class="cov0" title="0">return ""</span>
 }
 
-func Error(timestamp, message string) <span class="cov2" title="3">{
-        if LogLevel &gt;= constants.LOG_LEVEL_ERROR_NUM </span><span class="cov2" title="3">{
-                if timestamp == "" </span><span class="cov2" title="3">{
+func Error(timestamp, message string) <span class="cov3" title="6">{
+        if LogLevel &gt;= constants.LOG_LEVEL_ERROR_NUM </span><span class="cov3" title="6">{
+                if timestamp == "" </span><span class="cov3" title="6">{
                         timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
                 }</span>
-                <span class="cov2" title="3">fmt.Print(Logf(constants.LOG_LEVEL_ERROR, LogFormat, timestamp, message))</span>
+                <span class="cov3" title="6">fmt.Print(Logf(constants.LOG_LEVEL_ERROR, LogFormat, timestamp, message))</span>
                 // fmt.Printf("%s[ERROR  ]%s [%s] :: %s\n", constants.COLOR_RED, constants.COLOR_NONE, timestamp, message)
         }
 }
@@ -6221,12 +6278,12 @@ func Errorf(timestamp, format string, args ...interface{}) <span class="cov4" ti
         }
 }
 
-func Serrorf(timestamp, format string, args ...interface{}) string <span class="cov4" title="33">{
-        if LogLevel &gt;= constants.LOG_LEVEL_ERROR_NUM </span><span class="cov4" title="33">{
+func Serrorf(timestamp, format string, args ...interface{}) string <span class="cov7" title="94">{
+        if LogLevel &gt;= constants.LOG_LEVEL_ERROR_NUM </span><span class="cov7" title="94">{
                 if timestamp == "" </span><span class="cov0" title="0">{
                         timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
                 }</span>
-                <span class="cov4" title="33">return fmt.Sprintf("%s[ERROR  ]%s [%s] :: %s\n", constants.COLOR_RED, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))</span>
+                <span class="cov7" title="94">return fmt.Sprintf("%s[ERROR  ]%s [%s] :: %s\n", constants.COLOR_RED, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))</span>
         }
         <span class="cov0" title="0">return ""</span>
 }
@@ -6273,22 +6330,22 @@ func Info(timestamp, message string) <span class="cov1" title="1">{
         }
 }
 
-func Infof(timestamp, format string, args ...interface{}) <span class="cov8" title="759">{
-        if LogLevel &gt;= constants.LOG_LEVEL_INFO_NUM </span><span class="cov8" title="759">{
-                if timestamp == "" </span><span class="cov8" title="759">{
+func Infof(timestamp, format string, args ...interface{}) <span class="cov9" title="591">{
+        if LogLevel &gt;= constants.LOG_LEVEL_INFO_NUM </span><span class="cov9" title="591">{
+                if timestamp == "" </span><span class="cov9" title="591">{
                         timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
                 }</span>
-                <span class="cov8" title="759">fmt.Print(Logf(constants.LOG_LEVEL_INFO, LogFormat, timestamp, format, args...))</span>
+                <span class="cov9" title="591">fmt.Print(Logf(constants.LOG_LEVEL_INFO, LogFormat, timestamp, format, args...))</span>
                 // fmt.Printf("%s[INFO   ]%s [%s] :: %s\n", constants.COLOR_GREEN, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
         }
 }
 
-func Sinfof(timestamp, format string, args ...interface{}) string <span class="cov8" title="535">{
-        if LogLevel &gt;= constants.LOG_LEVEL_INFO_NUM </span><span class="cov8" title="535">{
+func Sinfof(timestamp, format string, args ...interface{}) string <span class="cov9" title="817">{
+        if LogLevel &gt;= constants.LOG_LEVEL_INFO_NUM </span><span class="cov9" title="817">{
                 if timestamp == "" </span><span class="cov0" title="0">{
                         timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
                 }</span>
-                <span class="cov8" title="535">return fmt.Sprintf("%s[INFO   ]%s [%s] :: %s\n", constants.COLOR_GREEN, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))</span>
+                <span class="cov9" title="817">return fmt.Sprintf("%s[INFO   ]%s [%s] :: %s\n", constants.COLOR_GREEN, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))</span>
         }
         <span class="cov0" title="0">return ""</span>
 }
@@ -6333,12 +6390,12 @@ func Trace(timestamp, message string) <span class="cov0" title="0">{
         }
 }
 
-func Tracef(timestamp, format string, args ...interface{}) <span class="cov6" title="113">{
-        if LogLevel &gt;= constants.LOG_LEVEL_TRACE_NUM </span><span class="cov6" title="113">{
-                if timestamp == "" </span><span class="cov6" title="113">{
+func Tracef(timestamp, format string, args ...interface{}) <span class="cov0" title="0">{
+        if LogLevel &gt;= constants.LOG_LEVEL_TRACE_NUM </span><span class="cov0" title="0">{
+                if timestamp == "" </span><span class="cov0" title="0">{
                         timestamp = time.Now().UTC().Format("2006-01-02T15:04:05Z")
                 }</span>
-                <span class="cov6" title="113">fmt.Print(Logf(constants.LOG_LEVEL_TRACE, LogFormat, timestamp, format, args...))</span>
+                <span class="cov0" title="0">fmt.Print(Logf(constants.LOG_LEVEL_TRACE, LogFormat, timestamp, format, args...))</span>
                 // fmt.Printf("%s[TRACE  ]%s [%s] :: %s\n", constants.COLOR_BLUE, constants.COLOR_NONE, timestamp, fmt.Sprintf(format, args...))
         }
 }
@@ -6434,22 +6491,22 @@ func run(ctx context.Context, channel chan struct{}) <span class="cov2" title="2
         }</span>
 
         <span class="cov2" title="2">routerPort := fmt.Sprintf(":%d", config.Config.Port)
-        if config.Config.TLSEnabled </span><span class="cov2" title="2">{
+        if config.Config.TLSEnabled </span><span class="cov0" title="0">{
                 logger.Infof("", "Running with TLS loaded from %s and %s", config.Config.TLSCrtPath, config.Config.TLSKeyPath)
                 go router.RunTLS(routerPort, config.Config.TLSCrtPath, config.Config.TLSKeyPath)
-        }</span> else<span class="cov0" title="0"> {
+        }</span> else<span class="cov2" title="2"> {
                 go router.Run(routerPort)
         }</span>
-        <span class="cov2" title="2">for </span><span class="cov10" title="229">{
+        <span class="cov2" title="2">for </span><span class="cov10" title="112">{
                 select </span>{
                 case &lt;-ctx.Done():<span class="cov0" title="0"> // if cancel() execute
                         channel &lt;- struct{}{}
                         return</span>
-                default:<span class="cov10" title="229"></span>
+                default:<span class="cov10" title="112"></span>
                         // foobar
                 }
 
-                <span class="cov10" title="229">time.Sleep(1 * time.Second)</span>
+                <span class="cov10" title="112">time.Sleep(1 * time.Second)</span>
         }
 }
 
@@ -6524,11 +6581,11 @@ func Run() <span class="cov1" title="1">{
         go func() </span><span class="cov1" title="1">{
                 log.Printf("Running reverse proxy at %s://0.0.0.0:%d\n", config.Config.Protocol, config.Config.WSPort)
 
-                if config.Config.TLSEnabled </span><span class="cov1" title="1">{
+                if config.Config.TLSEnabled </span><span class="cov0" title="0">{
                         if serverErr := server.ListenAndServeTLS(config.Config.TLSCrtPath, config.Config.TLSKeyPath); serverErr != nil </span><span class="cov0" title="0">{
                                 logger.Fatalf("", "Error running websocket server: %s", serverErr)
                         }</span>
-                } else<span class="cov0" title="0"> {
+                } else<span class="cov1" title="1"> {
                         if serverErr := server.ListenAndServe(); serverErr != nil </span><span class="cov0" title="0">{
                                 logger.Fatalf("", "Error running websocket server: %s", serverErr)
                         }</span>
@@ -6547,9 +6604,9 @@ func Run() <span class="cov1" title="1">{
         InProgress = make(map[string]map[string]string)
         ToCheck = make(map[string]map[string]string)
 
-        for </span><span class="cov7" title="236">{
+        for </span><span class="cov8" title="121">{
                 newNodes := []auth.NodeObject{}
-                for _, n := range auth.Nodes </span><span class="cov7" title="215">{
+                for _, n := range auth.Nodes </span><span class="cov7" title="100">{
                         queryURL := fmt.Sprintf("%s://%s:%d/health/healthy", n.Protocol, n.Host, n.Port)
                         logger.Debugf("", "Querying %s", queryURL)
                         resp, err := http.Get(queryURL)
@@ -6560,7 +6617,7 @@ func Run() <span class="cov1" title="1">{
                                 }
                                 continue</span>
                         }
-                        <span class="cov7" title="215">logger.Debugf("", "Got response code %d", resp.StatusCode)
+                        <span class="cov7" title="100">logger.Debugf("", "Got response code %d", resp.StatusCode)
                         if resp.StatusCode &gt;= 400 </span><span class="cov0" title="0">{
                                 auth.UnhealthyNodes[n.Host] = auth.DegradedNodeObject{
                                         Node:  n,
@@ -6568,10 +6625,10 @@ func Run() <span class="cov1" title="1">{
                                 }
                                 continue</span>
                         }
-                        <span class="cov7" title="215">newNodes = append(newNodes, n)</span>
+                        <span class="cov7" title="100">newNodes = append(newNodes, n)</span>
                 }
                 // Check unhealthy nodes for status change
-                <span class="cov7" title="236">toDelete := []string{}
+                <span class="cov8" title="121">toDelete := []string{}
                 for _, n := range auth.UnhealthyNodes </span><span class="cov0" title="0">{
                         queryURL := fmt.Sprintf("%s://%s:%d/health/healthy", n.Node.Protocol, n.Node.Host, n.Node.Port)
                         logger.Debugf("", "Querying %s", queryURL)
@@ -6592,12 +6649,12 @@ func Run() <span class="cov1" title="1">{
                         toDelete = append(toDelete, n.Node.Host)</span>
                 }
 
-                <span class="cov7" title="236">for _, key := range toDelete </span><span class="cov0" title="0">{
+                <span class="cov8" title="121">for _, key := range toDelete </span><span class="cov0" title="0">{
                         delete(auth.UnhealthyNodes, key)
                 }</span>
 
                 // Check unknown nodes for status change
-                <span class="cov7" title="236">toDelete = []string{}
+                <span class="cov8" title="121">toDelete = []string{}
                 for _, n := range auth.UnknownNodes </span><span class="cov0" title="0">{
                         queryURL := fmt.Sprintf("%s://%s:%d/health/healthy", n.Node.Protocol, n.Node.Host, n.Node.Port)
                         logger.Debugf("", "Querying %s", queryURL)
@@ -6624,22 +6681,22 @@ func Run() <span class="cov1" title="1">{
                         toDelete = append(toDelete, n.Node.Host)</span>
                 }
 
-                <span class="cov7" title="236">for _, key := range toDelete </span><span class="cov0" title="0">{
+                <span class="cov8" title="121">for _, key := range toDelete </span><span class="cov0" title="0">{
                         delete(auth.UnknownNodes, key)
                 }</span>
 
-                <span class="cov7" title="236">auth.Nodes = newNodes
+                <span class="cov8" title="121">auth.Nodes = newNodes
 
                 cascades, err := cascade.GetAllCascades()
-                if err == nil </span><span class="cov6" title="135">{
-                        for _, c := range cascades </span><span class="cov7" title="412">{
+                if err == nil </span><span class="cov5" title="19">{
+                        for _, c := range cascades </span><span class="cov7" title="64">{
                                 taskMap := map[string]string{}
-                                if _, ok := ToCheck[c.Name]; ok </span><span class="cov6" title="127">{
+                                if _, ok := ToCheck[c.Name]; ok </span><span class="cov4" title="12">{
                                         taskMap = ToCheck[c.Name]
                                 }</span>
-                                <span class="cov7" title="412">for _, t := range c.Tasks </span><span class="cov10" title="2472">{
-                                        for key := range taskMap </span><span class="cov8" title="782">{
-                                                if strings.HasPrefix(key, t.Name) </span><span class="cov5" title="71">{
+                                <span class="cov7" title="64">for _, t := range c.Tasks </span><span class="cov10" title="384">{
+                                        for key := range taskMap </span><span class="cov8" title="198">{
+                                                if strings.HasPrefix(key, t.Name) </span><span class="cov6" title="33">{
                                                         parts := strings.Split(key, ".")
                                                         hostPort := taskMap[key]
                                                         httpClient := http.Client{}
@@ -6653,14 +6710,14 @@ func Run() <span class="cov1" title="1">{
                                                                 logger.Errorf("", "Error getting run state %s.%s: %s", c.Name, t.Name, err.Error())
                                                                 continue</span>
                                                         }
-                                                        <span class="cov5" title="71">if resp.StatusCode == http.StatusOK </span><span class="cov5" title="71">{
+                                                        <span class="cov6" title="33">if resp.StatusCode == http.StatusOK </span><span class="cov0" title="0">{
                                                                 //Read the response body
                                                                 body, err := ioutil.ReadAll(resp.Body)
                                                                 if err != nil </span><span class="cov0" title="0">{
                                                                         logger.Errorf("", "Error reading body: %s", err.Error())
                                                                         continue</span>
                                                                 }
-                                                                <span class="cov5" title="71">var s state.State
+                                                                <span class="cov0" title="0">var s state.State
                                                                 var temp map[string]interface{}
                                                                 json.Unmarshal(body, &amp;temp)
 
@@ -6671,26 +6728,26 @@ func Run() <span class="cov1" title="1">{
 
                                                                 logger.Tracef("", "Got state %s", s.Status)
 
-                                                                if s.Status == constants.STATE_STATUS_SUCCESS </span><span class="cov3" title="7">{
+                                                                if s.Status == constants.STATE_STATUS_SUCCESS </span><span class="cov0" title="0">{
                                                                         logger.Debugf("", "Task %s has completed with success, removing from InProgress", key)
                                                                         triggerDepends(c, t.Name, constants.STATUS_TRIGGER_SUCCESS)
                                                                         triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ALWAYS)
                                                                         delete(InProgress[c.Name], key)
                                                                         delete(ToCheck[c.Name], key)
-                                                                }</span> else<span class="cov5" title="64"> if s.Status == constants.STATE_STATUS_ERROR </span><span class="cov0" title="0">{
+                                                                }</span> else<span class="cov0" title="0"> if s.Status == constants.STATE_STATUS_ERROR </span><span class="cov0" title="0">{
                                                                         logger.Debugf("", "Task %s has completed with error, removing from InProgress", key)
                                                                         triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ERROR)
                                                                         triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ALWAYS)
                                                                         delete(ToCheck[c.Name], key)
                                                                 }</span>
 
-                                                                <span class="cov5" title="71">resp.Body.Close()</span>
+                                                                <span class="cov0" title="0">resp.Body.Close()</span>
                                                         }
                                                 }
                                         }
-                                        <span class="cov10" title="2472">checkStateName := fmt.Sprintf("SCAFFOLD_CHECK-%s", t.Name)
-                                        for key := range taskMap </span><span class="cov8" title="778">{
-                                                if strings.HasPrefix(key, checkStateName) </span><span class="cov5" title="64">{
+                                        <span class="cov10" title="384">checkStateName := fmt.Sprintf("SCAFFOLD_CHECK-%s", t.Name)
+                                        for key := range taskMap </span><span class="cov8" title="198">{
+                                                if strings.HasPrefix(key, checkStateName) </span><span class="cov0" title="0">{
                                                         parts := strings.Split(key, ".")
                                                         hostPort := taskMap[key]
                                                         httpClient := http.Client{}
@@ -6704,14 +6761,14 @@ func Run() <span class="cov1" title="1">{
                                                                 logger.Errorf("", "Error getting run state %s.%s: %s", c.Name, checkStateName, err.Error())
                                                                 continue</span>
                                                         }
-                                                        <span class="cov5" title="64">if resp.StatusCode == http.StatusOK </span><span class="cov5" title="64">{
+                                                        <span class="cov0" title="0">if resp.StatusCode == http.StatusOK </span><span class="cov0" title="0">{
                                                                 //Read the response body
                                                                 body, err := ioutil.ReadAll(resp.Body)
                                                                 if err != nil </span><span class="cov0" title="0">{
                                                                         logger.Errorf("", "Error reading body: %s", err.Error())
                                                                         continue</span>
                                                                 }
-                                                                <span class="cov5" title="64">var s state.State
+                                                                <span class="cov0" title="0">var s state.State
                                                                 var temp map[string]interface{}
                                                                 json.Unmarshal(body, &amp;temp)
 
@@ -6724,18 +6781,18 @@ func Run() <span class="cov1" title="1">{
 
                                                                 state.UpdateStateByNames(c.Name, checkStateName, &amp;s)
 
-                                                                if s.Status == constants.STATE_STATUS_SUCCESS </span><span class="cov1" title="1">{
+                                                                if s.Status == constants.STATE_STATUS_SUCCESS </span><span class="cov0" title="0">{
                                                                         logger.Debugf("", "Removing state %s from InProgress", checkStateName)
                                                                         delete(InProgress[c.Name], key)
                                                                         delete(ToCheck[c.Name], key)
                                                                 }</span>
-                                                                <span class="cov5" title="64">if s.Status == constants.STATE_STATUS_ERROR </span><span class="cov1" title="1">{
+                                                                <span class="cov0" title="0">if s.Status == constants.STATE_STATUS_ERROR </span><span class="cov0" title="0">{
                                                                         ss, err := state.GetStateByNames(c.Name, t.Name)
                                                                         if err != nil </span><span class="cov0" title="0">{
                                                                                 logger.Errorf("", "Issue getting state %s %s: %s", c.Name, t.Name, err.Error())
                                                                                 continue</span>
                                                                         }
-                                                                        <span class="cov1" title="1">ss.Status = constants.STATE_STATUS_ERROR
+                                                                        <span class="cov0" title="0">ss.Status = constants.STATE_STATUS_ERROR
                                                                         state.UpdateStateByNames(c.Name, t.Name, ss)
                                                                         triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ERROR)
                                                                         triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ALWAYS)
@@ -6743,37 +6800,37 @@ func Run() <span class="cov1" title="1">{
                                                                         delete(ToCheck[c.Name], key)</span>
                                                                 }
 
-                                                                <span class="cov5" title="64">resp.Body.Close()</span>
+                                                                <span class="cov0" title="0">resp.Body.Close()</span>
                                                         }
                                                 }
                                         }
-                                        <span class="cov10" title="2472">if t.Check.Interval &gt; 0 </span><span class="cov8" title="824">{
+                                        <span class="cov10" title="384">if t.Check.Interval &gt; 0 </span><span class="cov8" title="128">{
                                                 s, err := state.GetStateByNames(c.Name, t.Name)
-                                                if err != nil </span><span class="cov4" title="18">{
+                                                if err != nil </span><span class="cov5" title="18">{
                                                         logger.Errorf("", "Issue getting state %s %s: %s", c.Name, t.Name, err.Error())
                                                         continue</span>
                                                 }
 
-                                                <span class="cov8" title="806">if s.Status != constants.STATE_STATUS_SUCCESS </span><span class="cov8" title="682">{
+                                                <span class="cov8" title="110">if s.Status != constants.STATE_STATUS_SUCCESS </span><span class="cov8" title="110">{
                                                         continue</span>
                                                 }
 
-                                                <span class="cov6" title="124">if s.Finished == "" </span><span class="cov0" title="0">{
+                                                <span class="cov0" title="0">if s.Finished == "" </span><span class="cov0" title="0">{
                                                         continue</span>
                                                 }
-                                                <span class="cov6" title="124">currentTime := time.Now().UTC()
+                                                <span class="cov0" title="0">currentTime := time.Now().UTC()
                                                 logger.Debugf("", "State finished: %s", s.Finished)
                                                 lastRun, _ := time.Parse("2006-01-02T15:04:05Z MST", fmt.Sprintf("%s UTC", s.Finished))
 
                                                 cs, err := state.GetStateByNames(c.Name, checkStateName)
-                                                if err == nil </span><span class="cov6" title="124">{
+                                                if err == nil </span><span class="cov0" title="0">{
                                                         logger.Debugf("", "Found state for %s", checkStateName)
-                                                        if cs.Finished != "" </span><span class="cov4" title="20">{
+                                                        if cs.Finished != "" </span><span class="cov0" title="0">{
                                                                 lastRun, _ = time.Parse("2006-01-02T15:04:05Z MST", fmt.Sprintf("%s UTC", cs.Finished))
                                                                 logger.Debugf("", "Check state finished: %s", cs.Finished)
                                                                 logger.Debugf("", "Check run is of status %s", cs.Status)
                                                         }</span>
-                                                        <span class="cov6" title="124">if cs.Status == constants.STATE_STATUS_RUNNING || cs.Status == constants.STATE_STATUS_WAITING </span><span class="cov5" title="45">{
+                                                        <span class="cov0" title="0">if cs.Status == constants.STATE_STATUS_RUNNING || cs.Status == constants.STATE_STATUS_WAITING </span><span class="cov0" title="0">{
                                                                 logger.Debugf("", "Check run is of status %s", cs.Status)
                                                                 continue</span>
                                                         }
@@ -6781,13 +6838,13 @@ func Run() <span class="cov1" title="1">{
                                                         logger.Warnf("", "No state found for %s", checkStateName)
                                                 }</span>
 
-                                                <span class="cov6" title="79">diff := int(currentTime.Sub(lastRun).Seconds())
+                                                <span class="cov0" title="0">diff := int(currentTime.Sub(lastRun).Seconds())
 
-                                                if diff &lt; t.Check.Interval </span><span class="cov5" title="76">{
+                                                if diff &lt; t.Check.Interval </span><span class="cov0" title="0">{
                                                         continue</span>
                                                 }
 
-                                                <span class="cov2" title="3">logger.Debugf("", "Triggering check run for %s %s", c.Name, t.Name)
+                                                <span class="cov0" title="0">logger.Debugf("", "Triggering check run for %s %s", c.Name, t.Name)
                                                 httpClient := http.Client{}
                                                 requestURL := fmt.Sprintf("%s://localhost:%d/api/v1/run/%s/%s/check", config.Config.Protocol, config.Config.Port, c.Name, t.Name)
                                                 req, _ := http.NewRequest("POST", requestURL, nil)
@@ -6798,71 +6855,71 @@ func Run() <span class="cov1" title="1">{
                                                         logger.Error("", err.Error())
                                                         continue</span>
                                                 }
-                                                <span class="cov2" title="3">if resp.StatusCode &gt;= 400 </span><span class="cov0" title="0">{
+                                                <span class="cov0" title="0">if resp.StatusCode &gt;= 400 </span><span class="cov0" title="0">{
                                                         logger.Errorf("", "Received trigger status code %d", resp.StatusCode)
                                                 }</span>
                                         }
                                 }
                         }
                 }
-                <span class="cov7" title="236">time.Sleep(time.Duration(config.Config.HeartbeatInterval) * time.Millisecond)</span>
+                <span class="cov8" title="121">time.Sleep(time.Duration(config.Config.HeartbeatInterval) * time.Millisecond)</span>
         }
 }
 
-func triggerDepends(c *cascade.Cascade, tn, status string) <span class="cov4" title="16">{
+func triggerDepends(c *cascade.Cascade, tn, status string) <span class="cov0" title="0">{
         toTrigger := []string{}
         states, _ := state.GetStatesByCascade(c.Name)
         switch status </span>{
-        case constants.STATUS_TRIGGER_SUCCESS:<span class="cov3" title="7">
-                for _, s := range states </span><span class="cov6" title="126">{
-                        if s.Status == constants.STATE_STATUS_SUCCESS </span><span class="cov4" title="28">{
+        case constants.STATUS_TRIGGER_SUCCESS:<span class="cov0" title="0">
+                for _, s := range states </span><span class="cov0" title="0">{
+                        if s.Status == constants.STATE_STATUS_SUCCESS </span><span class="cov0" title="0">{
                                 toTrigger = append(toTrigger, s.Task)
                         }</span>
                 }
-        case constants.STATUS_TRIGGER_ERROR:<span class="cov1" title="1">
-                for _, s := range states </span><span class="cov4" title="18">{
-                        if s.Status == constants.STATE_STATUS_ERROR </span><span class="cov1" title="2">{
+        case constants.STATUS_TRIGGER_ERROR:<span class="cov0" title="0">
+                for _, s := range states </span><span class="cov0" title="0">{
+                        if s.Status == constants.STATE_STATUS_ERROR </span><span class="cov0" title="0">{
                                 toTrigger = append(toTrigger, s.Task)
                         }</span>
                 }
-        case constants.STATUS_TRIGGER_ALWAYS:<span class="cov3" title="8">
-                for _, s := range states </span><span class="cov6" title="144">{
-                        if s.Status == constants.STATE_STATUS_ERROR || s.Status == constants.STATE_STATUS_SUCCESS </span><span class="cov5" title="39">{
+        case constants.STATUS_TRIGGER_ALWAYS:<span class="cov0" title="0">
+                for _, s := range states </span><span class="cov0" title="0">{
+                        if s.Status == constants.STATE_STATUS_ERROR || s.Status == constants.STATE_STATUS_SUCCESS </span><span class="cov0" title="0">{
                                 toTrigger = append(toTrigger, s.Task)
                         }</span>
                 }
         }
-        <span class="cov4" title="16">for _, t := range c.Tasks </span><span class="cov6" title="96">{
+        <span class="cov0" title="0">for _, t := range c.Tasks </span><span class="cov0" title="0">{
                 dependsOn := make([]string, 0)
                 switch status </span>{
-                case constants.STATUS_TRIGGER_SUCCESS:<span class="cov5" title="42">
-                        if t.DependsOn.Success == nil </span><span class="cov4" title="28">{
+                case constants.STATUS_TRIGGER_SUCCESS:<span class="cov0" title="0">
+                        if t.DependsOn.Success == nil </span><span class="cov0" title="0">{
                                 continue</span>
                         }
-                        <span class="cov4" title="14">dependsOn = append(dependsOn, t.DependsOn.Success...)</span>
-                case constants.STATUS_TRIGGER_ERROR:<span class="cov3" title="6">
-                        if t.DependsOn.Error == nil </span><span class="cov2" title="5">{
+                        <span class="cov0" title="0">dependsOn = append(dependsOn, t.DependsOn.Success...)</span>
+                case constants.STATUS_TRIGGER_ERROR:<span class="cov0" title="0">
+                        if t.DependsOn.Error == nil </span><span class="cov0" title="0">{
                                 continue</span>
                         }
-                        <span class="cov1" title="1">dependsOn = append(dependsOn, t.DependsOn.Error...)</span>
-                case constants.STATUS_TRIGGER_ALWAYS:<span class="cov5" title="48">
-                        if t.DependsOn.Always == nil </span><span class="cov5" title="40">{
+                        <span class="cov0" title="0">dependsOn = append(dependsOn, t.DependsOn.Error...)</span>
+                case constants.STATUS_TRIGGER_ALWAYS:<span class="cov0" title="0">
+                        if t.DependsOn.Always == nil </span><span class="cov0" title="0">{
                                 continue</span>
                         }
-                        <span class="cov3" title="8">dependsOn = append(dependsOn, t.DependsOn.Always...)</span>
+                        <span class="cov0" title="0">dependsOn = append(dependsOn, t.DependsOn.Always...)</span>
                 }
-                <span class="cov4" title="23">if utils.Contains(dependsOn, tn) </span><span class="cov3" title="6">{
+                <span class="cov0" title="0">if utils.Contains(dependsOn, tn) </span><span class="cov0" title="0">{
                         shouldTrigger := true
-                        for _, n := range dependsOn </span><span class="cov3" title="8">{
-                                if !utils.Contains(toTrigger, n) </span><span class="cov1" title="1">{
+                        for _, n := range dependsOn </span><span class="cov0" title="0">{
+                                if !utils.Contains(toTrigger, n) </span><span class="cov0" title="0">{
                                         shouldTrigger = false
                                         break</span>
                                 }
                         }
-                        <span class="cov3" title="6">if !shouldTrigger || !t.AutoExecute </span><span class="cov1" title="1">{
+                        <span class="cov0" title="0">if !shouldTrigger || !t.AutoExecute </span><span class="cov0" title="0">{
                                 continue</span>
                         }
-                        <span class="cov2" title="5">httpClient := http.Client{}
+                        <span class="cov0" title="0">httpClient := http.Client{}
                         requestURL := fmt.Sprintf("%s://localhost:%d/api/v1/run/%s/%s", config.Config.Protocol, config.Config.Port, c.Name, t.Name)
                         req, _ := http.NewRequest("POST", requestURL, nil)
                         req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
@@ -6872,7 +6929,7 @@ func triggerDepends(c *cascade.Cascade, tn, status string) <span class="cov4" ti
                                 logger.Errorf("", "Depends run trigger error: %s", err.Error())
                                 continue</span>
                         }
-                        <span class="cov2" title="5">if resp.StatusCode &gt;= 400 </span><span class="cov0" title="0">{
+                        <span class="cov0" title="0">if resp.StatusCode &gt;= 400 </span><span class="cov0" title="0">{
                                 logger.Errorf("", "Received trigger status code %d", resp.StatusCode)
                                 panic(fmt.Sprintf("Received trigger status code %d", resp.StatusCode))</span>
                         }
@@ -6880,12 +6937,12 @@ func triggerDepends(c *cascade.Cascade, tn, status string) <span class="cov4" ti
         }
 }
 
-func InputChangeStateChange(name string, changed []string) error <span class="cov1" title="2">{
+func InputChangeStateChange(name string, changed []string) error <span class="cov2" title="2">{
         c, err := cascade.GetCascadeByName(name)
         if err != nil </span><span class="cov0" title="0">{
                 return err
         }</span>
-        <span class="cov1" title="2">for _, i := range changed </span><span class="cov1" title="1">{
+        <span class="cov2" title="2">for _, i := range changed </span><span class="cov1" title="1">{
                 for _, t := range c.Tasks </span><span class="cov3" title="6">{
                         ss, err := state.GetStateByNames(c.Name, t.Name)
                         if err == nil </span><span class="cov3" title="6">{
@@ -6912,32 +6969,32 @@ func InputChangeStateChange(name string, changed []string) error <span class="co
                         }</span>
                 }
         }
-        <span class="cov1" title="2">return nil</span>
+        <span class="cov2" title="2">return nil</span>
 }
 
-func SetDependsState(c *cascade.Cascade, tn string) <span class="cov4" title="28">{
-        for _, t := range c.Tasks </span><span class="cov6" title="168">{
+func SetDependsState(c *cascade.Cascade, tn string) <span class="cov5" title="20">{
+        for _, t := range c.Tasks </span><span class="cov8" title="120">{
                 dependsOn := make([]string, 0)
-                if t.DependsOn.Success != nil </span><span class="cov5" title="56">{
+                if t.DependsOn.Success != nil </span><span class="cov6" title="40">{
                         dependsOn = append(dependsOn, t.DependsOn.Success...)
                 }</span>
-                <span class="cov6" title="168">if t.DependsOn.Error != nil </span><span class="cov4" title="28">{
+                <span class="cov8" title="120">if t.DependsOn.Error != nil </span><span class="cov5" title="20">{
                         dependsOn = append(dependsOn, t.DependsOn.Error...)
                 }</span>
-                <span class="cov6" title="168">if t.DependsOn.Always != nil </span><span class="cov4" title="28">{
+                <span class="cov8" title="120">if t.DependsOn.Always != nil </span><span class="cov5" title="20">{
                         dependsOn = append(dependsOn, t.DependsOn.Always...)
                 }</span>
-                <span class="cov6" title="168">if utils.Contains(dependsOn, tn) </span><span class="cov4" title="19">{
+                <span class="cov8" title="120">if utils.Contains(dependsOn, tn) </span><span class="cov5" title="16">{
                         if !utils.Contains(dependsOn, tn) </span><span class="cov0" title="0">{
                                 continue</span>
                         }
-                        <span class="cov4" title="19">ss, err := state.GetStateByNames(c.Name, t.Name)
-                        if err == nil </span><span class="cov4" title="19">{
+                        <span class="cov5" title="16">ss, err := state.GetStateByNames(c.Name, t.Name)
+                        if err == nil </span><span class="cov5" title="16">{
                                 previousName := fmt.Sprintf("SCAFFOLD_PREVIOUS-%s", t.Name)
                                 ss.Task = previousName
                                 state.UpdateStateByNames(c.Name, previousName, ss)
                         }</span>
-                        <span class="cov4" title="19">s := &amp;state.State{
+                        <span class="cov5" title="16">s := &amp;state.State{
                                 Task:     t.Name,
                                 Cascade:  c.Name,
                                 Status:   constants.STATE_STATUS_NOT_STARTED,
@@ -6951,7 +7008,7 @@ func SetDependsState(c *cascade.Cascade, tn string) <span class="cov4" title="28
                                 logger.Errorf("", "Cannot update state %s %s: %s", c.Name, s.Task, err.Error())
                                 continue</span>
                         }
-                        <span class="cov4" title="19">SetDependsState(c, s.Task)</span>
+                        <span class="cov5" title="16">SetDependsState(c, s.Task)</span>
                 }
         }
 }
@@ -7001,8 +7058,8 @@ import (
 
 // This middleware ensures that a request will be aborted with an error
 // if the user is not logged in
-func EnsureLoggedIn() gin.HandlerFunc <span class="cov6" title="56">{
-        return func(c *gin.Context) </span><span class="cov9" title="341">{
+func EnsureLoggedIn() gin.HandlerFunc <span class="cov7" title="56">{
+        return func(c *gin.Context) </span><span class="cov8" title="155">{
                 var token string
                 var err error
 
@@ -7021,22 +7078,22 @@ func EnsureLoggedIn() gin.HandlerFunc <span class="cov6" title="56">{
                         <span class="cov3" title="5">return</span>
                 }
 
-                <span class="cov9" title="336">authString := c.Request.Header.Get("Authorization")
+                <span class="cov8" title="150">authString := c.Request.Header.Get("Authorization")
                 if authString == "" </span><span class="cov0" title="0">{
                         token, err = c.Cookie("scaffold_token")
                         if err != nil </span><span class="cov0" title="0">{
                                 c.Redirect(307, "/ui/login")
                                 return
                         }</span>
-                } else<span class="cov9" title="336"> {
+                } else<span class="cov8" title="150"> {
                         token = strings.Split(authString, " ")[1]
                 }</span>
-                <span class="cov9" title="336">if token == config.Config.Node.PrimaryKey </span><span class="cov8" title="160">{
+                <span class="cov8" title="150">if token == config.Config.Node.PrimaryKey </span><span class="cov3" title="6">{
                         return
                 }</span>
 
-                <span class="cov8" title="176">usr, _ := user.GetUserByAPIToken(token)
-                if usr != nil </span><span class="cov8" title="176">{
+                <span class="cov8" title="144">usr, _ := user.GetUserByAPIToken(token)
+                if usr != nil </span><span class="cov8" title="144">{
                         return
                 }</span>
 
@@ -7085,7 +7142,7 @@ func EnsureNotLoggedIn() gin.HandlerFunc <span class="cov4" title="8">{
 // This middleware ensures that a request will be aborted with an error
 // if the user is not logged in
 func EnsureCascadeGroup(paramName string) gin.HandlerFunc <span class="cov5" title="27">{
-        return func(c *gin.Context) </span><span class="cov8" title="137">{
+        return func(c *gin.Context) </span><span class="cov7" title="98">{
                 var token string
                 var err error
                 isUI := false
@@ -7094,11 +7151,11 @@ func EnsureCascadeGroup(paramName string) gin.HandlerFunc <span class="cov5" tit
                 if err != nil </span><span class="cov0" title="0">{
                         c.AbortWithStatus(http.StatusUnauthorized)
                 }</span>
-                <span class="cov8" title="137">if cs == nil </span><span class="cov2" title="3">{
+                <span class="cov7" title="98">if cs == nil </span><span class="cov2" title="3">{
                         return
                 }</span>
 
-                <span class="cov8" title="134">authString := c.Request.Header.Get("Authorization")
+                <span class="cov7" title="95">authString := c.Request.Header.Get("Authorization")
                 if authString == "" </span><span class="cov0" title="0">{
                         token, err = c.Cookie("scaffold_token")
                         if err != nil </span><span class="cov0" title="0">{
@@ -7106,23 +7163,23 @@ func EnsureCascadeGroup(paramName string) gin.HandlerFunc <span class="cov5" tit
                                 return
                         }</span>
                         <span class="cov0" title="0">isUI = true</span>
-                } else<span class="cov8" title="134"> {
+                } else<span class="cov7" title="95"> {
                         token = strings.Split(authString, " ")[1]
                 }</span>
-                <span class="cov8" title="134">if token == config.Config.Node.PrimaryKey </span><span class="cov4" title="10">{
+                <span class="cov7" title="95">if token == config.Config.Node.PrimaryKey </span><span class="cov2" title="2">{
                         return
                 }</span>
 
-                <span class="cov8" title="124">usr, _ := user.GetUserByAPIToken(token)
-                if usr != nil </span><span class="cov8" title="124">{
+                <span class="cov7" title="93">usr, _ := user.GetUserByAPIToken(token)
+                if usr != nil </span><span class="cov7" title="93">{
                         if utils.Contains(usr.Groups, "admin") </span><span class="cov5" title="21">{
                                 return
                         }</span>
-                        <span class="cov7" title="103">if cs.Groups == nil </span><span class="cov5" title="16">{
+                        <span class="cov7" title="72">if cs.Groups == nil </span><span class="cov5" title="16">{
                                 return
                         }</span>
-                        <span class="cov7" title="87">for _, group := range cs.Groups </span><span class="cov7" title="87">{
-                                if utils.Contains(usr.Groups, group) </span><span class="cov7" title="63">{
+                        <span class="cov7" title="56">for _, group := range cs.Groups </span><span class="cov7" title="56">{
+                                if utils.Contains(usr.Groups, group) </span><span class="cov6" title="32">{
                                         return
                                 }</span>
                         }
@@ -7260,7 +7317,7 @@ func EnsureGroupsAllowed(groups []string) gin.HandlerFunc <span class="cov0" tit
 }
 
 func EnsureRolesAllowed(roles []string) gin.HandlerFunc <span class="cov6" title="43">{
-        return func(c *gin.Context) </span><span class="cov9" title="336">{
+        return func(c *gin.Context) </span><span class="cov8" title="150">{
                 var usr *user.User
                 var err error
 
@@ -7276,25 +7333,25 @@ func EnsureRolesAllowed(roles []string) gin.HandlerFunc <span class="cov6" title
                                 c.AbortWithStatus(http.StatusUnauthorized)
                                 return
                         }</span>
-                } else<span class="cov9" title="336"> {
+                } else<span class="cov8" title="150"> {
                         token := strings.Split(authString, " ")[1]
-                        if token == config.Config.Node.PrimaryKey </span><span class="cov8" title="160">{
+                        if token == config.Config.Node.PrimaryKey </span><span class="cov3" title="6">{
                                 return
                         }</span>
-                        <span class="cov8" title="176">usr, err = user.GetUserByAPIToken(token)
+                        <span class="cov8" title="144">usr, err = user.GetUserByAPIToken(token)
                         if err != nil </span><span class="cov0" title="0">{
                                 c.AbortWithStatus(http.StatusUnauthorized)
                                 return
                         }</span>
                 }
-                <span class="cov8" title="176">if usr != nil </span><span class="cov8" title="176">{
-                        for _, role := range usr.Roles </span><span class="cov8" title="201">{
-                                if StringSliceContains(roles, role) </span><span class="cov8" title="174">{
+                <span class="cov8" title="144">if usr != nil </span><span class="cov8" title="144">{
+                        for _, role := range usr.Roles </span><span class="cov8" title="169">{
+                                if StringSliceContains(roles, role) </span><span class="cov8" title="143">{
                                         return
                                 }</span>
                         }
                 }
-                <span class="cov2" title="2">c.AbortWithStatus(http.StatusUnauthorized)</span>
+                <span class="cov1" title="1">c.AbortWithStatus(http.StatusUnauthorized)</span>
         }
 }
 
@@ -7304,13 +7361,13 @@ func EnsureBasicAuth() gin.HandlerFunc <span class="cov0" title="0">{
         }</span>
 }
 
-func StringSliceContains(list []string, item string) bool <span class="cov8" title="201">{
-        for _, v := range list </span><span class="cov10" title="479">{
-                if v == item </span><span class="cov8" title="174">{
+func StringSliceContains(list []string, item string) bool <span class="cov8" title="169">{
+        for _, v := range list </span><span class="cov10" title="384">{
+                if v == item </span><span class="cov8" title="143">{
                         return true
                 }</span>
         }
-        <span class="cov5" title="27">return false</span>
+        <span class="cov5" title="26">return false</span>
 }
 </pre>
 		
@@ -7323,7 +7380,7 @@ import (
 )
 
 func CORSMiddleware() gin.HandlerFunc <span class="cov3" title="6">{
-        return func(c *gin.Context) </span><span class="cov10" title="568">{
+        return func(c *gin.Context) </span><span class="cov10" title="256">{
                 c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
                 c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
                 c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Scaffold-API")
@@ -7334,7 +7391,7 @@ func CORSMiddleware() gin.HandlerFunc <span class="cov3" title="6">{
                         return
                 }</span>
 
-                <span class="cov10" title="568">c.Next()</span>
+                <span class="cov10" title="256">c.Next()</span>
         }
 }
 </pre>
@@ -7343,7 +7400,6 @@ func CORSMiddleware() gin.HandlerFunc <span class="cov3" title="6">{
 
 import (
         "context"
-        "fmt"
         "log"
         "scaffold/server/config"
         "scaffold/server/constants"
@@ -7364,7 +7420,7 @@ var Collections map[string]*mongo.Collection
 var Ctx = context.TODO()
 
 func InitCollections() <span class="cov3" title="2">{
-        clientOptions := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", config.Config.DB.Username, config.Config.DB.Password, config.Config.DB.Host, config.Config.DB.Port, config.Config.DB.Name))
+        clientOptions := options.Client().ApplyURI(config.Config.DBConnectionString)
         client, err := mongo.Connect(Ctx, clientOptions)
         if err != nil </span><span class="cov0" title="0">{
                 log.Fatal(err)
@@ -7970,7 +8026,7 @@ import (
         ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func initializeRoutes() <span class="cov10" title="2">{
+func initializeRoutes() <span class="cov2" title="2">{
         router.Static("/static/css", "./static/css")
         router.Static("/static/img", "./static/img")
         router.Static("/static/js", "./static/js")
@@ -7981,12 +8037,12 @@ func initializeRoutes() <span class="cov10" title="2">{
 
         router.GET("/", page.RedirectIndexPage)
 
-        router.NoRoute(func(c *gin.Context) </span><span class="cov0" title="0">{
+        router.NoRoute(func(c *gin.Context) </span><span class="cov10" title="39">{
                 c.HTML(http.StatusNotFound, "404.html", gin.H{})
         }</span>)
 
-        <span class="cov10" title="2">healthRoutes := router.Group("/health", middleware.CORSMiddleware())
-        </span><span class="cov10" title="2">{
+        <span class="cov2" title="2">healthRoutes := router.Group("/health", middleware.CORSMiddleware())
+        </span><span class="cov2" title="2">{
                 healthRoutes.GET("/healthy", api.Healthy)
                 healthRoutes.GET("/ready", api.Ready)
                 if config.Config.Node.Type == constants.NODE_TYPE_WORKER </span><span class="cov1" title="1">{
@@ -7996,7 +8052,7 @@ func initializeRoutes() <span class="cov10" title="2">{
                 }</span>
         }
 
-        <span class="cov10" title="2">if config.Config.Node.Type == constants.NODE_TYPE_MANAGER </span><span class="cov1" title="1">{
+        <span class="cov2" title="2">if config.Config.Node.Type == constants.NODE_TYPE_MANAGER </span><span class="cov1" title="1">{
                 authRoutes := router.Group("/auth", middleware.CORSMiddleware())
                 </span><span class="cov1" title="1">{
                         authRoutes.POST("/login", middleware.EnsureNotLoggedIn(), auth.PerformLogin)
@@ -8096,7 +8152,7 @@ func initializeRoutes() <span class="cov10" title="2">{
                         uiRoutes.GET("/user/:username", middleware.EnsureLoggedIn(), page.ShowUserPage)
                 }</span>
         }
-        <span class="cov10" title="2">if config.Config.Node.Type == constants.NODE_TYPE_WORKER </span><span class="cov1" title="1">{
+        <span class="cov2" title="2">if config.Config.Node.Type == constants.NODE_TYPE_WORKER </span><span class="cov1" title="1">{
                 apiRoutes := router.Group("/api", middleware.CORSMiddleware())
                 </span><span class="cov1" title="1">{
                         v1Routes := apiRoutes.Group("/v1")
@@ -8156,11 +8212,11 @@ func setErrorStatus(r *Run, output string) <span class="cov0" title="0">{
         r.State.Finished = currentTime.Format("2006-01-02T15:04:05Z")
 }</span>
 
-func runCmd(cmd *exec.Cmd) <span class="cov6" title="10">{
+func runCmd(cmd *exec.Cmd) <span class="cov0" title="0">{
         runError = cmd.Run()
 }</span>
 
-func StartRun(r *Run) (bool, error) <span class="cov6" title="10">{
+func StartRun(r *Run) (bool, error) <span class="cov0" title="0">{
         r.State.Status = constants.STATE_STATUS_RUNNING
         currentTime := time.Now().UTC()
         r.State.Started = currentTime.Format("2006-01-02T15:04:05Z")
@@ -8174,7 +8230,7 @@ func StartRun(r *Run) (bool, error) <span class="cov6" title="10">{
         }</span>
 
         // containerName := strings.Replace(r.Name, ".", "-", -1)
-        <span class="cov6" title="10">containerName := fmt.Sprintf("%s-%s-%d", r.State.Cascade, r.State.Task, r.Number)
+        <span class="cov0" title="0">containerName := fmt.Sprintf("%s-%s-%d", r.State.Cascade, r.State.Task, r.Number)
 
         runDir := fmt.Sprintf("/tmp/run/%s/%s/%d", r.State.Cascade, r.State.Task, r.Number)
         err = os.MkdirAll(runDir, 0755)
@@ -8184,30 +8240,30 @@ func StartRun(r *Run) (bool, error) <span class="cov6" title="10">{
                 return false, err
         }</span>
 
-        <span class="cov6" title="10">scriptPath := runDir + "/.run.sh"
+        <span class="cov0" title="0">scriptPath := runDir + "/.run.sh"
         envInPath := runDir + "/.envin"
         displayPath := runDir + "/.display"
 
         envInput := ""
-        for key, val := range r.Task.Inputs </span><span class="cov2" title="2">{
+        for key, val := range r.Task.Inputs </span><span class="cov0" title="0">{
                 encoded := base64.StdEncoding.EncodeToString([]byte(ds.Env[val]))
                 envInput += fmt.Sprintf("%s;%s\n", key, encoded)
         }</span>
-        <span class="cov6" title="10">for _, key := range r.Task.Load.Env </span><span class="cov1" title="1">{
+        <span class="cov0" title="0">for _, key := range r.Task.Load.Env </span><span class="cov0" title="0">{
                 encoded := base64.StdEncoding.EncodeToString([]byte(ds.Env[key]))
                 envInput += fmt.Sprintf("%s;%s\n", key, encoded)
         }</span>
-        <span class="cov6" title="10">for key, val := range r.Task.Env </span><span class="cov1" title="1">{
+        <span class="cov0" title="0">for key, val := range r.Task.Env </span><span class="cov0" title="0">{
                 encoded := base64.StdEncoding.EncodeToString([]byte(val))
                 envInput += fmt.Sprintf("%s;%s\n", key, encoded)
         }</span>
 
-        <span class="cov6" title="10">envOutput := ""
-        for _, key := range r.Task.Store.Env </span><span class="cov1" title="1">{
+        <span class="cov0" title="0">envOutput := ""
+        for _, key := range r.Task.Store.Env </span><span class="cov0" title="0">{
                 envOutput += fmt.Sprintf("echo \"%s;$(echo \"${%s}\" | base64)\" &gt;&gt; /tmp/run/.envout\n", key, key)
         }</span>
 
-        <span class="cov6" title="10">runScript := fmt.Sprintf(`
+        <span class="cov0" title="0">runScript := fmt.Sprintf(`
         # load ENV var
 
         while read -r line; do
@@ -8233,7 +8289,7 @@ func StartRun(r *Run) (bool, error) <span class="cov6" title="10">{
         }</span>
 
         // Write out envin script
-        <span class="cov6" title="10">data = []byte(envInput)
+        <span class="cov0" title="0">data = []byte(envInput)
         err = os.WriteFile(envInPath, data, 0777)
         if err != nil </span><span class="cov0" title="0">{
                 logger.Errorf("", "Error writing envin file %s", err.Error())
@@ -8241,7 +8297,7 @@ func StartRun(r *Run) (bool, error) <span class="cov6" title="10">{
                 return false, err
         }</span>
 
-        <span class="cov6" title="10">for _, name := range r.Task.Load.File </span><span class="cov1" title="1">{
+        <span class="cov0" title="0">for _, name := range r.Task.Load.File </span><span class="cov0" title="0">{
                 err := filestore.GetFile(fmt.Sprintf("%s/%s", r.Task.Cascade, name), fmt.Sprintf("%s/%s", runDir, name))
                 if err != nil </span><span class="cov0" title="0">{
                         logger.Errorf("", "Error getting file %s", err.Error())
@@ -8251,18 +8307,24 @@ func StartRun(r *Run) (bool, error) <span class="cov6" title="10">{
         }
 
         // Clean up any possible artifacts
-        <span class="cov6" title="10">if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman kill %s", containerName)).Run(); err != nil </span><span class="cov6" title="10">{
+        <span class="cov0" title="0">if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman kill %s", containerName)).Run(); err != nil </span><span class="cov0" title="0">{
                 logger.Infof("", "No running container with name %s exists, skipping kill\n", containerName)
         }</span>
-        <span class="cov6" title="10">if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman rm %s", containerName)).Run(); err != nil </span><span class="cov6" title="10">{
+        <span class="cov0" title="0">if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman rm %s", containerName)).Run(); err != nil </span><span class="cov0" title="0">{
                 logger.Infof("", "No running container with name %s exists, skipping removal\n", containerName)
         }</span>
 
-        <span class="cov6" title="10">podmanCommand := "podman run --privileged -d --security-opt label=disabled "
+        <span class="cov0" title="0">podmanCommand := "podman run --privileged -d --security-opt label=disabled --network=host --device /dev/net/tun:/dev/net/tun "
 
         podmanCommand += fmt.Sprintf("--name %s ", containerName)
         podmanCommand += fmt.Sprintf("--mount type=bind,src=%s,dst=/tmp/run ", runDir)
-        podmanCommand += r.Task.Image
+        for _, m := range r.Task.Load.Mounts </span><span class="cov0" title="0">{
+                podmanCommand += fmt.Sprintf("--mount type=bind,src=%s,dst=%s ", m, m)
+        }</span>
+        <span class="cov0" title="0">for _, e := range r.Task.Load.EnvPassthrough </span><span class="cov0" title="0">{
+                podmanCommand += fmt.Sprintf("--env %s=\"${%s}\" ", e, e)
+        }</span>
+        <span class="cov0" title="0">podmanCommand += r.Task.Image
         podmanCommand += " bash -c /tmp/run/.run.sh"
 
         logger.Debugf("", "command: %s", podmanCommand)
@@ -8291,11 +8353,11 @@ func StartRun(r *Run) (bool, error) <span class="cov6" title="10">{
                 return shouldRestart, err</span>
         }
 
-        <span class="cov6" title="10">var podmanOutput string
+        <span class="cov0" title="0">var podmanOutput string
         erroredOut := false
-        for !strings.HasPrefix(string(output), "Exited") </span><span class="cov10" title="54">{
+        for !strings.HasPrefix(string(output), "Exited") </span><span class="cov0" title="0">{
                 logger.Debugf("", "Checking for exit status: %s", string(output))
-                if string(output) == "" </span><span class="cov6" title="10">{
+                if string(output) == "" </span><span class="cov0" title="0">{
                         podmanOutput = outb.String() + "\n\n" + errb.String()
                         r.State.Output = podmanOutput
                         if runError != nil </span><span class="cov0" title="0">{
@@ -8305,49 +8367,49 @@ func StartRun(r *Run) (bool, error) <span class="cov6" title="10">{
                                 break</span>
                         }
                         // Load in display file if present and able
-                        <span class="cov6" title="10">if _, err := os.Stat(displayPath); err == nil </span><span class="cov1" title="1">{
+                        <span class="cov0" title="0">if _, err := os.Stat(displayPath); err == nil </span><span class="cov0" title="0">{
                                 logger.Tracef("", "Display path is present")
                                 data, err := os.ReadFile(displayPath)
-                                if err == nil </span><span class="cov1" title="1">{
+                                if err == nil </span><span class="cov0" title="0">{
                                         logger.Tracef("", "Read display file")
                                         var obj []map[string]interface{}
                                         if err := json.Unmarshal(data, &amp;obj); err != nil </span><span class="cov0" title="0">{
                                                 logger.Errorf("", "Error unmarshalling display JSON: %v", err)
-                                        }</span> else<span class="cov1" title="1"> {
+                                        }</span> else<span class="cov0" title="0"> {
                                                 logger.Tracef("", "Updating display object")
                                                 r.State.Display = obj
                                         }</span>
                                 }
                         }
 
-                } else<span class="cov9" title="44"> {
+                } else<span class="cov0" title="0"> {
                         logs, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman logs %s", containerName)).CombinedOutput()
                         if err != nil </span><span class="cov0" title="0">{
                                 r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s--------------------------------\n\n%s", podmanOutput, logs, string(err.Error()))
-                        }</span> else<span class="cov9" title="44"> {
+                        }</span> else<span class="cov0" title="0"> {
                                 r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(logs))
                         }</span>
                         // Load in display file if present and able
-                        <span class="cov9" title="44">if _, err := os.Stat(displayPath); err == nil </span><span class="cov6" title="13">{
+                        <span class="cov0" title="0">if _, err := os.Stat(displayPath); err == nil </span><span class="cov0" title="0">{
                                 logger.Tracef("", "Display path is present")
                                 data, err := os.ReadFile(displayPath)
-                                if err == nil </span><span class="cov6" title="13">{
+                                if err == nil </span><span class="cov0" title="0">{
                                         logger.Tracef("", "Read display file")
                                         var obj []map[string]interface{}
                                         if err := json.Unmarshal(data, &amp;obj); err != nil </span><span class="cov0" title="0">{
                                                 logger.Errorf("", "Error unmarshalling display JSON: %v", err)
-                                        }</span> else<span class="cov6" title="13"> {
+                                        }</span> else<span class="cov0" title="0"> {
                                                 logger.Tracef("", "Updating display object")
                                                 r.State.Display = obj
                                         }</span>
                                 }
                         }
                 }
-                <span class="cov10" title="54">time.Sleep(500 * time.Millisecond)
+                <span class="cov0" title="0">time.Sleep(500 * time.Millisecond)
                 output, _ = exec.Command("/bin/sh", "-c", fmt.Sprintf("podman ps -a --filter \"name=%s\" --format \"{{.Status}}\"", containerName)).CombinedOutput()</span>
         }
 
-        <span class="cov5" title="9">if !erroredOut </span><span class="cov5" title="9">{
+        <span class="cov0" title="0">if !erroredOut </span><span class="cov0" title="0">{
                 openParenIdx := strings.Index(string(output), "(")
                 closeParenIdx := strings.Index(string(output), ")")
                 returnCode := string(output)[openParenIdx+1 : closeParenIdx]
@@ -8355,55 +8417,55 @@ func StartRun(r *Run) (bool, error) <span class="cov6" title="10">{
                 logs, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman logs %s", containerName)).CombinedOutput()
                 if err != nil </span><span class="cov0" title="0">{
                         r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(err.Error()))
-                }</span> else<span class="cov5" title="9"> {
+                }</span> else<span class="cov0" title="0"> {
                         r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(logs))
                 }</span>
 
-                <span class="cov5" title="9">for _, name := range r.Task.Store.File </span><span class="cov1" title="1">{
+                <span class="cov0" title="0">for _, name := range r.Task.Store.File </span><span class="cov0" title="0">{
                         err := filestore.UploadFile(fmt.Sprintf("%s/%s", runDir, name), fmt.Sprintf("%s/%s", r.Task.Cascade, name))
                         if err != nil </span><span class="cov0" title="0">{
                                 logger.Errorf("", "ERROR UPLOADING %s: %s\n", fmt.Sprintf("%s/%s", r.Task.Cascade, name), err.Error())
                         }</span>
-                        <span class="cov1" title="1">ds.Files = append(ds.Files, name)</span>
+                        <span class="cov0" title="0">ds.Files = append(ds.Files, name)</span>
                 }
 
-                <span class="cov5" title="9">envOutPath := fmt.Sprintf("%s/.envout", runDir)
+                <span class="cov0" title="0">envOutPath := fmt.Sprintf("%s/.envout", runDir)
                 var dat []byte
-                if _, err := os.Stat(envOutPath); err == nil </span><span class="cov1" title="1">{
+                if _, err := os.Stat(envOutPath); err == nil </span><span class="cov0" title="0">{
                         dat, err = os.ReadFile(envOutPath)
                         if err != nil </span><span class="cov0" title="0">{
                                 logger.Errorf("", "Error reading file %s\n", err.Error())
                                 setErrorStatus(r, err.Error())
                         }</span>
                 }
-                <span class="cov5" title="9">envVarList := strings.Split(string(dat), "\n")
+                <span class="cov0" title="0">envVarList := strings.Split(string(dat), "\n")
                 envVarMap := map[string]string{}
 
-                for _, val := range envVarList </span><span class="cov6" title="10">{
+                for _, val := range envVarList </span><span class="cov0" title="0">{
                         name, val, _ := strings.Cut(val, ";")
                         decoded, _ := base64.StdEncoding.DecodeString(val)
                         envVarMap[name] = string(decoded)
                 }</span>
 
-                <span class="cov5" title="9">for _, name := range r.Task.Store.Env </span><span class="cov1" title="1">{
+                <span class="cov0" title="0">for _, name := range r.Task.Store.Env </span><span class="cov0" title="0">{
                         ds.Env[name] = envVarMap[name]
                 }</span>
 
-                <span class="cov5" title="9">inputs := []input.Input{}
+                <span class="cov0" title="0">inputs := []input.Input{}
                 if err := datastore.UpdateDataStoreByName(cName, ds, inputs); err != nil </span><span class="cov0" title="0">{
                         logger.Errorf("", "Error updating datastore %s\n", err.Error())
                         setErrorStatus(r, err.Error())
                 }</span>
 
-                <span class="cov5" title="9">currentTime = time.Now().UTC()
+                <span class="cov0" title="0">currentTime = time.Now().UTC()
                 r.State.Finished = currentTime.Format("2006-01-02T15:04:05Z")
-                if returnCode == "0" </span><span class="cov5" title="8">{
+                if returnCode == "0" </span><span class="cov0" title="0">{
                         r.State.Status = constants.STATE_STATUS_SUCCESS
-                }</span> else<span class="cov1" title="1"> {
+                }</span> else<span class="cov0" title="0"> {
                         r.State.Status = constants.STATE_STATUS_ERROR
                 }</span>
 
-                <span class="cov5" title="9">if r.Task.ShouldRM </span><span class="cov2" title="2">{
+                <span class="cov0" title="0">if r.Task.ShouldRM </span><span class="cov0" title="0">{
                         rmCommand := fmt.Sprintf("podman rm -f %s", containerName)
                         out, err := exec.Command("bash", "-c", rmCommand).CombinedOutput()
                         logger.Debugf("", "Podman rm: %s", string(out))
@@ -8414,7 +8476,7 @@ func StartRun(r *Run) (bool, error) <span class="cov6" title="10">{
                         }</span>
                 }
         }
-        <span class="cov5" title="9">return false, err</span>
+        <span class="cov0" title="0">return false, err</span>
 }
 
 func Kill(cn, tn, nn string) error <span class="cov0" title="0">{
@@ -8451,12 +8513,12 @@ type State struct {
         Number   int                      `json:"number" bson:"number"`
 }
 
-func CreateState(s *State) error <span class="cov6" title="98">{
+func CreateState(s *State) error <span class="cov7" title="98">{
         if _, err := GetStateByNames(s.Cascade, s.Task); err == nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("state already exists with names %s, %s", s.Cascade, s.Task)
         }</span>
 
-        <span class="cov6" title="98">_, err := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME].InsertOne(mongodb.Ctx, s)
+        <span class="cov7" title="98">_, err := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME].InsertOne(mongodb.Ctx, s)
         return err</span>
 }
 
@@ -8500,7 +8562,7 @@ func DeleteStatesByCascade(cascade string) error <span class="cov2" title="3">{
 
 }
 
-func GetAllStates() ([]*State, error) <span class="cov3" title="11">{
+func GetAllStates() ([]*State, error) <span class="cov4" title="11">{
         filter := bson.D{{}}
 
         states, err := FilterStates(filter)
@@ -8508,27 +8570,27 @@ func GetAllStates() ([]*State, error) <span class="cov3" title="11">{
         return states, err
 }</span>
 
-func GetStateByNames(cascade, task string) (*State, error) <span class="cov9" title="1128">{
+func GetStateByNames(cascade, task string) (*State, error) <span class="cov8" title="265">{
         filter := bson.M{"cascade": cascade, "task": task}
 
         states, err := FilterStates(filter)
 
-        if err != nil </span><span class="cov6" title="116">{
+        if err != nil </span><span class="cov7" title="116">{
                 return nil, err
         }</span>
 
-        <span class="cov9" title="1012">if len(states) == 0 </span><span class="cov0" title="0">{
+        <span class="cov7" title="149">if len(states) == 0 </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("no state found with names %s, %s", cascade, task)
         }</span>
 
-        <span class="cov9" title="1012">if len(states) &gt; 1 </span><span class="cov0" title="0">{
+        <span class="cov7" title="149">if len(states) &gt; 1 </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("multiple states found with names %s, %s", cascade, task)
         }</span>
 
-        <span class="cov9" title="1012">return states[0], nil</span>
+        <span class="cov7" title="149">return states[0], nil</span>
 }
 
-func GetStatesByCascade(cascade string) ([]*State, error) <span class="cov4" title="18">{
+func GetStatesByCascade(cascade string) ([]*State, error) <span class="cov1" title="2">{
         filter := bson.M{"cascade": cascade}
 
         states, err := FilterStates(filter)
@@ -8537,10 +8599,10 @@ func GetStatesByCascade(cascade string) ([]*State, error) <span class="cov4" tit
                 return nil, err
         }</span>
 
-        <span class="cov4" title="18">return states, nil</span>
+        <span class="cov1" title="2">return states, nil</span>
 }
 
-func UpdateStateByNames(cascade, task string, s *State) error <span class="cov7" title="195">{
+func UpdateStateByNames(cascade, task string, s *State) error <span class="cov6" title="48">{
         filter := bson.M{"cascade": cascade, "task": task}
 
         collection := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME]
@@ -8554,14 +8616,14 @@ func UpdateStateByNames(cascade, task string, s *State) error <span class="cov7"
                 return err
         }</span>
 
-        <span class="cov7" title="195">if result.ModifiedCount != 1 </span><span class="cov0" title="0">{
+        <span class="cov6" title="48">if result.ModifiedCount != 1 </span><span class="cov0" title="0">{
                 return fmt.Errorf("no state found with names %s, %s", cascade, task)
         }</span>
 
-        <span class="cov7" title="195">return nil</span>
+        <span class="cov6" title="48">return nil</span>
 }
 
-func FilterStates(filter interface{}) ([]*State, error) <span class="cov9" title="1157">{
+func FilterStates(filter interface{}) ([]*State, error) <span class="cov8" title="278">{
         // A slice of tasks for storing the decoded documents
         var states []*State
 
@@ -8573,28 +8635,28 @@ func FilterStates(filter interface{}) ([]*State, error) <span class="cov9" title
                 return states, err
         }</span>
 
-        <span class="cov9" title="1157">for cur.Next(ctx) </span><span class="cov10" title="1948">{
+        <span class="cov8" title="278">for cur.Next(ctx) </span><span class="cov10" title="797">{
                 var s State
                 err := cur.Decode(&amp;s)
                 if err != nil </span><span class="cov0" title="0">{
                         return states, err
                 }</span>
 
-                <span class="cov10" title="1948">states = append(states, &amp;s)</span>
+                <span class="cov10" title="797">states = append(states, &amp;s)</span>
         }
 
-        <span class="cov9" title="1157">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="278">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
                 return states, err
         }</span>
 
         // once exhausted, close the cursor
-        <span class="cov9" title="1157">cur.Close(ctx)
+        <span class="cov8" title="278">cur.Close(ctx)
 
-        if len(states) == 0 </span><span class="cov6" title="116">{
+        if len(states) == 0 </span><span class="cov7" title="116">{
                 return states, mongo.ErrNoDocuments
         }</span>
 
-        <span class="cov9" title="1041">return states, nil</span>
+        <span class="cov7" title="162">return states, nil</span>
 }
 </pre>
 		
@@ -8621,8 +8683,10 @@ type TaskDependsOn struct {
 }
 
 type TaskLoadStore struct {
-        Env  []string `json:"env" bson:"env"`
-        File []string `json:"file" bson:"file"`
+        Env            []string `json:"env" bson:"env"`
+        File           []string `json:"file" bson:"file"`
+        EnvPassthrough []string `json:"env_passthrough" bson:"env_passthrough"`
+        Mounts         []string `json:"mounts" bson:"mounts"`
 }
 
 type TaskCheck struct {
@@ -8764,7 +8828,7 @@ func GetAllTasks() ([]*Task, error) <span class="cov4" title="11">{
         return tasks, err
 }</span>
 
-func GetTaskByNames(cascade, task string) (*Task, error) <span class="cov7" title="53">{
+func GetTaskByNames(cascade, task string) (*Task, error) <span class="cov7" title="45">{
         filter := bson.M{"cascade": cascade, "name": task}
 
         tasks, err := FilterTasks(filter)
@@ -8773,15 +8837,15 @@ func GetTaskByNames(cascade, task string) (*Task, error) <span class="cov7" titl
                 return nil, err
         }</span>
 
-        <span class="cov6" title="21">if len(tasks) == 0 </span><span class="cov0" title="0">{
+        <span class="cov5" title="13">if len(tasks) == 0 </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("no task found with names %s, %s", cascade, task)
         }</span>
 
-        <span class="cov6" title="21">if len(tasks) &gt; 1 </span><span class="cov0" title="0">{
+        <span class="cov5" title="13">if len(tasks) &gt; 1 </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("multiple tasks found with names %s, %s", cascade, task)
         }</span>
 
-        <span class="cov6" title="21">return tasks[0], nil</span>
+        <span class="cov5" title="13">return tasks[0], nil</span>
 }
 
 func GetTasksByCascade(cascade string) ([]*Task, error) <span class="cov2" title="2">{
@@ -8796,7 +8860,7 @@ func GetTasksByCascade(cascade string) ([]*Task, error) <span class="cov2" title
         <span class="cov2" title="2">return tasks, nil</span>
 }
 
-func UpdateTaskByNames(cascade, task string, t *Task) error <span class="cov5" title="18">{
+func UpdateTaskByNames(cascade, task string, t *Task) error <span class="cov4" title="10">{
         filter := bson.M{"cascade": cascade, "name": task}
         currentTime := time.Now().UTC()
         t.Updated = currentTime.Format("2006-01-02T15:04:05Z")
@@ -8815,16 +8879,16 @@ func UpdateTaskByNames(cascade, task string, t *Task) error <span class="cov5" t
                 return err
         }</span>
 
-        <span class="cov5" title="18">if result.ModifiedCount != 1 </span><span class="cov0" title="0">{
+        <span class="cov4" title="10">if result.ModifiedCount != 1 </span><span class="cov0" title="0">{
                 return fmt.Errorf("no task found with names %s, %s", cascade, task)
         }</span>
 
-        <span class="cov5" title="18">logger.Debugf("", "Update result: %v", result)
+        <span class="cov4" title="10">logger.Debugf("", "Update result: %v", result)
 
         return nil</span>
 }
 
-func FilterTasks(filter interface{}) ([]*Task, error) <span class="cov7" title="66">{
+func FilterTasks(filter interface{}) ([]*Task, error) <span class="cov7" title="58">{
         // A slice of tasks for storing the decoded documents
         var tasks []*Task
 
@@ -8836,28 +8900,28 @@ func FilterTasks(filter interface{}) ([]*Task, error) <span class="cov7" title="
                 return tasks, err
         }</span>
 
-        <span class="cov7" title="66">for cur.Next(ctx) </span><span class="cov10" title="237">{
+        <span class="cov7" title="58">for cur.Next(ctx) </span><span class="cov10" title="229">{
                 var s Task
                 err := cur.Decode(&amp;s)
                 if err != nil </span><span class="cov0" title="0">{
                         return tasks, err
                 }</span>
 
-                <span class="cov10" title="237">tasks = append(tasks, &amp;s)</span>
+                <span class="cov10" title="229">tasks = append(tasks, &amp;s)</span>
         }
 
-        <span class="cov7" title="66">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
+        <span class="cov7" title="58">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
                 return tasks, err
         }</span>
 
         // once exhausted, close the cursor
-        <span class="cov7" title="66">cur.Close(ctx)
+        <span class="cov7" title="58">cur.Close(ctx)
 
         if len(tasks) == 0 </span><span class="cov6" title="32">{
                 return tasks, mongo.ErrNoDocuments
         }</span>
 
-        <span class="cov6" title="34">return tasks, nil</span>
+        <span class="cov6" title="26">return tasks, nil</span>
 }
 </pre>
 		
@@ -8968,7 +9032,7 @@ func GetUserByUsername(username string) (*User, error) <span class="cov4" title=
         <span class="cov4" title="25">return users[0], nil</span>
 }
 
-func GetUserByAPIToken(apiToken string) (*User, error) <span class="cov8" title="1063">{
+func GetUserByAPIToken(apiToken string) (*User, error) <span class="cov8" title="968">{
         // filter := bson.M{"api_tokens": bson.M{"token": apiToken}}
 
         filter := bson.D{{}}
@@ -8978,9 +9042,9 @@ func GetUserByAPIToken(apiToken string) (*User, error) <span class="cov8" title=
                 return nil, err
         }</span>
 
-        <span class="cov8" title="1063">for _, u := range users </span><span class="cov9" title="2954">{
-                for _, t := range u.APITokens </span><span class="cov9" title="2954">{
-                        if err := bcrypt.CompareHashAndPassword([]byte(t.Token), []byte(apiToken)); err == nil </span><span class="cov8" title="1063">{
+        <span class="cov8" title="968">for _, u := range users </span><span class="cov9" title="2667">{
+                for _, t := range u.APITokens </span><span class="cov9" title="2667">{
+                        if err := bcrypt.CompareHashAndPassword([]byte(t.Token), []byte(apiToken)); err == nil </span><span class="cov8" title="968">{
                                 return u, nil
                         }</span>
                 }
@@ -9154,7 +9218,7 @@ func UpdateUserByUsername(username string, u *User) error <span class="cov2" tit
         <span class="cov2" title="5">return nil</span>
 }
 
-func FilterUsers(filter interface{}) ([]*User, error) <span class="cov8" title="1118">{
+func FilterUsers(filter interface{}) ([]*User, error) <span class="cov8" title="1023">{
         // A slice of tasks for storing the decoded documents
         var users []*User
 
@@ -9166,28 +9230,28 @@ func FilterUsers(filter interface{}) ([]*User, error) <span class="cov8" title="
                 return users, err
         }</span>
 
-        <span class="cov8" title="1118">for cur.Next(ctx) </span><span class="cov10" title="5460">{
+        <span class="cov8" title="1023">for cur.Next(ctx) </span><span class="cov10" title="4985">{
                 var u User
                 err := cur.Decode(&amp;u)
                 if err != nil </span><span class="cov0" title="0">{
                         return users, err
                 }</span>
 
-                <span class="cov10" title="5460">users = append(users, &amp;u)</span>
+                <span class="cov10" title="4985">users = append(users, &amp;u)</span>
         }
 
-        <span class="cov8" title="1118">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1023">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
                 return users, err
         }</span>
 
         // once exhausted, close the cursor
-        <span class="cov8" title="1118">cur.Close(ctx)
+        <span class="cov8" title="1023">cur.Close(ctx)
 
         if len(users) == 0 </span><span class="cov2" title="6">{
                 return users, mongo.ErrNoDocuments
         }</span>
 
-        <span class="cov8" title="1112">return users, nil</span>
+        <span class="cov8" title="1017">return users, nil</span>
 }
 
 func VerifyAdmin() error <span class="cov1" title="1">{
@@ -9252,18 +9316,18 @@ import (
         "github.com/gin-gonic/gin"
 )
 
-func Error(err error, c *gin.Context, statusCode int) <span class="cov2" title="3">{
+func Error(err error, c *gin.Context, statusCode int) <span class="cov3" title="6">{
         logger.Error("", err.Error())
         c.JSON(statusCode, gin.H{"error": err.Error()})
 }</span>
 
-func Contains(s []string, e string) bool <span class="cov10" title="1443">{
-        for _, a := range s </span><span class="cov9" title="1229">{
-                if a == e </span><span class="cov8" title="485">{
+func Contains(s []string, e string) bool <span class="cov10" title="1299">{
+        for _, a := range s </span><span class="cov9" title="1081">{
+                if a == e </span><span class="cov8" title="435">{
                         return true
                 }</span>
         }
-        <span class="cov9" title="958">return false</span>
+        <span class="cov9" title="864">return false</span>
 }
 
 func Keys(m map[string]string) []string <span class="cov3" title="6">{
@@ -9309,7 +9373,7 @@ func InstallPackages(packages []string) error <span class="cov0" title="0">{
         <span class="cov0" title="0">return nil</span>
 }
 
-func GenerateToken(length int) string <span class="cov2" title="5">{
+func GenerateToken(length int) string <span class="cov3" title="5">{
         token := strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16) + strconv.FormatInt(rand.Int63(), 16)
 
         token = token[:length]
@@ -9403,12 +9467,12 @@ func Run() <span class="cov1" title="1">{
 
 func PollQueue() <span class="cov1" title="1">{
         container.InitContainers()
-        for </span><span class="cov10" title="3161595318">{
+        for </span><span class="cov9" title="3218655581">{
                 if !health.IsAvailable </span><span class="cov0" title="0">{
                         time.Sleep(250 * time.Millisecond)
                         continue</span>
                 }
-                <span class="cov10" title="3161595318">if len(RunQueue) &gt; 0 </span><span class="cov1" title="10">{
+                <span class="cov10" title="3218656774">if len(RunQueue) &gt; 0 </span><span class="cov0" title="0">{
                         health.IsAvailable = false
                         container.CurrentRun, RunQueue = RunQueue[0], RunQueue[1:]
                         container.CurrentName = container.CurrentRun.Name
@@ -9416,7 +9480,7 @@ func PollQueue() <span class="cov1" title="1">{
                         if shouldRestart </span><span class="cov0" title="0">{
                                 logger.Debugf("", "Should restart is true")
                                 RunQueue = append([]run.Run{container.CurrentRun}, RunQueue...)
-                        }</span> else<span class="cov1" title="9"> {
+                        }</span> else<span class="cov0" title="0"> {
                                 logger.Debugf("", "Current run name: %s", container.CurrentRun.Name)
                                 c := container.CurrentRun
                                 t := c.Task
@@ -9465,14 +9529,14 @@ func PollQueue() <span class="cov1" title="1">{
                                 }
                                 parts := strings.Split(c.Name, ".")
                                 nameParts := strings.Split(parts[1], "-")
-                                if !strings.HasSuffix(nameParts[0], "CHECK") </span><span class="cov1" title="7">{
+                                if !strings.HasSuffix(nameParts[0], "CHECK") </span><span class="cov0" title="0">{
                                         logger.Debugf("", "Adding groups %v to LastGroups", c.Groups)
                                         container.LastRun = append(container.LastRun, container.CurrentRun.Name)
                                         container.LastImage = append(container.LastImage, container.CurrentRun.Task.Image)
                                         container.LastGroups = append(container.LastGroups, c.Groups)
                                 }</span>
                         }
-                        <span class="cov1" title="9">logger.Debugf("", "current run: %v", container.CurrentRun)
+                        <span class="cov0" title="0">logger.Debugf("", "current run: %v", container.CurrentRun)
                         container.CurrentRun = run.Run{}
                         health.IsAvailable = true</span>
                 }

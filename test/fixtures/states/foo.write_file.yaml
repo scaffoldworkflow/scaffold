@@ -1,8 +1,8 @@
 cascade: foo
 display: []
 finished: ''
-number: 2
+number: 0
 output: ''
 started: ''
-status: waiting
+status: not_started
 task: write_file
