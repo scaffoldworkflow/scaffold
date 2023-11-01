@@ -67,7 +67,7 @@ func Run() {
 	user.VerifyAdmin()
 	auth.Nodes = make([]auth.NodeObject, 0)
 	auth.UnknownNodes = make(map[string]auth.DegradedNodeObject)
-	auth.UnknownNodes = make(map[string]auth.DegradedNodeObject)
+	auth.UnhealthyNodes = make(map[string]auth.DegradedNodeObject)
 
 	health.IsReady = true
 
@@ -103,8 +103,8 @@ func Run() {
 			queryURL := fmt.Sprintf("%s://%s:%d/health/healthy", n.Node.Protocol, n.Node.Host, n.Node.Port)
 			logger.Debugf("", "Querying %s", queryURL)
 			resp, err := http.Get(queryURL)
-			logger.Debugf("", "Got response code %d", resp.StatusCode)
 			if err != nil {
+				logger.Errorf("", "Got error %s when trying to contact unhealthy node %s", err, n.Node.Host)
 				auth.UnknownNodes[n.Node.Host] = auth.DegradedNodeObject{
 					Node:  n.Node,
 					Count: 1,
@@ -113,6 +113,7 @@ func Run() {
 				continue
 			}
 			if resp.StatusCode >= 400 {
+				logger.Errorf("", "Got response code %d when trying to contact unhealthy node %s", resp.StatusCode, n.Node.Host)
 				continue
 			}
 			newNodes = append(newNodes, n.Node)
@@ -129,8 +130,8 @@ func Run() {
 			queryURL := fmt.Sprintf("%s://%s:%d/health/healthy", n.Node.Protocol, n.Node.Host, n.Node.Port)
 			logger.Debugf("", "Querying %s", queryURL)
 			resp, err := http.Get(queryURL)
-			logger.Debugf("", "Got response code %d", resp.StatusCode)
 			if err != nil {
+				logger.Errorf("", "Got error %s when trying to contact unknown node %s", err, n.Node.Host)
 				val := auth.UnknownNodes[n.Node.Host]
 				val.Count += 1
 				if val.Count >= config.Config.HeartbeatBackoff {
@@ -140,6 +141,7 @@ func Run() {
 				continue
 			}
 			if resp.StatusCode >= 400 {
+				logger.Errorf("", "Got response code %d when trying to contact unknown node %s", resp.StatusCode, n.Node.Host)
 				auth.UnhealthyNodes[n.Node.Host] = auth.DegradedNodeObject{
 					Node:  n.Node,
 					Count: 1,

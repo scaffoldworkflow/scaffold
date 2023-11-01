@@ -34,6 +34,27 @@ func Run() {
 
 	health.IsHealthy = true
 
+	logger.Infof("", "Trying to join manager")
+	for {
+		err := JoinManager()
+		if err == nil {
+			logger.Successf("", "Successfully joined manager")
+			break
+		}
+		logger.Errorf("", "Unable to reach manager: %s", err.Error())
+		logger.Debugf("", "Trying manager again in 5 seconds")
+		time.Sleep(5 * time.Second)
+	}
+
+	health.IsReady = true
+	health.IsAvailable = true
+
+	go container.PruneContainers()
+
+	PollQueue()
+}
+
+func JoinManager() error {
 	JoinKey = config.Config.Node.JoinKey
 	PrimaryKey = config.Config.Node.PrimaryKey
 
@@ -58,18 +79,37 @@ func Run() {
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	if resp.StatusCode >= 400 {
-		panic(fmt.Sprintf("Received join status code %d", resp.StatusCode))
+		return fmt.Errorf("received join status code %d", resp.StatusCode)
 	}
+	return nil
+}
 
-	health.IsReady = true
-	health.IsAvailable = true
+func CheckManagerHealth() error {
+	queryURL := fmt.Sprintf("%s://%s:%d/health/ready", config.Config.Node.ManagerProtocol, config.Config.Node.ManagerHost, config.Config.Node.ManagerPort)
+	resp, err := http.Get(queryURL)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("unable to reach manager, response code: %d", resp.StatusCode)
+	}
+	return nil
+}
 
-	go container.PruneContainers()
-
-	PollQueue()
+func EnsureManagerConnection() {
+	for {
+		if err := CheckManagerHealth(); err != nil {
+			logger.Errorf("", "Unable to reach manager: %s", err.Error())
+			err = JoinManager()
+			if err != nil {
+				logger.Successf("", "Successfully joined manager")
+			}
+		}
+		time.Sleep(5 * time.Second)
+	}
 }
 
 func PollQueue() {

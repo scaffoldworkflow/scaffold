@@ -221,14 +221,22 @@ func JoinNode(ctx *gin.Context) {
 
 	if n.JoinKey == config.Config.Node.JoinKey {
 		logger.Debugf("", "Joining node %s, %d, %d", n.Host, n.Port, n.WSPort)
-		Nodes = append(Nodes, NodeObject{
-			Host:     n.Host,
-			Port:     n.Port,
-			WSPort:   n.WSPort,
-			Healthy:  true,
-			Version:  n.Version,
-			Protocol: n.Protocol,
-		})
+		if u, ok := UnknownNodes[n.Host]; ok {
+			Nodes = append(Nodes, u.Node)
+			delete(UnknownNodes, n.Host)
+		} else if u, ok := UnhealthyNodes[n.Host]; ok {
+			Nodes = append(Nodes, u.Node)
+			delete(UnhealthyNodes, n.Host)
+		} else {
+			Nodes = append(Nodes, NodeObject{
+				Host:     n.Host,
+				Port:     n.Port,
+				WSPort:   n.WSPort,
+				Healthy:  true,
+				Version:  n.Version,
+				Protocol: n.Protocol,
+			})
+		}
 		ctx.Status(http.StatusOK)
 		return
 	}
