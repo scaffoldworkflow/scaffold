@@ -99,8 +99,8 @@ func LoadConfig() {
 		HeartbeatBackoff:  10,
 		TLSEnabled:        false,
 		TLSSkipVerify:     false,
-		TLSCrtPath:        "/tmp/cert.crt",
-		TLSKeyPath:        "/tmp/cert.key",
+		TLSCrtPath:        "/tmp/certs/cert.crt",
+		TLSKeyPath:        "/tmp/certs/cert.key",
 		Admin: UserObject{
 			Username: "admin",
 			Password: "admin",
