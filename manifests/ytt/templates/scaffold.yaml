@@ -22,6 +22,7 @@ metadata:
     #@ if data.values.filestore.container.enabled:
     kapp.k14s.io/change-rule.file-store: "upsert after upserting apps.johnfcarter.tech/file-store"
     #@ end
+    kapp.k14s.io/disable-wait: ""
 spec:
   selector:
     app: scaffold-manager
@@ -196,7 +197,11 @@ spec:
             add: ["NET_ADMIN"]
         env:
         - name: SCAFFOLD_BASE_URL
+          #@ if data.values.scaffold.tls.enabled:
+          value: #@ "https://scaffold-worker-{}:{}".format(idx, base_port + 1 + idx)
+          #@ else:
           value: #@ "http://scaffold-worker-{}:{}".format(idx, base_port + 1 + idx)
+          #@ end
         - name: SCAFFOLD_WS_PORT
           value: #@ "{}".format(data.values.scaffold.service.ws_port + 1 + idx)
         - name: SCAFFOLD_LOG_LEVEL
