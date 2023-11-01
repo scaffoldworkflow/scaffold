@@ -10,3 +10,5 @@ ca
 docs/build
 .vscode
 rendered.yaml
+cert.crt
+cert.key
