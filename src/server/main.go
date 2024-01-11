@@ -10,10 +10,11 @@ import (
 	"net/http"
 	"scaffold/server/config"
 	"scaffold/server/constants"
-	"scaffold/server/logger"
 	"scaffold/server/manager"
 	"scaffold/server/worker"
 	"time"
+
+	logger "github.com/jfcarter2358/go-logger"
 
 	"github.com/gin-gonic/gin"
 )

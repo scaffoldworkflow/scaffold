@@ -8,7 +8,6 @@ import (
 	"scaffold/server/config"
 	"scaffold/server/constants"
 	"scaffold/server/input"
-	"scaffold/server/logger"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -16,6 +15,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"scaffold/server/mongodb"
+
+	logger "github.com/jfcarter2358/go-logger"
 )
 
 type DataStore struct {

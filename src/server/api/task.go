@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"scaffold/server/cascade"
+	"scaffold/server/state"
 	"scaffold/server/task"
 	"scaffold/server/utils"
 
@@ -39,7 +40,7 @@ func CreateTask(ctx *gin.Context) {
 	}
 	if c.Groups != nil {
 		if !validateUserGroup(ctx, c.Groups) {
-			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusForbidden)
 		}
 	}
 
@@ -229,6 +230,36 @@ func UpdateTaskByNames(ctx *gin.Context) {
 
 	err := task.UpdateTaskByNames(cn, tn, &t)
 	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
+}
+
+func ToggleTaskEnabled(ctx *gin.Context) {
+	cn := ctx.Param("cascade")
+	tn := ctx.Param("task")
+
+	t, err := task.GetTaskByNames(cn, tn)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	t.Disabled = !t.Disabled
+	if err := task.UpdateTaskByNames(cn, tn, t); err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	s, err := state.GetStateByNames(cn, tn)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+	s.Disabled = t.Disabled
+	if err := state.UpdateStateByNames(cn, tn, s); err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
 	}

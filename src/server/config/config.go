@@ -17,25 +17,35 @@ const DEFAULT_CONFIG_PATH = "/home/scaffold/data/config.json"
 const ENV_PREFIX = "SCAFFOLD_"
 
 type ConfigObject struct {
-	Host               string          `json:"host"`
-	Port               int             `json:"port"`
-	Protocol           string          `json:"protocol"`
-	WSPort             int             `json:"ws_port" env:"WS_PORT"`
-	LogLevel           string          `json:"log_level" env:"LOG_LEVEL"`
-	LogFormat          string          `json:"log_format" env:"LOG_FORMAT"`
-	BaseURL            string          `json:"base_url" env:"BASE_URL"`
-	Admin              UserObject      `json:"admin" env:"ADMIN"`
-	DBConnectionString string          `json:"db_connection_string" env:"DB_CONNECTION_STRING"`
-	DB                 DBObject        `json:"db"`
-	Node               NodeObject      `json:"node" env:"NODE"`
-	HeartbeatInterval  int             `json:"heartbeat_interval" env:"HEARTBEAT_INTERVAL"`
-	HeartbeatBackoff   int             `json:"heartbeat_backoff" env:"HEARTBEAT_BACKOFF"`
-	Reset              ResetObject     `json:"reset" env:"RESET"`
-	FileStore          FileStoreObject `json:"file_store" env:"FILESTORE"`
-	TLSEnabled         bool            `json:"tls_enabled" env:"TLS_ENABLED"`
-	TLSSkipVerify      bool            `json:"tls_skip_verify" env:"TLS_SKIP_VERIFY"`
-	TLSCrtPath         string          `json:"tls_crt_path" env:"TLS_CRT_PATH"`
-	TLSKeyPath         string          `json:"tls_key_path" env:"TLS_KEY_PATH"`
+	Host                       string          `json:"host"`
+	Port                       int             `json:"port"`
+	Protocol                   string          `json:"protocol"`
+	WSPort                     int             `json:"ws_port" env:"WS_PORT"`
+	LogLevel                   string          `json:"log_level" env:"LOG_LEVEL"`
+	LogFormat                  string          `json:"log_format" env:"LOG_FORMAT"`
+	BaseURL                    string          `json:"base_url" env:"BASE_URL"`
+	PodmanOpts                 string          `json:"podman_opts" env:"PODMAN_OPTS"`
+	Admin                      UserObject      `json:"admin" env:"ADMIN"`
+	DBConnectionString         string          `json:"db_connection_string" env:"DB_CONNECTION_STRING"`
+	DB                         DBObject        `json:"db"`
+	Node                       NodeObject      `json:"node" env:"NODE"`
+	HeartbeatInterval          int             `json:"heartbeat_interval" env:"HEARTBEAT_INTERVAL"`
+	HeartbeatBackoff           int             `json:"heartbeat_backoff" env:"HEARTBEAT_BACKOFF"`
+	Reset                      ResetObject     `json:"reset" env:"RESET"`
+	FileStore                  FileStoreObject `json:"file_store" env:"FILESTORE"`
+	TLSEnabled                 bool            `json:"tls_enabled" env:"TLS_ENABLED"`
+	TLSSkipVerify              bool            `json:"tls_skip_verify" env:"TLS_SKIP_VERIFY"`
+	TLSCrtPath                 string          `json:"tls_crt_path" env:"TLS_CRT_PATH"`
+	TLSKeyPath                 string          `json:"tls_key_path" env:"TLS_KEY_PATH"`
+	BulwarkConnectionString    string          `json:"bulwark_connection_string" env:"BULWARK_CONNECTION_STRING"`
+	BulwarkSecretKey           string          `json:"bulwark_secret_key" env:"BULWARK_SECRET_KEY"`
+	BulwarkCheckInterval       int             `json:"bulwark_check_interval" env:"BULWARK_CHECK_INTERVAL"`
+	BulwarkAPIConnectionString string          `json:"bulwark_api_connection_string" env:"BULWARK_API_CONNECTION_STRING"`
+	ManagerQueueName           string          `json:"manager_queue_name" env:"MANAGER_QUEUE_NAME"`
+	WorkerQueueName            string          `json:"worker_queue_name" env:"WORKER_QUEUE_NAME"`
+	KillBufferName             string          `json:"kill_buffer_name" env:"KILL_BUFFER_NAME"`
+	PingHealthyThreshold       int             `json:"ping_healthy_threshold" env:"PING_HEALTHY_THRESHOLD"`
+	PingUnknownThreshold       int             `json:"ping_unknown_threshold" env:"PING_UNKNOWN_THRESHOLD"`
 }
 
 type FileStoreObject struct {
@@ -46,6 +56,7 @@ type FileStoreObject struct {
 	Bucket    string `json:"bucket"`
 	Region    string `json:"region"`
 	Protocol  string `json:"protocol"`
+	Type      string `json:"type"`
 }
 
 type UserObject struct {
@@ -95,12 +106,13 @@ func LoadConfig() {
 		WSPort:            8080,
 		LogLevel:          constants.LOG_LEVEL_INFO,
 		LogFormat:         constants.LOG_FORMAT_CONSOLE,
-		HeartbeatInterval: 500,
+		HeartbeatInterval: 1000,
 		HeartbeatBackoff:  10,
 		TLSEnabled:        false,
 		TLSSkipVerify:     false,
 		TLSCrtPath:        "/tmp/certs/cert.crt",
 		TLSKeyPath:        "/tmp/certs/cert.key",
+		PodmanOpts:        "--security-opt label=disabled --network=host",
 		Admin: UserObject{
 			Username: "admin",
 			Password: "admin",
@@ -129,7 +141,17 @@ func LoadConfig() {
 			Bucket:    "scaffold",
 			Region:    "default-region",
 			Protocol:  "http",
+			Type:      "s3",
 		},
+		BulwarkConnectionString:    "bulwark:1380",
+		BulwarkAPIConnectionString: "http://bulwark:1381",
+		BulwarkSecretKey:           "MyCoolBulwarkSecretKey",
+		BulwarkCheckInterval:       2000,
+		ManagerQueueName:           "scaffold_manager",
+		WorkerQueueName:            "scaffold_worker",
+		KillBufferName:             "scaffold_kill",
+		PingHealthyThreshold:       3,
+		PingUnknownThreshold:       6,
 	}
 
 	jsonFile, err := os.Open(configPath)

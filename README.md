@@ -228,7 +228,7 @@ Infrastructure management is an interesting problem to tackle. Many organization
 
     - __Miscellaneous__
 
-        - [ ] Log level configuration
+        - [x] Log level configuration
         - [x] CLI version command
         - [x] CLI get Scaffold version
 
@@ -355,7 +355,7 @@ Infrastructure management is an interesting problem to tackle. Many organization
 
     - __Logging__
         
-        - [ ] Configure log format
+        - [x] Configure log format
 
 ### v0.2.0
 

@@ -34,7 +34,7 @@ func CreateCascade(ctx *gin.Context) {
 
 	if c.Groups != nil {
 		if !validateUserGroup(ctx, c.Groups) {
-			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusForbidden)
 		}
 	}
 

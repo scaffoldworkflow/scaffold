@@ -3,9 +3,10 @@ package task
 import (
 	"fmt"
 	"scaffold/server/constants"
-	"scaffold/server/logger"
 	"scaffold/server/state"
 	"time"
+
+	logger "github.com/jfcarter2358/go-logger"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -28,7 +29,7 @@ type TaskLoadStore struct {
 }
 
 type TaskCheck struct {
-	Interval  int               `json:"interval" bson:"interval"`
+	Cron      string            `json:"cron" bson:"cron"`
 	Image     string            `json:"image" bson:"image"`
 	Run       string            `json:"run" bson:"run"`
 	Store     TaskLoadStore     `json:"store" bson:"store"`
@@ -40,29 +41,30 @@ type TaskCheck struct {
 }
 
 type Task struct {
-	Name        string            `json:"name" bson:"name"`
-	Cascade     string            `json:"cascade" bson:"cascade"`
-	Verb        string            `json:"verb" bson:"verb"`
-	DependsOn   TaskDependsOn     `json:"depends_on" bson:"depends_on"`
-	Image       string            `json:"image" bson:"image"`
-	Run         string            `json:"run" bson:"run"`
-	Store       TaskLoadStore     `json:"store" bson:"store"`
-	Load        TaskLoadStore     `json:"load" bson:"load"`
-	Env         map[string]string `json:"env" bson:"env"`
-	Inputs      map[string]string `json:"inputs" bson:"inputs"`
-	Updated     string            `json:"updated" bson:"updated"`
-	Check       TaskCheck         `json:"check" bson:"check"`
-	RunNumber   int               `json:"run_number" bson:"run_number"`
-	ShouldRM    bool              `json:"should_rm" bson:"should_rm"`
-	AutoExecute bool              `json:"auto_execute" bson:"auto_execute"`
+	Name                  string            `json:"name" bson:"name"`
+	Cron                  string            `json:"cron" bson:"cron"`
+	Cascade               string            `json:"cascade" bson:"cascade"`
+	Verb                  string            `json:"verb" bson:"verb"`
+	DependsOn             TaskDependsOn     `json:"depends_on" bson:"depends_on"`
+	Image                 string            `json:"image" bson:"image"`
+	Run                   string            `json:"run" bson:"run"`
+	Store                 TaskLoadStore     `json:"store" bson:"store"`
+	Load                  TaskLoadStore     `json:"load" bson:"load"`
+	Env                   map[string]string `json:"env" bson:"env"`
+	Inputs                map[string]string `json:"inputs" bson:"inputs"`
+	Updated               string            `json:"updated" bson:"updated"`
+	RunNumber             int               `json:"run_number" bson:"run_number"`
+	ShouldRM              bool              `json:"should_rm" bson:"should_rm"`
+	AutoExecute           bool              `json:"auto_execute" bson:"auto_execute"`
+	Disabled              bool              `json:"disabled" bson:"disabled"`
+	Check                 TaskCheck         `json:"check" bson:"check"`
+	ContainerLoginCommand string            `json:"container_login_command" bson:"container_login_command"`
 }
 
 func CreateTask(t *Task) error {
 	if _, err := GetTaskByNames(t.Cascade, t.Name); err == nil {
 		return fmt.Errorf("task already exists with names %s, %s", t.Cascade, t.Name)
 	}
-
-	t.Check.RunNumber = 0
 
 	s := state.State{
 		Task:     t.Name,
@@ -73,38 +75,39 @@ func CreateTask(t *Task) error {
 		Output:   "",
 		Number:   t.RunNumber,
 		Display:  make([]map[string]interface{}, 0),
+		Killed:   false,
 	}
 	if err := state.CreateState(&s); err != nil {
 		return err
 	}
 
-	sc := state.State{
-		Task:     fmt.Sprintf("SCAFFOLD_CHECK-%s", t.Name),
-		Cascade:  t.Cascade,
-		Status:   constants.STATE_STATUS_NOT_STARTED,
-		Started:  "",
-		Finished: "",
-		Output:   "",
-		Number:   t.RunNumber,
-		Display:  make([]map[string]interface{}, 0),
-	}
-	if err := state.CreateState(&sc); err != nil {
-		return err
-	}
+	// sc := state.State{
+	// 	Task:     fmt.Sprintf("SCAFFOLD_CHECK-%s", t.Name),
+	// 	Cascade:  t.Cascade,
+	// 	Status:   constants.STATE_STATUS_NOT_STARTED,
+	// 	Started:  "",
+	// 	Finished: "",
+	// 	Output:   "",
+	// 	Number:   t.RunNumber,
+	// 	Display:  make([]map[string]interface{}, 0),
+	// }
+	// if err := state.CreateState(&sc); err != nil {
+	// 	return err
+	// }
 
-	sp := state.State{
-		Task:     fmt.Sprintf("SCAFFOLD_PREVIOUS-%s", t.Name),
-		Cascade:  t.Cascade,
-		Status:   constants.STATE_STATUS_NOT_STARTED,
-		Started:  "",
-		Finished: "",
-		Output:   "",
-		Number:   0,
-		Display:  make([]map[string]interface{}, 0),
-	}
-	if err := state.CreateState(&sp); err != nil {
-		return err
-	}
+	// sp := state.State{
+	// 	Task:     fmt.Sprintf("SCAFFOLD_PREVIOUS-%s", t.Name),
+	// 	Cascade:  t.Cascade,
+	// 	Status:   constants.STATE_STATUS_NOT_STARTED,
+	// 	Started:  "",
+	// 	Finished: "",
+	// 	Output:   "",
+	// 	Number:   0,
+	// 	Display:  make([]map[string]interface{}, 0),
+	// }
+	// if err := state.CreateState(&sp); err != nil {
+	// 	return err
+	// }
 
 	_, err := mongodb.Collections[constants.MONGODB_TASK_COLLECTION_NAME].InsertOne(mongodb.Ctx, t)
 	return err
@@ -260,4 +263,30 @@ func FilterTasks(filter interface{}) ([]*Task, error) {
 	}
 
 	return tasks, nil
+}
+
+func VerifyDepends(cn, tn string) (bool, error) {
+	t, err := GetTaskByNames(cn, tn)
+	if err != nil {
+		return false, err
+	}
+	for _, n := range t.DependsOn.Success {
+		s, err := state.GetStateByNames(cn, n)
+		if err != nil {
+			return false, err
+		}
+		if s.Status != constants.STATE_STATUS_SUCCESS {
+			return false, nil
+		}
+	}
+	for _, n := range t.DependsOn.Error {
+		s, err := state.GetStateByNames(cn, n)
+		if err != nil {
+			return false, err
+		}
+		if s.Status != constants.STATE_STATUS_ERROR {
+			return false, nil
+		}
+	}
+	return true, nil
 }

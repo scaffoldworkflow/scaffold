@@ -15,109 +15,165 @@ links:
 groups:
   - foo
 tasks:
-- name: write_file
+- name: a
   image: ubuntu:20.04
   run: |
-    echo "${file_contents}" > /tmp/run/foo.txt
-    echo "Sleeping for a bit..."
-    sleep 10
-  store:
-    file:
-      - foo.txt
-  env:
-    file_contents: These are the contents of my file
-
-- name: store_full_message
-  image: ubuntu:20.04 
-  run: |
-    MESSAGE="${greeting}${name}"
-  store:
-    env:
-      - MESSAGE
-  inputs:
-    greeting: greeting
-    name: name 
-
-- name: print_file
-  depends_on:
-    success:
-      - write_file
-      - store_full_message
+    echo "a"
+- name: b
   image: ubuntu:20.04
-  load:
-    file:
-      - foo.txt
-    env_passthrough:
-      - FOO
   run: |
-    echo "----  WRITING FILE  ----"
-    cat /tmp/run/foo.txt
-    echo "----  PASS THROUGH  ----"
-    echo "${FOO}"
-    echo "----  SLEEPING FOR A BIT  ----"
-  check:
-    interval: 20
-    image: ubuntu:20.04
-    run: |
-      echo "Writing data to display"
-      echo '[{"kind":"value","name":"Exit Reason","data":"Testing errored check"}]' > /tmp/run/.display
-      echo "Bailing with invalid status"
-      exit 1
-  auto_execute: true
-
-- name: print_error
-  image: ubuntu:20.04
-  depends_on:
-    error:
-      - print_file
-  run: |
-    echo "The print_file task has errored"
-  auto_execute: true
-
-- name: print_always
-  image: ubuntu:20.04
+    echo "b"
   depends_on:
     always:
-      - print_file
-  run: |
-    echo "This should always run regardless of print_file status"
+      - a
   auto_execute: true
-
-- name: print_env
-  depends_on:
-    success:
-      - print_file
+- name: c
   image: ubuntu:20.04
-  load:
-    env:
-      - MESSAGE
   run: |
-    echo "---- WRITING MESSAGE ----"
-    echo "${MESSAGE}"
-  check:
-    interval: 10
-    image: ubuntu:20.04
-    run: |
-      apt-get update && apt-get install -y jq
-      display_contents=$(cat << EOM
-        [
-          {
-            "kind": "table",
-            "name": "Example Table",
-            "header": ["foo", "bar", "baz"],
-            "data": [
-              [0, 1, 2],
-              [3, 4, 5],
-              [6, 7, 8]
-            ]
-          },
-          {
-            "kind": "value",
-            "name": "Counter value",
-            "data": 0
-          }
-        ]
-      EOM
-      )
-      echo "${display_contents}" > /tmp/run/.display
+    echo "c"
+  depends_on:
+    always:
+      - a
   auto_execute: true
+    
+# - name: write_file
+#   image: ubuntu:20.04
+#   run: |
+#     echo "writing file"
+#     echo "${file_contents}" > /tmp/run/foo.txt
+#     echo "writing display"
+#     echo '[
+#       {
+#         "kind":"value",
+#         "name":"Example Value",
+#         "data":"Foobar"
+#       },
+#       {
+#         "kind": "table",
+#         "name": "Example Table",
+#         "header": ["foo", "bar", "baz"],
+#         "data": [
+#           [0, 1, 2],
+#           [3, 4, 5],
+#           [6, 7, 8]
+#         ]
+#       },
+#       {
+#         "kind": "pre",
+#         "name": "Example Pre",
+#         "data": "This is pre-formatted\ncontent"
+#       }
+#     ]' > /tmp/run/.display
+#   store:
+#     file:
+#       - foo.txt
+#   env:
+#     file_contents: These are the contents of my file
+#   check:
+#     interval: 10
+#     image: ubuntu:20.04
+#     run: |
+#       echo '[
+#         {
+#           "kind":"value",
+#           "name":"Example Value",
+#           "data":"Foobar",
+#           "color": "scaffold-red"
+#         }
+#       ]' > /tmp/run/.display
+
+# - name: store_full_message
+#   image: ubuntu:20.04 
+#   run: |
+#     MESSAGE="${greeting}${name}"
+#   store:
+#     env:
+#       - MESSAGE
+#   inputs:
+#     greeting: greeting
+#     name: name 
+
+# - name: print_file
+#   depends_on:
+#     success:
+#       - write_file
+#       - store_full_message
+#   image: ubuntu:20.04
+#   load:
+#     file:
+#       - foo.txt
+#     env_passthrough:
+#       - FOO
+#   run: |
+#     echo "----  WRITING FILE  ----"
+#     cat /tmp/run/foo.txt
+#     echo "----  PASS THROUGH  ----"
+#     echo "${FOO}"
+#     echo "----  SLEEPING FOR A BIT  ----"
+    
+#   check:
+#     interval: 20
+#     image: ubuntu:20.04
+#     run: |
+#       echo "Writing data to display"
+#       echo '[{"kind":"value","name":"Exit Reason","data":"Testing errored check"}]' > /tmp/run/.display
+#       echo "Bailing with invalid status"
+#       exit 1
+#   auto_execute: true
+
+# - name: print_error
+#   image: ubuntu:20.04
+#   depends_on:
+#     error:
+#       - print_file
+#   run: |
+#     echo "The print_file task has errored"
+#   auto_execute: true
+
+# - name: print_always
+#   image: ubuntu:20.04
+#   depends_on:
+#     always:
+#       - print_file
+#   run: |
+#     echo "This should always run regardless of print_file status"
+#   auto_execute: true
+
+# - name: print_env
+#   depends_on:
+#     success:
+#       - print_file
+#   image: ubuntu:20.04
+#   load:
+#     env:
+#       - MESSAGE
+#   run: |
+#     echo "---- WRITING MESSAGE ----"
+#     echo "${MESSAGE}"
+#   check:
+#     interval: 10
+#     image: ubuntu:20.04
+#     run: |
+#       apt-get update && apt-get install -y jq
+#       display_contents=$(cat << EOM
+#         [
+#           {
+#             "kind": "table",
+#             "name": "Example Table",
+#             "header": ["foo", "bar", "baz"],
+#             "data": [
+#               [0, 1, 2],
+#               [3, 4, 5],
+#               [6, 7, 8]
+#             ]
+#           },
+#           {
+#             "kind": "value",
+#             "name": "Counter value",
+#             "data": 0
+#           }
+#         ]
+#       EOM
+#       )
+#       echo "${display_contents}" > /tmp/run/.display
+#   auto_execute: true

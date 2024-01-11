@@ -10,10 +10,11 @@ import (
 	"scaffold/server/constants"
 	"scaffold/server/datastore"
 	"scaffold/server/filestore"
-	"scaffold/server/logger"
 	"scaffold/server/user"
 	"scaffold/server/utils"
 	"time"
+
+	logger "github.com/jfcarter2358/go-logger"
 
 	"github.com/gin-gonic/gin"
 )

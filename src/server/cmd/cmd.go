@@ -11,11 +11,12 @@ import (
 	"os/exec"
 	"os/signal"
 	"scaffold/server/config"
-	"scaffold/server/logger"
 	"sort"
 	"syscall"
 	"time"
 	"unicode/utf8"
+
+	logger "github.com/jfcarter2358/go-logger"
 
 	_ "embed"
 

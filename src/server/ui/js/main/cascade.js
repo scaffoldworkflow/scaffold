@@ -31,22 +31,22 @@ pin_colors = {
     "Always": "#5E81AC",
 }
 
-// var workflow
-
 var state_colors = {
     "not_started": "scaffold-charcoal",
     "success": "scaffold-green",
     "error": "scaffold-red",
     "running": "scaffold-blue",
-    "waiting": "scaffold-yellow"
+    "waiting": "scaffold-yellow",
+    "killed": "scaffold-orange"
 }
 
 var state_icons = {
     "not_started": '<i class="w3-medium fa-regular fa-circle"></i>',
     "success": '<i class="w3-medium fa-solid fa-circle-check"></i>',
     "error": '<i class="w3-medium fa-solid fa-circle-exclamation"></i>',
-    "running": '<i class="w3-medium fa-sharp fa-solid fa-spinner"></i>',
-    "waiting": '<i class="w3-medium fa-solid fa-clock"></i>'
+    "running": '<i class="w3-medium fa-sharp fa-solid fa-spinner fa-spin"></i>',
+    "waiting": '<i class="w3-medium fa-solid fa-clock"></i>',
+    "killed": '<i class="w3-medium fa-solid fa-skull"></i>'
 }
 
 var state_colors_hex = {
@@ -54,7 +54,8 @@ var state_colors_hex = {
     "success": "#A3BE8C",
     "error": "#BF616A",
     "running": "#5E81AC",
-    "waiting": "#EBCB8B"
+    "waiting": "#EBCB8B",
+    "killed": "#D08770"
 }
 
 var state_text_colors = {
@@ -62,12 +63,14 @@ var state_text_colors = {
     "success": "scaffold-text-green",
     "error": "scaffold-text-red",
     "running": "scaffold-text-blue",
-    "waiting": "scaffold-text-yellow"
+    "waiting": "scaffold-text-yellow",
+    "killed": "scaffold-text-orange"
 }
 
-color_keys = ["not_started", "success", "error", "running", "waiting"]
+color_keys = ["not_started", "success", "error", "running", "waiting", "killed"]
 
 var hidden = []
+var disabled = []
 
 function render() {
     let prefix = $("#search").val();
@@ -200,6 +203,9 @@ function getDatastore() {
         },
         error: function (result) {
             console.log(result)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
         }
     });
 }
@@ -216,19 +222,31 @@ function getTasks() {
             rawTasks = result
             for (let task of rawTasks) {
                 let status = getStatusFromName(task.name)
+                let extra_icons = ""
+                if (task.auto_execute) {
+                    extra_icons += '<i class="fa-solid fa-forward w3-medium" style="float:right;margin-right:4px;margin-left:4px;"></i>'
+                }
+                if (task.cron != "") {
+                    extra_icons += '<i class="fa-solid fa-clock w3-medium" style="float:right;margin-right:4px;margin-left:4px;"></i>'
+                }
+
                 tasks[task.name] = {
                     "title": {
                         "background_color": state_colors_hex[status],
                         "foreground_color": "#ffffff",
-                        "text": `${state_icons[status]}&nbsp;&nbsp;${task.name}` 
+                        "text": `${state_icons[status]}&nbsp;&nbsp;${task.name}${extra_icons}`
                     },
                     "out": {},
-                    "func": "changeStateName"
+                    "func": "changeStateName",
+                    "disabled": task.disabled,
+                    "extra_icons": extra_icons,
+                    "parents": []
                 }
             }
             for (let task of rawTasks) {
                 if (task.depends_on.success != null && task.depends_on.success != undefined && task.depends_on.success.length > 0) {
                     for (let name of task.depends_on.success) {
+                        tasks[task.name].parents.push(name)
                         if (tasks[name].out['Success'] !== undefined) {
                             tasks[name].out['Success'].push(task.name)
                         } else {
@@ -238,6 +256,7 @@ function getTasks() {
                 }
                 if (task.depends_on.error != null && task.depends_on.error != undefined && task.depends_on.error.length > 0) {
                     for (let name of task.depends_on.error) {
+                        tasks[task.name].parents.push(name)
                         if (tasks[name].out['Error'] !== undefined) {
                             tasks[name].out['Error'].push(task.name)
                         } else {
@@ -247,6 +266,7 @@ function getTasks() {
                 }
                 if (task.depends_on.always != null && task.depends_on.always != undefined && task.depends_on.always.length > 0) {
                     for (let name of task.depends_on.always) {
+                        tasks[task.name].parents.push(name)
                         if (tasks[name].out['Always'] !== undefined) {
                             tasks[name].out['Always'].push(task.name)
                         } else {
@@ -259,6 +279,9 @@ function getTasks() {
         },
         error: function (result) {
             console.log(result)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
         }
     });
 }
@@ -273,6 +296,7 @@ function getStates(shouldInit) {
         contentType: "application/json",
         success: function (result) {
             states = result 
+            updateNodes()
             if (shouldInit) {
                 workflow = new Workflow("cascade-canvas", "cascade-card", "", "", 995, "light theme-light", tasks, pin_colors)
                 setInterval(function() {
@@ -283,6 +307,9 @@ function getStates(shouldInit) {
         },
         error: function (result) {
             console.log(result)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
         }
     });
 }
@@ -312,17 +339,30 @@ function triggerRun() {
         },
         error: function (result) {
             console.log(result)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
         }
     });
     }
 }
 
 function updateNodes() {
+    disabled = []
+    for (let state of states) {
+        if (state.disabled) {
+            disabled.push(state.task)
+        }
+    }
     for (let [key, task] of Object.entries(tasks)) {
         $(`#${key}`).css("filter", `brightness(100%)`)
 
         if (hidden.includes(key)) {
-            $(`#${key}`).css("filter", `brightness(50%)`)
+            $(`#${key}`).css("filter", `brightness(66%)`)
+        }
+
+        if (disabled.includes(key)) {
+            $(`#${key}`).css("filter", `brightness(33%)`)
         }
     }
 }
@@ -335,27 +375,22 @@ function updateStates() {
             }
             let color = state_colors_hex[state.status]
             let icon = state_icons[state.status]
+            let extra_icons = tasks[state.task].extra_icons
             let current_color = $(`#${state.task}-header`).css('background-color')
             if (color == current_color) {
                 continue
             }
             $(`#${state.task}-header`).css('background-color', color)
-            $(`#${state.task}-header-text`).html(`${icon}&nbsp;&nbsp;${state.task}` )
+            $(`#${state.task}-header-text`).html(`${icon}&nbsp;&nbsp;${state.task}${extra_icons}` )
         }
     }
 }
 
 $(document).ready(
     function () {
-        // let width = $( document ).width();
         $("#current-state").css("left", `calc(100%)`)
         $("#current-input").css("left", `calc(100%)`)
         $("#sidebar").css("left", "-300px")
-
-        // $("#spinner").css("display", "block")
-        // $("#page-darken").css("opacity", "1")
-
-        
 
         getTasks()
 

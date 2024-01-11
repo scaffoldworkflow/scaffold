@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"net/url"
 	"scaffold/server/cascade"
-	"scaffold/server/logger"
 	"scaffold/server/user"
 	"scaffold/server/utils"
 	"strings"
+
+	logger "github.com/jfcarter2358/go-logger"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"

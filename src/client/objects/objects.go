@@ -78,3 +78,9 @@ type Task struct {
 	ShouldRM    bool              `json:"should_rm" bson:"should_rm"`
 	AutoExecute bool              `json:"auto_execute" bson:"auto_execute"`
 }
+
+type File struct {
+	Name     string `json:"name"`
+	Modified string `json:"modified"`
+	Cascade  string `json:"cascade"`
+}

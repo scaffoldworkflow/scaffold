@@ -38,6 +38,12 @@ build-docker:
     stud set-server-version
     wsc compile
     docker build -t scaffold -f src/server/Dockerfile .
+push-docker:
+  help: Build Scaffold Docker image
+  cmd: |
+    version = ?(cat src/server/VERSION).strip()
+    docker tag scaffold {docker_org}/scaffold:{version}
+    docker push {docker_org}/scaffold:{version}
 build-docker-test:
   help: Build Scaffold test Docker image
   cmd: |

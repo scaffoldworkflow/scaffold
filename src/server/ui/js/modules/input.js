@@ -19,6 +19,9 @@ function getDataStore() {
         },
         error: function (result) {
             console.log(result)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
         }
     });
 }
@@ -38,6 +41,9 @@ function getInputs(trigger) {
         },
         error: function (result) {
             console.log(result)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
         }
     });
 }
@@ -106,6 +112,9 @@ function saveInputs() {
         },
         error: function(response) {
             console.log(response)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
             $("#page-darken").css("opacity", "0")

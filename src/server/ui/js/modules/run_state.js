@@ -2,16 +2,16 @@ var CurrentStateName
 
 function updateStateStatus() {
     let ids = ["cascade-state-header", "cascade-output-header", "cascade-status-header", "cascade-code-header"]
-    for (let k = 0; k < color_keys.length; k++) {
-        $(`#cascade-check-header`).removeClass(state_colors[color_keys[k]])
-    }
-    $(`#cascade-check-header`).addClass(state_colors['not_started'])
-    $("#state-check").text('')
-    for (let k = 0; k < color_keys.length; k++) {
-        $(`#previous-header`).removeClass(state_colors[color_keys[k]])
-    }
-    $(`#previous-header`).addClass(state_colors['not_started'])
-    $("#state-previous").text('')
+    // for (let k = 0; k < color_keys.length; k++) {
+    //     $(`#cascade-check-header`).removeClass(state_colors[color_keys[k]])
+    // }
+    // $(`#cascade-check-header`).addClass(state_colors['not_started'])
+    // $("#state-check").text('')
+    // for (let k = 0; k < color_keys.length; k++) {
+    //     $(`#cascade-previous-header`).removeClass(state_colors[color_keys[k]])
+    // }
+    // $(`#cascade-previous-header`).addClass(state_colors['not_started'])
+    // $("#state-previous").text('')
     if (CurrentStateName != "" && states != undefined) {
         for (let state of states) {
             if (state.task == CurrentStateName) {
@@ -31,29 +31,44 @@ function updateStateStatus() {
                 $("#state-started").text(`Started: ${state.started}`)
                 $("#state-finished").text(`Finished: ${state.finished}`)
                 $("#state-output").text(state.output)
+                $("#toggle-icon").removeClass("fa-toggle-off");
+                $("#toggle-icon").removeClass("fa-toggle-on");
+                if (state.disabled) {
+                    $("#toggle-icon").addClass("fa-toggle-off");
+                } else {
+                    $("#toggle-icon").addClass("fa-toggle-on");
+                }
+
+                // console.log("building display!")
+                // console.log(state)
+                // console.log(state.display)
                 buildDisplay(state.display, "current", color, text_color)
                 continue
             }
-            if (state.task == `SCAFFOLD_CHECK-${CurrentStateName}`) {
-                for (let color of color_keys) {
-                    $(`#cascade-check-header`).removeClass(state_colors[color])
-                }
-                $("#check-run").text(`Run: ${state.number}`)
-                $(`#cascade-check-header`).addClass(state_colors[state.status])
-                $("#state-check").text(state.output)
-                // buildDisplay(states[i].display, "check", state_colors[states[i].status])
-                continue
-            }
-            if (state.task == `SCAFFOLD_PREVIOUS-${CurrentStateName}`) {
-                for (let color of color_keys) {
-                    $(`#previous-header`).removeClass(state_colors[color])
-                }
-                $("#previous-run").text(`Run: ${state.number}`)
-                $(`#previous-header`).addClass(state_colors[state.status])
-                $("#state-previous").text(state.output)
-                // buildDisplay(states[i].display, "previous", state_colors[states[i].status])
-                continue
-            }
+            // if (state.task == `SCAFFOLD_PREVIOUS-${CurrentStateName}`) {
+            //     let color = state_colors[state.status]
+            //     let text_color = state_text_colors[state.status]
+            //     for (let color of color_keys) {
+            //         $(`#previous-header`).removeClass(state_colors[color])
+            //     }
+            //     $("#previous-run").text(`Run: ${state.number}`)
+            //     $(`#previous-header`).addClass(color)
+            //     $("#state-previous").text(state.output)
+            //     buildDisplay(state.display, "previous", color, text_color)
+            //     continue
+            // }
+            // if (state.task == `SCAFFOLD_CHECK-${CurrentStateName}`) {
+            //     let color = state_colors[state.status]
+            //     let text_color = state_text_colors[state.status]
+            //     for (let color of color_keys) {
+            //         $(`#check-header`).removeClass(state_colors[color])
+            //     }
+            //     $("#check-run").text(`Run: ${state.number}`)
+            //     $(`#check-header`).addClass(color)
+            //     $("#state-check").text(state.output)
+            //     buildDisplay(state.display, "check", color, text_color)
+            //     continue
+            // }
         }
     }
 }
@@ -182,13 +197,17 @@ function buildDisplay(display, item, color, text_color) {
     $(`#state-${item}-display-data`).empty();
     output = ""
     for (let i = 0; i < display.length; i++) {
-        let cd = display[i]
+        let cd = display[i];
+        let local_color = color;
+        if (cd.color != "" && cd.color != undefined && cd.color != null) {
+            local_color = cd.color;
+        }
         if (cd.kind == "table") {
-            $(`#state-${item}-display-data`).append(buildDisplayTable(cd, color, text_color))
+            $(`#state-${item}-display-data`).append(buildDisplayTable(cd, local_color, text_color))
         } else if (cd.type == "pre") {
-            $(`#state-${item}-display-data`).append(buildDisplayPre(cd, color))
+            $(`#state-${item}-display-data`).append(buildDisplayPre(cd, local_color))
         } else {
-            $(`#state-${item}-display-data`).append(buildDisplayValue(cd, color))
+            $(`#state-${item}-display-data`).append(buildDisplayValue(cd, local_color))
         }
     }
     $(`#state-${item}-display-div`).css("display", "block")
@@ -199,19 +218,20 @@ function killRun() {
     let c = parts[parts.length - 1]
 
     let t = CurrentStateName
-    n = $("#state-run").text().slice(5)
 
-    if (c == "" || t == "" || n == "") {
-        $("#error-container").text(`Invalid task information, cascade: ${c}, task: ${t}, number: ${n}`)
+    if (c == "" || t == "") {
+        $("#error-container").text(`Invalid task information, cascade: ${c}, task: ${t}`)
         openModal('error-modal')
         return
     }
+
+    console.log(`Killing run ${c}.${t}`)
 
     $("#spinner").css("display", "block")
     $("#page-darken").css("opacity", "1")
 
     $.ajax({
-        url: `/api/v1/run/${c}/${t}/${n}`,
+        url: `/api/v1/run/${c}/${t}`,
         type: "DELETE",
         contentType: "application/json",
         success: function (result) {
@@ -220,9 +240,41 @@ function killRun() {
         },
         error: function (response) {
             console.log(response)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
             $("#page-darken").css("opacity", "0")
+            openModal('error-modal')
+        }
+    });
+}
+
+function toggleDisable() {
+    let parts = window.location.href.split('/')
+    let c = parts[parts.length - 1]
+
+    let t = CurrentStateName
+
+    if (c == "" || t == "") {
+        $("#error-container").text(`Invalid task information, cascade: ${c}, task: ${t}`)
+        openModal('error-modal')
+        return
+    }
+
+    $.ajax({
+        url: `/api/v1/task/${c}/${t}/enabled`,
+        type: "PUT",
+        contentType: "application/json",
+        success: function (result) {
+        },
+        error: function (response) {
+            console.log(response)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
+            $("#error-container").text(response.responseJSON['error'])
             openModal('error-modal')
         }
     });

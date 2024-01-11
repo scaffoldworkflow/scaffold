@@ -12,3 +12,4 @@ docs/build
 rendered.yaml
 cert.crt
 cert.key
+*.log

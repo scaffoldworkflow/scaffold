@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"scaffold/server/logger"
 	"scaffold/server/run"
 	"strings"
 	"time"
+
+	logger "github.com/jfcarter2358/go-logger"
 )
 
 var LastRun []string

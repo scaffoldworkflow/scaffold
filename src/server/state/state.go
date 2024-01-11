@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"scaffold/server/constants"
 
+	logger "github.com/jfcarter2358/go-logger"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -19,7 +21,10 @@ type State struct {
 	Finished string                   `json:"finished" bson:"finished"`
 	Output   string                   `json:"output" bson:"output"`
 	Display  []map[string]interface{} `json:"display" bson:"display"`
+	Worker   string                   `json:"worker" bson:"worker"`
 	Number   int                      `json:"number" bson:"number"`
+	Disabled bool                     `json:"disabled" bson:"disabled"`
+	Killed   bool                     `json:"killed" bson:"killed"`
 }
 
 func CreateState(s *State) error {
@@ -79,8 +84,51 @@ func GetAllStates() ([]*State, error) {
 	return states, err
 }
 
+func CopyStatesByNames(cascade, task1, task2 string) error {
+	filter1 := bson.M{"cascade": cascade, "task": task1}
+	states, err := FilterStates(filter1)
+	if err != nil {
+		return err
+	}
+	if len(states) == 0 {
+		return fmt.Errorf("no state found with names %s, %s", cascade, task1)
+	}
+	if len(states) > 1 {
+		return fmt.Errorf("multiple states found with names %s, %s", cascade, task1)
+	}
+
+	filter2 := bson.M{"cascade": cascade, "task": task2}
+	collection := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME]
+	ctx := mongodb.Ctx
+	opts := options.Replace().SetUpsert(true)
+
+	_, err = collection.ReplaceOne(ctx, filter2, states[0], opts)
+
+	return err
+}
+
 func GetStateByNames(cascade, task string) (*State, error) {
 	filter := bson.M{"cascade": cascade, "task": task}
+
+	states, err := FilterStates(filter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(states) == 0 {
+		return nil, fmt.Errorf("no state found with names %s, %s", cascade, task)
+	}
+
+	if len(states) > 1 {
+		return nil, fmt.Errorf("multiple states found with names %s, %s", cascade, task)
+	}
+
+	return states[0], nil
+}
+
+func GetStateByNamesNumber(cascade, task string, number int) (*State, error) {
+	filter := bson.M{"cascade": cascade, "task": task, "number": number}
 
 	states, err := FilterStates(filter)
 
@@ -130,6 +178,91 @@ func UpdateStateByNames(cascade, task string, s *State) error {
 	}
 
 	return nil
+}
+
+func UpdateStateKilledByNames(cascade, task string, killed bool) error {
+	filter := bson.M{"cascade": cascade, "task": task}
+
+	collection := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME]
+	ctx := mongodb.Ctx
+
+	update := bson.D{
+		{"$set", bson.D{{"killed", killed}}},
+	}
+
+	result, err := collection.UpdateOne(ctx, filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	if result.ModifiedCount != 1 {
+		// return fmt.Errorf("no state found with names %s, %s", cascade, task)
+		logger.Tracef("no state found with names %s, %s", cascade, task)
+	}
+
+	return nil
+}
+
+func UpdateStateRunByNames(cascade, task string, s State) error {
+	filter := bson.M{"cascade": cascade, "task": task}
+
+	collection := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME]
+	ctx := mongodb.Ctx
+
+	update := bson.D{
+		{"$set", bson.D{{"status", s.Status}}},
+		{"$set", bson.D{{"started", s.Started}}},
+		{"$set", bson.D{{"finished", s.Finished}}},
+		{"$set", bson.D{{"output", s.Output}}},
+		{"$set", bson.D{{"display", s.Display}}},
+	}
+
+	result, err := collection.UpdateOne(ctx, filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	if result.ModifiedCount != 1 {
+		// return fmt.Errorf("no state found with names %s, %s", cascade, task)
+		logger.Tracef("no state found with names %s, %s", cascade, task)
+	}
+
+	return nil
+}
+
+func ClearStateByNames(cascade, task string, runNumber int) error {
+	s := &State{
+		Task:     task,
+		Cascade:  cascade,
+		Status:   constants.STATE_STATUS_NOT_STARTED,
+		Started:  "",
+		Finished: "",
+		Output:   "",
+		Number:   runNumber,
+		Worker:   "",
+		Display:  make([]map[string]interface{}, 0),
+	}
+
+	if err := UpdateStateByNames(cascade, task, s); err != nil {
+		logger.Errorf("", "Cannot update state %s.%s: %s", cascade, task, err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func GetStatesByWorker(worker string) ([]*State, error) {
+	filter := bson.M{"worker": worker}
+
+	states, err := FilterStates(filter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return states, nil
 }
 
 func FilterStates(filter interface{}) ([]*State, error) {

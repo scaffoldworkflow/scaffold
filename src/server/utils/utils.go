@@ -6,8 +6,9 @@ import (
 	"log"
 	"math/rand"
 	"os/exec"
-	"scaffold/server/logger"
 	"strconv"
+
+	logger "github.com/jfcarter2358/go-logger"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,6 +25,24 @@ func Contains(s []string, e string) bool {
 		}
 	}
 	return false
+}
+
+func ContainsInt(s []int, e int) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func Remove(l []string, item string) []string {
+	for i, other := range l {
+		if other == item {
+			return append(l[:i], l[i+1:]...)
+		}
+	}
+	return l
 }
 
 func Keys(m map[string]string) []string {

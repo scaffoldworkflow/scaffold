@@ -7,6 +7,7 @@ const STATE_STATUS_SUCCESS = "success"
 const STATE_STATUS_RUNNING = "running"
 const STATE_STATUS_WAITING = "waiting"
 const STATE_STATUS_NOT_STARTED = "not_started"
+const STATE_STATUS_KILLED = "killed"
 
 const MONGODB_CASCADE_COLLECTION_NAME = "cascade"
 const MONGODB_DATASTORE_COLLECTION_NAME = "datastore"
@@ -56,3 +57,9 @@ const METHOD_DELETE = COLOR_RED
 const STATUS_TRIGGER_ALWAYS = "always"
 const STATUS_TRIGGER_SUCCESS = "success"
 const STATUS_TRIGGER_ERROR = "error"
+
+const ACTION_TRIGGER = "trigger"
+const ACTION_KILL = "kill"
+
+const FILESTORE_TYPE_S3 = "s3"
+const FILESTORE_TYPE_ARTIFACTORY = "artifactory"

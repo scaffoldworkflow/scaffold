@@ -20,12 +20,12 @@ func DoGet(profile, object, context string) {
 	uri := fmt.Sprintf("%s://%s:%s", p.Protocol, p.Host, p.Port)
 
 	logger.Debugf("", "Checking if object is valid")
-	objects := []string{"cascade", "datastore", "state", "task"}
+	objects := []string{"cascade", "datastore", "state", "task", "file"}
 
 	parts := strings.Split(object, "/")
 
 	if !utils.Contains(objects, parts[0]) {
-		logger.Fatalf("Invalid object type passed: '%s'. Valid object types are 'cascade', 'datastore', 'state', 'task'", object)
+		logger.Fatalf("Invalid object type passed: '%s'. Valid object types are %v", object, objects)
 	}
 
 	logger.Debugf("", "Getting context")
@@ -36,6 +36,10 @@ func DoGet(profile, object, context string) {
 		if parts[0] != "cascade" && parts[0] != "datastore" {
 			object = fmt.Sprintf("%s/%s/%s", parts[0], context, parts[1])
 		}
+	}
+
+	if parts[0] == "file" {
+		object = fmt.Sprintf("datastore/%s", object)
 	}
 
 	data := getJSON(p, uri, object)
@@ -54,6 +58,8 @@ func DoGet(profile, object, context string) {
 		listTasks(data, context)
 	case "datastore":
 		listDataStores(data)
+	case "file":
+		listFiles(data, context)
 	}
 }
 
@@ -147,6 +153,22 @@ func listTasks(data []byte, context string) {
 		if t.Cascade == context {
 			fmt.Fprintln(w, fmt.Sprintf("%s \t%s \t%s \t%d \t%s ", t.Name, t.Cascade, t.Image, t.RunNumber, t.Updated))
 		}
+	}
+	w.Flush()
+}
+
+func listFiles(data []byte, context string) {
+	var files []objects.File
+
+	err := json.Unmarshal(data, &files)
+	if err != nil {
+		logger.Fatalf("", "Unable to marshal file JSON: %s", err.Error())
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
+	fmt.Fprintln(w, "NAME \tCASCADE \tUPDATED")
+	for _, f := range files {
+		fmt.Fprintln(w, fmt.Sprintf("%s \t%s \t%s ", f.Name, f.Cascade, f.Modified))
 	}
 	w.Flush()
 }

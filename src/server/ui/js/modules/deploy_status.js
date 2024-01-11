@@ -52,7 +52,7 @@ function updateStatuses() {
                     down_count += 1
                 }
                 tableInnerHTML += '<tr>' +
-                    '<td class="status-table-icon ' + serviceStatusColor + ' ' + serviceStatusIcon + '">' + '</td>' +
+                    '<td class="status-table-icon fa-solid ' + serviceStatusColor + ' ' + serviceStatusIcon + '">' + '</td>' +
                     '<td>' + result.nodes[i].name + '</td>' +
                     '<td class="status-table-status">' + serviceStatusText + '</td>' +
                     '<td>' + serviceStatusVersion + '</td>' +
@@ -69,6 +69,10 @@ function updateStatuses() {
             }
         },
         error: function (result) {
+            console.log(result)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
             tableElements = $('.status-table-icon')
             for (let i = 0; i < tableElements.length; i++) {
                 $(tableElements[i]).removeClass(allHealthClasses)

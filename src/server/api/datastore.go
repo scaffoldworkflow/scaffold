@@ -46,7 +46,7 @@ func CreateDataStore(ctx *gin.Context) {
 	}
 	if c.Groups != nil {
 		if !validateUserGroup(ctx, c.Groups) {
-			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusForbidden)
 		}
 	}
 
@@ -227,7 +227,8 @@ func DownloadFile(ctx *gin.Context) {
 	}
 	if c.Groups != nil {
 		if !validateUserGroup(ctx, c.Groups) {
-			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusForbidden)
+			return
 		}
 	}
 
@@ -243,15 +244,50 @@ func DownloadFile(ctx *gin.Context) {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
 	}
-	ctx.Header("Content-Disposition", "attachment; filename="+fileName)
-	ctx.Header("Content-Type", "application/text/plain")
-	ctx.Header("Accept-Length", fmt.Sprintf("%d", len(data)))
-	ctx.Writer.Write([]byte(data))
-	ctx.Status(http.StatusOK)
-
 	if err := os.Remove(path); err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
 	}
+	ctx.Header("Content-Disposition", "attachment; filename="+fileName)
+	ctx.Header("Content-Type", "application/text/plain")
+	ctx.Header("Accept-Length", fmt.Sprintf("%d", data))
+	ctx.Writer.Write(data)
+	ctx.Status(http.StatusOK)
+}
+
+func ViewFile(ctx *gin.Context) {
+	name := ctx.Param("name")
+	fileName := ctx.Param("file")
+
+	c, err := cascade.GetCascadeByName(name)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusNotFound)
+	}
+	if c.Groups != nil {
+		if !validateUserGroup(ctx, c.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusForbidden)
+			return
+		}
+	}
+
+	path := fmt.Sprintf("/tmp/%s", uuid.New().String())
+
+	err = filestore.GetFile(fmt.Sprintf("%s/%s", name, fileName), path)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+	if err := os.Remove(path); err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	ctx.Data(http.StatusOK, "application/text/plain", []byte(data))
 }
 
 //	@summary					Upload a file
@@ -280,7 +316,7 @@ func UploadFile(ctx *gin.Context) {
 	}
 	if c.Groups != nil {
 		if !validateUserGroup(ctx, c.Groups) {
-			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusForbidden)
 		}
 	}
 
@@ -318,6 +354,7 @@ func UploadFile(ctx *gin.Context) {
 	}
 
 	ds.Files = append(ds.Files, fileName)
+	ds.Files = utils.RemoveDuplicateValues(ds.Files)
 
 	inputs := []input.Input{}
 
@@ -328,4 +365,70 @@ func UploadFile(ctx *gin.Context) {
 
 	// File saved successfully. Return proper result
 	utils.DynamicAPIResponse(ctx, "/ui/files", http.StatusOK, gin.H{"message": "OK"})
+}
+
+func GetFilesByCascade(ctx *gin.Context) {
+	name := ctx.Param("name")
+
+	c, err := cascade.GetCascadeByName(name)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusNotFound)
+	}
+	if c.Groups != nil {
+		if !validateUserGroup(ctx, c.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusForbidden)
+			return
+		}
+	}
+
+	objects, err := filestore.ListObjects()
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	out := make([]filestore.ObjectMetadata, 0)
+
+	for _, obj := range objects {
+		if obj.Cascade == name {
+			out = append(out, obj)
+		}
+	}
+
+	ctx.JSON(http.StatusOK, out)
+}
+
+func GetFileByNames(ctx *gin.Context) {
+	name := ctx.Param("name")
+	file := ctx.Param("file")
+
+	c, err := cascade.GetCascadeByName(name)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusNotFound)
+	}
+	if c.Groups != nil {
+		if !validateUserGroup(ctx, c.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusForbidden)
+			return
+		}
+	}
+
+	objects, err := filestore.ListObjects()
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	obj, ok := objects[file]
+	if !ok {
+		utils.Error(fmt.Errorf("file %s does not exist in datastore %s", file, name), ctx, http.StatusInternalServerError)
+		return
+	}
+
+	if obj.Cascade != name {
+		utils.Error(fmt.Errorf("cascade %s does not have file %s", name, file), ctx, http.StatusNotFound)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, obj)
 }

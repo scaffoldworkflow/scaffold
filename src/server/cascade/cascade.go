@@ -5,11 +5,12 @@ import (
 	"scaffold/server/constants"
 	"scaffold/server/datastore"
 	"scaffold/server/input"
-	"scaffold/server/logger"
 	"scaffold/server/state"
 	"scaffold/server/task"
 	"scaffold/server/utils"
 	"time"
+
+	logger "github.com/jfcarter2358/go-logger"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
