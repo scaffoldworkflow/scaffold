@@ -368,7 +368,11 @@ Infrastructure management is an interesting problem to tackle. Many organization
 
         - [ ] Move task status to right slide in
         - [ ] Change auto-execute from cascade page
-
-    -  __Worker Improvements__
-
-        - [ ] Check task kill ability
+        - [ ] Upload cascade from cascades page
+            - [ ] Create new on non-existing
+            - [ ] Upgrade on existing
+        - [ ] Delete cascade from cascades page
+    
+    - __Cascade Improvements__
+        
+        - [ ] Inputs should update when cascades are updated
