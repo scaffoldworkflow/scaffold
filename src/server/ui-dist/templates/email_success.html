@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <!--Use the `title` variable to set the title of the page-->
+    <title>Forgot Password</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <!-- add the icon -->
+    <link rel="icon" href="/resources/img/favicon.png">
+    <!-- add w3 css -->
+    <link rel="stylesheet" type="text/css" href="https://www.w3schools.com/w3css/4/w3.css">
+    <!-- add jquery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="/static/css/email_success.css">
+	<!-- add custom javascript -->
+    <script src="/resources/js/email_success.js"></script>
+
+	</head>
+<body class="light theme-base w3-container">
+
+	<br>
+	<br>
+	<div class="modal-content animate w3-border w3-border-black w3-card w3-round light theme-light">
+		<div class="w3-container scaffold-green w3-round">
+			<div class="w3-center"><h1 class="header-text">Forgot Password</h1></div>
+		</div>
+		<br>
+		<div class="w3-container">
+			<h3>Email sent!</h3>
+			<p>Keep an eye out in your inbox for an email from {{ .reset_email }} with instructions for resetting your password, if it doesn't show up then try checking your spam folder.</p>
+		</div>
+		<br>
+		<div class="w3-container light theme-light w3-round">
+			<p style="float: left;" class="footer-text scaffold-text-green"><b>&copy; 2024 John Carter</b></p>
+			<p style="float: right;" class="footer-text scaffold-text-green"><b>v{{ .version }}</b></p>
+		</div>
+	</div>
+
+</body>
+
+</html>

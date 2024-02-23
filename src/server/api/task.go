@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"scaffold/server/cascade"
 	"scaffold/server/state"
@@ -171,6 +172,11 @@ func GetTaskByNames(ctx *gin.Context) {
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	if t == nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("Task %s/%s does not exist", cn, tn)})
 		return
 	}
 

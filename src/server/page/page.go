@@ -24,19 +24,19 @@ func RedirectIndexPage(c *gin.Context) {
 }
 
 func ShowLoginPage(c *gin.Context) {
-	showPage(c, "login.html", gin.H{})
+	showPage(c, "login.html", gin.H{"version": constants.VERSION})
 }
 
 func ShowForgotPasswordPage(c *gin.Context) {
-	showPage(c, "forgot_password.html", gin.H{})
+	showPage(c, "forgot_password.html", gin.H{"version": constants.VERSION})
 }
 
 func ShowEmailSuccessPage(c *gin.Context) {
-	showPage(c, "email_success.html", gin.H{})
+	showPage(c, "email_success.html", gin.H{"version": constants.VERSION})
 }
 
 func ShowEmailFailurePage(c *gin.Context) {
-	showPage(c, "email_failure.html", gin.H{})
+	showPage(c, "email_failure.html", gin.H{"version": constants.VERSION})
 }
 
 func ShowResetPasswordPage(c *gin.Context) {

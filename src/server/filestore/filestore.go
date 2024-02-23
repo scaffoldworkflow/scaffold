@@ -27,9 +27,9 @@ import (
 var S3Config *aws.Config
 
 type ObjectMetadata struct {
-	Name     string `json:"name" bson:"name"`
-	Modified string `json:"modified" bson:"modified"`
-	Cascade  string `json:"cascade" bson:"cascade"`
+	Name     string `json:"name" bson:"name" yaml:"name"`
+	Modified string `json:"modified" bson:"modified" yaml:"modified"`
+	Cascade  string `json:"cascade" bson:"cascade" yaml:"cascade"`
 }
 
 func InitBucket() {
@@ -207,6 +207,7 @@ func doArtifactoryList() (map[string]ObjectMetadata, error) {
 				output[name] = ObjectMetadata{
 					Name:     fmt.Sprintf("%s/%s", c.Name, name),
 					Modified: lastModified,
+					Cascade:  c.Name,
 				}
 			}
 		}
@@ -308,9 +309,11 @@ func doS3List() (map[string]ObjectMetadata, error) {
 	output := make(map[string]ObjectMetadata)
 
 	for _, item := range resp.Contents {
+		cascade := strings.Split(*item.Key, "/")[0]
 		output[*item.Key] = ObjectMetadata{
 			Name:     *item.Key,
 			Modified: (*item.LastModified).Format("2006-01-02T15:04:05Z"),
+			Cascade:  cascade,
 		}
 	}
 	return output, nil

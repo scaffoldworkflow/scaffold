@@ -27,19 +27,19 @@ import (
 var runError error
 
 // type CheckRun struct {
-// 	Enabled bool           `json:"disabled"`
-// 	Name    string         `json:"name"`
-// 	Task    task.TaskCheck `json:"task"`
-// 	State   state.State    `json:"state"`
+// 	Enabled bool           `json:"disabled" yaml:"disabled"`
+// 	Name    string         `json:"name" yaml:"name"`
+// 	Task    task.TaskCheck `json:"task" yaml:"task"`
+// 	State   state.State    `json:"state" yaml:"state"`
 // }
 
 type Run struct {
-	Name   string      `json:"name"`
-	Task   task.Task   `json:"task"`
-	State  state.State `json:"state"`
-	Number int         `json:"number"`
-	Groups []string    `json:"groups"`
-	Worker string      `json:"worker"`
+	Name   string      `json:"name" yaml:"name"`
+	Task   task.Task   `json:"task" yaml:"task"`
+	State  state.State `json:"state" yaml:"state"`
+	Number int         `json:"number" yaml:"number"`
+	Groups []string    `json:"groups" yaml:"groups"`
+	Worker string      `json:"worker" yaml:"worker"`
 }
 
 func setErrorStatus(r *Run, output string) {
@@ -86,7 +86,7 @@ func StartRun(c *client.Client, r *Run) (bool, error) {
 	tName := r.State.Task
 
 	logger.Debugf("", "Getting datastore by name %s", cName)
-	ds, err := datastore.GetDataStoreByName(cName)
+	ds, err := datastore.GetDataStoreByCascade(cName)
 	if err != nil {
 		logger.Errorf("", "Cannot get datastore %s", cName)
 		setErrorStatus(r, err.Error())
@@ -388,7 +388,7 @@ func StartRun(c *client.Client, r *Run) (bool, error) {
 		}
 
 		inputs := []input.Input{}
-		if err := datastore.UpdateDataStoreByName(cName, ds, inputs); err != nil {
+		if err := datastore.UpdateDataStoreByCascade(cName, ds, inputs); err != nil {
 			logger.Errorf("", "Error updating datastore %s\n", err.Error())
 			if err := updateRunState(c, r, true); err != nil {
 				return false, err
@@ -421,8 +421,9 @@ func StartRun(c *client.Client, r *Run) (bool, error) {
 	return false, err
 }
 
-func Kill(c *client.Client, prefixes []string) error {
-	logger.Debugf("", "Trying to kill %v", prefixes)
+func Kill(cn, tn string) error {
+	prefix := fmt.Sprintf("%s.%s", cn, tn)
+	logger.Debugf("", "Trying to kill %s", prefix)
 	output, err := exec.Command("/bin/sh", "-c", "podman ps -a --format \"{{.Names}}\"").CombinedOutput()
 	if err != nil {
 		logger.Infof("", "Unable to list running containers: %s | %s", err, string(output))
@@ -430,41 +431,36 @@ func Kill(c *client.Client, prefixes []string) error {
 	}
 	logger.Tracef("", "Container output: %s", string(output))
 	lines := strings.Split(string(output), "\n")
-	for _, containerPrefix := range prefixes {
-		containerPrefix = strings.Trim(containerPrefix, " ")
-		logger.Tracef("", "Checking prefix %s", containerPrefix)
-		for _, containerName := range lines {
-			logger.Tracef("", "Checking container %s", containerName)
-			if strings.HasPrefix(containerName, containerPrefix) {
-				parts := strings.Split(containerPrefix, "-")
-				cn := parts[0]
-				tn := parts[1]
-				logger.Infof("", "Killing container %s", containerName)
-				if output, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman kill %s", containerName)).CombinedOutput(); err != nil {
-					logger.Infof("", "Cannot kill container with name %s with output %s", containerName, output)
-					return err
-				}
-				m := msg.RunMsg{
-					Task:    tn,
-					Cascade: cn,
-					Status:  constants.STATE_STATUS_KILLED,
-				}
-				s, err := state.GetStateByNames(cn, tn)
-				if err != nil {
-					logger.Errorf("", "Unable to get state for run %s.%s with error %s", cn, tn, err.Error())
-					return err
-				}
-				s.Status = constants.STATE_STATUS_KILLED
-				logger.Debugf("", "Updating run state for %v", m)
-				if err := state.UpdateStateByNames(cn, tn, s); err != nil {
-					logger.Errorf("", "Unable to update state %s.%s: %s", cn, tn, err.Error())
-					return err
-				}
-				if err := bulwark.QueuePush(c, m); err != nil {
-					logger.Errorf("", "Unable to push killed message to queue: %s", err.Error())
-					return err
-				}
+
+	logger.Tracef("", "Checking prefix %s", prefix)
+	for _, containerName := range lines {
+		logger.Tracef("", "Checking container %s", containerName)
+		if strings.HasPrefix(containerName, prefix) {
+			logger.Infof("", "Killing container %s", containerName)
+			if output, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman kill %s", containerName)).CombinedOutput(); err != nil {
+				logger.Infof("", "Cannot kill container with name %s with output %s", containerName, output)
+				return err
 			}
+			// m := msg.RunMsg{
+			// 	Task:    tn,
+			// 	Cascade: cn,
+			// 	Status:  constants.STATE_STATUS_KILLED,
+			// }
+			s, err := state.GetStateByNames(cn, tn)
+			if err != nil {
+				logger.Errorf("", "Unable to get state for run %s.%s with error %s", cn, tn, err.Error())
+				return err
+			}
+			s.Status = constants.STATE_STATUS_KILLED
+			// logger.Debugf("", "Updating run state for %v", m)
+			if err := state.UpdateStateByNames(cn, tn, s); err != nil {
+				logger.Errorf("", "Unable to update state %s.%s: %s", cn, tn, err.Error())
+				return err
+			}
+			// if err := bulwark.QueuePush(c, m); err != nil {
+			// 	logger.Errorf("", "Unable to push killed message to queue: %s", err.Error())
+			// 	return err
+			// }
 		}
 	}
 	return nil

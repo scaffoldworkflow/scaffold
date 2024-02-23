@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"scaffold/server/mongodb"
@@ -20,11 +19,11 @@ import (
 )
 
 type DataStore struct {
-	Name    string            `json:"name" bson:"name"`
-	Env     map[string]string `json:"env" bson:"env"`
-	Files   []string          `json:"files" bson:"files"`
-	Created string            `json:"created" bson:"created"`
-	Updated string            `json:"updated" bson:"updated"`
+	Name    string            `json:"name" bson:"name" yaml:"name"`
+	Env     map[string]string `json:"env" bson:"env" yaml:"env"`
+	Files   []string          `json:"files" bson:"files" yaml:"files"`
+	Created string            `json:"created" bson:"created" yaml:"created"`
+	Updated string            `json:"updated" bson:"updated" yaml:"updated"`
 }
 
 func CreateDataStore(d *DataStore) error {
@@ -32,15 +31,19 @@ func CreateDataStore(d *DataStore) error {
 	d.Created = currentTime.Format("2006-01-02T15:04:05Z")
 	d.Updated = currentTime.Format("2006-01-02T15:04:05Z")
 
-	if _, err := GetDataStoreByName(d.Name); err == nil {
+	dd, err := GetDataStoreByCascade(d.Name)
+	if err != nil {
+		return fmt.Errorf("error getting datastores: %s", err.Error())
+	}
+	if dd != nil {
 		return fmt.Errorf("datastore already exists with name %s", d.Name)
 	}
 
-	_, err := mongodb.Collections[constants.MONGODB_DATASTORE_COLLECTION_NAME].InsertOne(mongodb.Ctx, d)
+	_, err = mongodb.Collections[constants.MONGODB_DATASTORE_COLLECTION_NAME].InsertOne(mongodb.Ctx, d)
 	return err
 }
 
-func DeleteDataStoreByName(name string) error {
+func DeleteDataStoreByCascade(name string) error {
 	filter := bson.M{"name": name}
 
 	collection := mongodb.Collections[constants.MONGODB_DATASTORE_COLLECTION_NAME]
@@ -68,7 +71,7 @@ func GetAllDataStores() ([]*DataStore, error) {
 	return datastores, err
 }
 
-func GetDataStoreByName(name string) (*DataStore, error) {
+func GetDataStoreByCascade(name string) (*DataStore, error) {
 	filter := bson.M{"name": name}
 
 	datastores, err := FilterDataStores(filter)
@@ -78,7 +81,7 @@ func GetDataStoreByName(name string) (*DataStore, error) {
 	}
 
 	if len(datastores) == 0 {
-		return nil, fmt.Errorf("no datastore found with name %s", name)
+		return nil, nil
 	}
 
 	if len(datastores) > 1 {
@@ -88,41 +91,41 @@ func GetDataStoreByName(name string) (*DataStore, error) {
 	return datastores[0], nil
 }
 
-func UpdateDataStoreByName(name string, d *DataStore, is []input.Input) error {
+func UpdateDataStoreByCascade(name string, d *DataStore, is []input.Input) error {
 	filter := bson.M{"name": name}
 
 	currentTime := time.Now().UTC()
 	d.Updated = currentTime.Format("2006-01-02T15:04:05Z")
 
-	if config.Config.Node.Type == constants.NODE_TYPE_MANAGER {
-		logger.Infof("", "Node is of type %s", constants.NODE_TYPE_MANAGER)
-		toChange := []string{}
-		old, err := GetDataStoreByName(name)
-		if err != nil {
-			logger.Errorf("", "Error getting datastore %s: %s\n", name, err.Error())
-			return err
-		}
+	// if config.Config.Node.Type == constants.NODE_TYPE_MANAGER {
+	// 	logger.Infof("", "Node is of type %s", constants.NODE_TYPE_MANAGER)
+	toChange := []string{}
+	old, err := GetDataStoreByCascade(name)
+	if err != nil {
+		logger.Errorf("", "Error getting datastore %s: %s\n", name, err.Error())
+		return err
+	}
 
-		for _, val := range is {
-			if old.Env[val.Name] != d.Env[val.Name] {
-				toChange = append(toChange, val.Name)
-			}
-		}
-		postBody, _ := json.Marshal(toChange)
-		postBodyBuffer := bytes.NewBuffer(postBody)
-
-		httpClient := http.Client{}
-		requestURL := fmt.Sprintf("%s://localhost:%d/api/v1/input/%s/update", config.Config.Protocol, config.Config.Port, d.Name)
-		req, _ := http.NewRequest("POST", requestURL, postBodyBuffer)
-		req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode >= 400 {
-			return fmt.Errorf("received trigger status code %d", resp.StatusCode)
+	for key, val := range d.Env {
+		if old.Env[key] != val {
+			toChange = append(toChange, key)
 		}
 	}
+	postBody, _ := json.Marshal(toChange)
+	postBodyBuffer := bytes.NewBuffer(postBody)
+
+	httpClient := http.Client{}
+	requestURL := fmt.Sprintf("%s://%s:%d/api/v1/input/%s/update", config.Config.Node.ManagerProtocol, config.Config.Node.ManagerHost, config.Config.Node.ManagerPort, d.Name)
+	req, _ := http.NewRequest("POST", requestURL, postBodyBuffer)
+	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("received input update status code %d", resp.StatusCode)
+	}
+	// }
 
 	collection := mongodb.Collections[constants.MONGODB_DATASTORE_COLLECTION_NAME]
 	ctx := mongodb.Ctx
@@ -170,10 +173,6 @@ func FilterDataStores(filter interface{}) ([]*DataStore, error) {
 
 	// once exhausted, close the cursor
 	cur.Close(ctx)
-
-	if len(datastores) == 0 {
-		return datastores, mongo.ErrNoDocuments
-	}
 
 	return datastores, nil
 }

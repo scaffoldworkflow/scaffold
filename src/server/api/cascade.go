@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"scaffold/server/cascade"
 	"scaffold/server/utils"
@@ -135,6 +136,11 @@ func GetCascadeByName(ctx *gin.Context) {
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	if c == nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("Cascade %s does not exist", name)})
 		return
 	}
 

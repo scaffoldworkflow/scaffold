@@ -5,26 +5,29 @@ import (
 	"scaffold/server/constants"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"scaffold/server/mongodb"
 )
 
 type Input struct {
-	Name        string `json:"name" bson:"name"`
-	Cascade     string `json:"cascade" bson:"cascade"`
-	Description string `json:"description" bson:"description"`
-	Default     string `json:"default" bson:"default"`
-	Type        string `json:"type" bson:"type"`
+	Name        string `json:"name" bson:"name" yaml:"name"`
+	Cascade     string `json:"cascade" bson:"cascade" yaml:"cascade"`
+	Description string `json:"description" bson:"description" yaml:"description"`
+	Default     string `json:"default" bson:"default" yaml:"default"`
+	Type        string `json:"type" bson:"type" yaml:"type"`
 }
 
 func CreateInput(i *Input) error {
-	if _, err := GetInputByNames(i.Cascade, i.Name); err == nil {
+	ii, err := GetInputByNames(i.Cascade, i.Name)
+	if err != nil {
+		return fmt.Errorf("error getting inputs: %s", err.Error())
+	}
+	if ii != nil {
 		return fmt.Errorf("input already exists with names %s, %s", i.Cascade, i.Name)
 	}
 
-	_, err := mongodb.Collections[constants.MONGODB_INPUT_COLLECTION_NAME].InsertOne(mongodb.Ctx, i)
+	_, err = mongodb.Collections[constants.MONGODB_INPUT_COLLECTION_NAME].InsertOne(mongodb.Ctx, i)
 	return err
 }
 
@@ -86,7 +89,7 @@ func GetInputByNames(cascade, name string) (*Input, error) {
 	}
 
 	if len(inputs) == 0 {
-		return nil, fmt.Errorf("no input found with names %s, %s", cascade, name)
+		return nil, nil
 	}
 
 	if len(inputs) > 1 {
@@ -157,10 +160,6 @@ func FilterInputs(filter interface{}) ([]*Input, error) {
 
 	// once exhausted, close the cursor
 	cur.Close(ctx)
-
-	if len(inputs) == 0 {
-		return inputs, mongo.ErrNoDocuments
-	}
 
 	return inputs, nil
 }

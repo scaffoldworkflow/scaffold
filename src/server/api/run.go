@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"scaffold/server/bulwark"
@@ -8,6 +9,7 @@ import (
 	"scaffold/server/constants"
 	"scaffold/server/manager"
 	"scaffold/server/msg"
+	"scaffold/server/run"
 	"scaffold/server/task"
 	"scaffold/server/utils"
 
@@ -64,39 +66,39 @@ func ManagerKillRun(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
 }
 
-// //	@summary					Kill a run
-// //	@description				Kill a run on a worker
-// //	@tags						worker
-// //	@tags						run
-// //	@success					200
-// //	@failure					500
-// //	@failure					401
-// //	@securityDefinitions.apiKey	token
-// //	@in							header
-// //	@name						Authorization
-// //	@security					X-Scaffold-API
-// //	@router						/api/v1/kill/{cascade_name}/{task_name}/{task_number} [delete]
-// func KillRun(ctx *gin.Context) {
-// 	cn := ctx.Param("cascade")
-// 	tn := ctx.Param("task")
+//	@summary					Kill a run
+//	@description				Kill a run on a worker
+//	@tags						worker
+//	@tags						run
+//	@success					200
+//	@failure					500
+//	@failure					401
+//	@securityDefinitions.apiKey	token
+//	@in							header
+//	@name						Authorization
+//	@security					X-Scaffold-API
+//	@router						/api/v1/kill/{cascade_name}/{task_name} [delete]
+func KillRun(ctx *gin.Context) {
+	cn := ctx.Param("cascade")
+	tn := ctx.Param("task")
 
-// 	c, err := cascade.GetCascadeByName(cn)
-// 	if err != nil {
-// 		utils.Error(err, ctx, http.StatusNotFound)
-// 	}
-// 	if c.Groups != nil {
-// 		if !validateUserGroup(ctx, c.Groups) {
-// 			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
-// 		}
-// 	}
+	c, err := cascade.GetCascadeByName(cn)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusNotFound)
+	}
+	if c.Groups != nil {
+		if !validateUserGroup(ctx, c.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+		}
+	}
 
-// 	if err := run.Kill(cn, tn); err != nil {
-// 		utils.Error(err, ctx, http.StatusInternalServerError)
-// 		return
-// 	}
+	if err := run.Kill(cn, tn); err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
 
-// 	ctx.Status(http.StatusOK)
-// }
+	ctx.Status(http.StatusOK)
+}
 
 func CreateRun(ctx *gin.Context) {
 	cn := ctx.Param("cascade")

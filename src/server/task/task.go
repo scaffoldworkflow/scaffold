@@ -9,60 +9,63 @@ import (
 	logger "github.com/jfcarter2358/go-logger"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"scaffold/server/mongodb"
 )
 
 type TaskDependsOn struct {
-	Success []string `json:"success" bson:"success"`
-	Error   []string `json:"error" bson:"error"`
-	Always  []string `json:"always" bson:"always"`
+	Success []string `json:"success" bson:"success" yaml:"success"`
+	Error   []string `json:"error" bson:"error" yaml:"error"`
+	Always  []string `json:"always" bson:"always" yaml:"always"`
 }
 
 type TaskLoadStore struct {
-	Env            []string `json:"env" bson:"env"`
-	File           []string `json:"file" bson:"file"`
-	EnvPassthrough []string `json:"env_passthrough" bson:"env_passthrough"`
-	Mounts         []string `json:"mounts" bson:"mounts"`
+	Env            []string `json:"env" bson:"env" yaml:"env"`
+	File           []string `json:"file" bson:"file" yaml:"file"`
+	EnvPassthrough []string `json:"env_passthrough" bson:"env_passthrough" yaml:"env_passthrough"`
+	Mounts         []string `json:"mounts" bson:"mounts" yaml:"mounts"`
 }
 
 type TaskCheck struct {
-	Cron      string            `json:"cron" bson:"cron"`
-	Image     string            `json:"image" bson:"image"`
-	Run       string            `json:"run" bson:"run"`
-	Store     TaskLoadStore     `json:"store" bson:"store"`
-	Load      TaskLoadStore     `json:"load" bson:"load"`
-	Env       map[string]string `json:"env" bson:"env"`
-	Inputs    map[string]string `json:"inputs" bson:"inputs"`
-	Updated   string            `json:"updated" bson:"updated"`
-	RunNumber int               `json:"run_number" bson:"run_number"`
+	Cron      string            `json:"cron" bson:"cron" yaml:"cron"`
+	Image     string            `json:"image" bson:"image" yaml:"image"`
+	Run       string            `json:"run" bson:"run" yaml:"run"`
+	Store     TaskLoadStore     `json:"store" bson:"store" yaml:"store"`
+	Load      TaskLoadStore     `json:"load" bson:"load" yaml:"load"`
+	Env       map[string]string `json:"env" bson:"env" yaml:"env"`
+	Inputs    map[string]string `json:"inputs" bson:"inputs" yaml:"inputs"`
+	Updated   string            `json:"updated" bson:"updated" yaml:"updated"`
+	RunNumber int               `json:"run_number" bson:"run_number" yaml:"run_number"`
 }
 
 type Task struct {
-	Name                  string            `json:"name" bson:"name"`
-	Cron                  string            `json:"cron" bson:"cron"`
-	Cascade               string            `json:"cascade" bson:"cascade"`
-	Verb                  string            `json:"verb" bson:"verb"`
-	DependsOn             TaskDependsOn     `json:"depends_on" bson:"depends_on"`
-	Image                 string            `json:"image" bson:"image"`
-	Run                   string            `json:"run" bson:"run"`
-	Store                 TaskLoadStore     `json:"store" bson:"store"`
-	Load                  TaskLoadStore     `json:"load" bson:"load"`
-	Env                   map[string]string `json:"env" bson:"env"`
-	Inputs                map[string]string `json:"inputs" bson:"inputs"`
-	Updated               string            `json:"updated" bson:"updated"`
-	RunNumber             int               `json:"run_number" bson:"run_number"`
-	ShouldRM              bool              `json:"should_rm" bson:"should_rm"`
-	AutoExecute           bool              `json:"auto_execute" bson:"auto_execute"`
-	Disabled              bool              `json:"disabled" bson:"disabled"`
-	Check                 TaskCheck         `json:"check" bson:"check"`
-	ContainerLoginCommand string            `json:"container_login_command" bson:"container_login_command"`
+	Name                  string            `json:"name" bson:"name" yaml:"name"`
+	Cron                  string            `json:"cron" bson:"cron" yaml:"cron"`
+	Cascade               string            `json:"cascade" bson:"cascade" yaml:"cascade"`
+	Verb                  string            `json:"verb" bson:"verb" yaml:"verb"`
+	DependsOn             TaskDependsOn     `json:"depends_on" bson:"depends_on" yaml:"depends_on"`
+	Image                 string            `json:"image" bson:"image" yaml:"image"`
+	Run                   string            `json:"run" bson:"run" yaml:"run"`
+	Store                 TaskLoadStore     `json:"store" bson:"store" yaml:"store"`
+	Load                  TaskLoadStore     `json:"load" bson:"load" yaml:"load"`
+	Env                   map[string]string `json:"env" bson:"env" yaml:"env"`
+	Inputs                map[string]string `json:"inputs" bson:"inputs" yaml:"inputs"`
+	Updated               string            `json:"updated" bson:"updated" yaml:"updated"`
+	RunNumber             int               `json:"run_number" bson:"run_number" yaml:"run_number"`
+	ShouldRM              bool              `json:"should_rm" bson:"should_rm" yaml:"should_rm"`
+	AutoExecute           bool              `json:"auto_execute" bson:"auto_execute" yaml:"auto_execute"`
+	Disabled              bool              `json:"disabled" bson:"disabled" yaml:"disabled"`
+	Check                 TaskCheck         `json:"check" bson:"check" yaml:"check"`
+	ContainerLoginCommand string            `json:"container_login_command" bson:"container_login_command" yaml:"container_login_command"`
 }
 
 func CreateTask(t *Task) error {
-	if _, err := GetTaskByNames(t.Cascade, t.Name); err == nil {
+	tt, err := GetTaskByNames(t.Cascade, t.Name)
+	if err != nil {
+		return fmt.Errorf("error getting tasks: %s", err.Error())
+	}
+	if tt != nil {
 		return fmt.Errorf("task already exists with names %s, %s", t.Cascade, t.Name)
 	}
 
@@ -109,7 +112,7 @@ func CreateTask(t *Task) error {
 	// 	return err
 	// }
 
-	_, err := mongodb.Collections[constants.MONGODB_TASK_COLLECTION_NAME].InsertOne(mongodb.Ctx, t)
+	_, err = mongodb.Collections[constants.MONGODB_TASK_COLLECTION_NAME].InsertOne(mongodb.Ctx, t)
 	return err
 }
 
@@ -179,7 +182,7 @@ func GetTaskByNames(cascade, task string) (*Task, error) {
 	}
 
 	if len(tasks) == 0 {
-		return nil, fmt.Errorf("no task found with names %s, %s", cascade, task)
+		return nil, nil
 	}
 
 	if len(tasks) > 1 {
@@ -257,10 +260,6 @@ func FilterTasks(filter interface{}) ([]*Task, error) {
 
 	// once exhausted, close the cursor
 	cur.Close(ctx)
-
-	if len(tasks) == 0 {
-		return tasks, mongo.ErrNoDocuments
-	}
 
 	return tasks, nil
 }

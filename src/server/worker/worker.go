@@ -194,7 +194,7 @@ func QueueDataReceive(endpoint, data string) error {
 		currentTask = m.Task
 		currentCascade = m.Cascade
 
-		run.Kill(bulwark.ManagerClient, []string{fmt.Sprintf("%s.%s", m.Cascade, m.Task)})
+		run.Kill(m.Cascade, m.Task)
 
 		shouldRestart, _ := run.StartRun(bulwark.ManagerClient, &r)
 		for shouldRestart {
@@ -261,11 +261,11 @@ func bufferCheck() {
 					continue
 				}
 				logger.Debugf("", "Current run state: %s, %v", s.Status, s.Killed)
-				if s.Killed {
-					if err := run.Kill(bulwark.ManagerClient, []string{fmt.Sprintf("%s-%s", currentCascade, currentTask)}); err != nil {
-						logger.Errorf("", "Error killing run: %s", err.Error())
-					}
-				}
+				// if s.Killed {
+				// 	if err := run.Kill(bulwark.ManagerClient, []string{fmt.Sprintf("%s-%s", currentCascade, currentTask)}); err != nil {
+				// 		logger.Errorf("", "Error killing run: %s", err.Error())
+				// 	}
+				// }
 			}
 		}
 	}

@@ -7,32 +7,35 @@ import (
 	logger "github.com/jfcarter2358/go-logger"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"scaffold/server/mongodb"
 )
 
 type State struct {
-	Task     string                   `json:"task" bson:"task"`
-	Cascade  string                   `json:"cascade" bson:"cascade"`
-	Status   string                   `json:"status" bson:"status"`
-	Started  string                   `json:"started" bson:"started"`
-	Finished string                   `json:"finished" bson:"finished"`
-	Output   string                   `json:"output" bson:"output"`
-	Display  []map[string]interface{} `json:"display" bson:"display"`
-	Worker   string                   `json:"worker" bson:"worker"`
-	Number   int                      `json:"number" bson:"number"`
-	Disabled bool                     `json:"disabled" bson:"disabled"`
-	Killed   bool                     `json:"killed" bson:"killed"`
+	Task     string                   `json:"task" bson:"task" yaml:"task"`
+	Cascade  string                   `json:"cascade" bson:"cascade" yaml:"cascade"`
+	Status   string                   `json:"status" bson:"status" yaml:"status"`
+	Started  string                   `json:"started" bson:"started" yaml:"started"`
+	Finished string                   `json:"finished" bson:"finished" yaml:"finished"`
+	Output   string                   `json:"output" bson:"output" yaml:"output"`
+	Display  []map[string]interface{} `json:"display" bson:"display" yaml:"display"`
+	Worker   string                   `json:"worker" bson:"worker" yaml:"worker"`
+	Number   int                      `json:"number" bson:"number" yaml:"number"`
+	Disabled bool                     `json:"disabled" bson:"disabled" yaml:"disabled"`
+	Killed   bool                     `json:"killed" bson:"killed" yaml:"killed"`
 }
 
 func CreateState(s *State) error {
-	if _, err := GetStateByNames(s.Cascade, s.Task); err == nil {
+	ss, err := GetStateByNames(s.Cascade, s.Task)
+	if err != nil {
+		return fmt.Errorf("error getting states: %s", err.Error())
+	}
+	if ss != nil {
 		return fmt.Errorf("state already exists with names %s, %s", s.Cascade, s.Task)
 	}
 
-	_, err := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME].InsertOne(mongodb.Ctx, s)
+	_, err = mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME].InsertOne(mongodb.Ctx, s)
 	return err
 }
 
@@ -117,7 +120,7 @@ func GetStateByNames(cascade, task string) (*State, error) {
 	}
 
 	if len(states) == 0 {
-		return nil, fmt.Errorf("no state found with names %s, %s", cascade, task)
+		return nil, nil
 	}
 
 	if len(states) > 1 {
@@ -293,10 +296,6 @@ func FilterStates(filter interface{}) ([]*State, error) {
 
 	// once exhausted, close the cursor
 	cur.Close(ctx)
-
-	if len(states) == 0 {
-		return states, mongo.ErrNoDocuments
-	}
 
 	return states, nil
 }

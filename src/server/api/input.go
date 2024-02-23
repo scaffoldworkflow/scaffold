@@ -173,6 +173,11 @@ func GetInputByNames(ctx *gin.Context) {
 		return
 	}
 
+	if i == nil {
+		ctx.JSON(http.StatusOK, input.Input{})
+		return
+	}
+
 	ctx.JSON(http.StatusOK, *i)
 }
 

@@ -1,0 +1,62 @@
+<div class="w3-card-4 w3-round light theme-light w3-border theme-border-light">
+    <div class="w3-container scaffold-green w3-round cascade-title">
+        <h4>Files</h4>
+    </div>
+    <br>
+    <div class="w3-container">
+        {{ range .cascades }}
+        {{ $c := . }}
+            {{ if (index $.in_groups $c) }}
+                <div class="w3-card light theme-light w3-border theme-border-light">
+                    <div class="w3-container scaffold-green w3-round cascade-title">
+                        <div style="float:right;margin-top:4px;">
+                            <span onclick="togglePane('table-{{ . }}')" class="w3-button"><i class="fa-solid fa-caret-down" id="table-{{ . }}-icon"></i></span>
+                        </div>
+                        <h4>{{ . }}</h4>
+                    </div>
+                    <table class="w3-table light w3-hide w3-border theme-border-light theme-table-striped" id="table-{{ . }}">
+                        <tbody style="display:table;width:100%;">
+                            <tr>
+                                <th class="table-title w3-medium scaffold-text-green">
+                                    <span class="table-title-text">Name</span>
+                                </th>
+                                <th class="table-title w3-medium scaffold-text-green">
+                                    <span class="table-title-text">Last Modified</span>   
+                                </th>
+                                <th class="table-title w3-medium scaffold-text-green">
+                                    <button class="w3-button scaffold-green w3-round" onclick="openFileUploadModal('{{ . }}')" style="float:right;">
+                                        Upload File
+                                    </button>
+                                </th>
+                            </tr>
+                            {{ range $.objects }}
+                                {{ if eq .Cascade $c }}
+                                    <tr>
+                                        <td>{{ .Name }}</td>
+                                        <td>{{ .Modified }}</td>
+                                        <td>
+                                            <a class="w3-button scaffold-green w3-round" href="/api/v1/file/{{ .Cascade }}/{{ .Name }}/download" style="float:right;">
+                                                Download
+                                            </button>
+                                            <!-- <a class="w3-button scaffold-green w3-round" href="/api/v1/file/{{ .Cascade }}/{{ .Name }}/view" style="float:right;">
+                                                View
+                                            </button> -->
+                                        </td>
+                                    </tr>
+                                {{ end }}
+                            {{ end }}
+                        </tbody>
+                    </table>
+                </div>
+            {{ else }}
+                <div class="w3-card light theme-light w3-border theme-border-light">
+                    <div class="w3-container scaffold-grey w3-round cascade-title">
+                        <h4>{{ . }}</h4>
+                    </div>
+                </div>
+            {{ end }}
+            <br>
+        {{ end }}
+    </div>
+    <br>
+</div>

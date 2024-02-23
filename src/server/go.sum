@@ -69,6 +69,8 @@ github.com/jfcarter2358/bulwarkmp v0.0.0-20231212195134-09407a0c8287 h1:lXFp+QeH
 github.com/jfcarter2358/bulwarkmp v0.0.0-20231212195134-09407a0c8287/go.mod h1:zuSuKclc28cGOzVJGeGTU83oi2QBrcUnjXNLldDcfzY=
 github.com/jfcarter2358/bulwarkmp v0.0.0-20231219154552-c77212055dee h1:+WtGeyR3iCXUaTpVZ3T4C5UShTJLPRL7zQi0//dS8Zw=
 github.com/jfcarter2358/bulwarkmp v0.0.0-20231219154552-c77212055dee/go.mod h1:zuSuKclc28cGOzVJGeGTU83oi2QBrcUnjXNLldDcfzY=
+github.com/jfcarter2358/bulwarkmp v0.0.0-20231219171728-1621a60fb5c6 h1:4q+n4+Vf2ZiGcxldROpz5VZoHSCAZcVLXQg5t4uKGxs=
+github.com/jfcarter2358/bulwarkmp v0.0.0-20231219171728-1621a60fb5c6/go.mod h1:zuSuKclc28cGOzVJGeGTU83oi2QBrcUnjXNLldDcfzY=
 github.com/jfcarter2358/go-logger v0.0.0-20231208162231-b1afadc15efd h1:JT+PUm6rB1CbHHSuo/h2daEDObODtYc02I11RFnpOe8=
 github.com/jfcarter2358/go-logger v0.0.0-20231208162231-b1afadc15efd/go.mod h1:Q7xEO64oLiEI6MZy+NxO//voPPnHiFRtY11Xtg8df5g=
 github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9YPoQUg=

@@ -216,7 +216,8 @@ func JoinNode(ctx *gin.Context) {
 	}
 
 	if n.JoinKey == config.Config.Node.JoinKey {
-		logger.Debugf("", "Joining node %s, %d, %d", n.Host, n.Port, n.WSPort)
+		ipAddr := ctx.ClientIP()
+		logger.Debugf("", "Joining node %s, %d, %d", ipAddr, n.Port, n.WSPort)
 		if nd, ok := Nodes[n.Name]; ok {
 			nd.Ping = 0
 			Nodes[n.Name] = nd
@@ -226,7 +227,7 @@ func JoinNode(ctx *gin.Context) {
 
 		Nodes[n.Name] = NodeObject{
 			Name:     n.Name,
-			Host:     n.Host,
+			Host:     ipAddr,
 			Port:     n.Port,
 			WSPort:   n.WSPort,
 			Healthy:  true,

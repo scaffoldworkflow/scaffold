@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"scaffold/server/auth"
 	"scaffold/server/bulwark"
@@ -71,7 +72,9 @@ func Run() {
 
 	health.IsHealthy = true
 
-	user.VerifyAdmin()
+	if err := user.VerifyAdmin(); err != nil {
+		logger.Fatalf("", "Unable to create admin user: %s", err.Error())
+	}
 	auth.Nodes = make(map[string]auth.NodeObject)
 
 	health.IsReady = true
@@ -366,9 +369,29 @@ func DoKill(cn, tn string) error {
 	// toKill = append(toKill, id)
 	// toKill = utils.RemoveDuplicateValues(toKill)
 	// return bulwark.BufferSet(bulwark.BufferClient, toKill)
-	logger.Tracef("", "Killing run %s-%s", cn, tn)
+	logger.Tracef("", "Killing run %s.%s", cn, tn)
 	// return stateChange(cn, tn, constants.STATE_STATUS_KILLED)
-	return state.UpdateStateKilledByNames(cn, tn, true)
+	// return state.UpdateStateKilledByNames(cn, tn, true)
+
+	for _, node := range auth.Nodes {
+		uri := fmt.Sprintf("%s://%s:%d", node.Protocol, node.Host, node.Port)
+		httpClient := &http.Client{}
+		requestURL := fmt.Sprintf("%s/api/v1/run/%s/%s", uri, cn, tn)
+		req, _ := http.NewRequest("DELETE", requestURL, nil)
+		req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			logger.Fatalf("", "Encountered error killing run: %v", err)
+			return err
+		}
+		if resp.StatusCode >= 400 {
+			logger.Debugf("", "Got status code %d when trying to kill run", resp.StatusCode)
+			return fmt.Errorf("got status code %d when trying to kill run", resp.StatusCode)
+		}
+		logger.Debugf("", "Run kill successfully triggered at %s", uri)
+	}
+	return nil
 }
 
 func InputChangeStateChange(name string, changed []string) error {
@@ -399,22 +422,30 @@ func InputChangeStateChange(name string, changed []string) error {
 //	@Success		200	{object}	object
 //	@Router			/health/status [get]
 func GetStatus(ctx *gin.Context) {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+	localAddress := conn.LocalAddr().(*net.UDPAddr)
+	ip := localAddress.IP.String()
+
 	nodes := make([]map[string]string, 0)
 	managerStatus := "healthy"
 	if !health.IsHealthy {
 		managerStatus = "degraded"
 	}
-	nodes = append(nodes, map[string]string{"name": config.Config.Host, "status": managerStatus, "version": constants.VERSION})
+	nodes = append(nodes, map[string]string{"name": config.Config.Host, "ip": ip, "status": managerStatus, "version": constants.VERSION})
 	for _, node := range auth.Nodes {
 		if node.Ping < config.Config.PingHealthyThreshold {
-			nodes = append(nodes, map[string]string{"name": node.Name, "host": node.Host, "status": "healthy", "version": node.Version})
+			nodes = append(nodes, map[string]string{"name": node.Name, "ip": node.Host, "status": "healthy", "version": node.Version})
 			continue
 		}
 		if node.Ping < config.Config.PingUnknownThreshold {
-			nodes = append(nodes, map[string]string{"name": node.Name, "host": node.Host, "status": "unknown", "version": node.Version})
+			nodes = append(nodes, map[string]string{"name": node.Name, "ip": node.Host, "status": "unknown", "version": node.Version})
 			continue
 		}
-		nodes = append(nodes, map[string]string{"name": node.Name, "host": node.Host, "status": "unhealthy", "version": node.Version})
+		nodes = append(nodes, map[string]string{"name": node.Name, "ip": node.Host, "status": "unhealthy", "version": node.Version})
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"nodes": nodes})

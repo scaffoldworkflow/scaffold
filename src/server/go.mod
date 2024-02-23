@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.1
-	github.com/jfcarter2358/bulwarkmp v0.0.0-20231219154552-c77212055dee
+	github.com/jfcarter2358/bulwarkmp v0.0.0-20231219171728-1621a60fb5c6
 	github.com/jfcarter2358/go-logger v0.0.0-20231208162231-b1afadc15efd
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0

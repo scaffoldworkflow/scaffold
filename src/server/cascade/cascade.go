@@ -13,21 +13,20 @@ import (
 	logger "github.com/jfcarter2358/go-logger"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"scaffold/server/mongodb"
 )
 
 type Cascade struct {
-	Version string            `json:"version" bson:"version"`
-	Name    string            `json:"name" bson:"name"`
-	Inputs  []input.Input     `json:"inputs" bson:"inputs"`
-	Tasks   []task.Task       `json:"tasks" bson:"tasks"`
-	Created string            `json:"created" bson:"created"`
-	Updated string            `json:"updated" bson:"updated"`
-	Groups  []string          `json:"groups" bson:"groups"`
-	Links   map[string]string `json:"links" bson:"links"`
+	Version string            `json:"version" bson:"version" yaml:"version"`
+	Name    string            `json:"name" bson:"name" yaml:"name"`
+	Inputs  []input.Input     `json:"inputs" bson:"inputs" yaml:"inputs"`
+	Tasks   []task.Task       `json:"tasks" bson:"tasks" yaml:"tasks"`
+	Created string            `json:"created" bson:"created" yaml:"created"`
+	Updated string            `json:"updated" bson:"updated" yaml:"updated"`
+	Groups  []string          `json:"groups" bson:"groups" yaml:"groups"`
+	Links   map[string]string `json:"links" bson:"links" yaml:"links"`
 }
 
 func CreateCascade(c *Cascade) error {
@@ -35,11 +34,15 @@ func CreateCascade(c *Cascade) error {
 	c.Created = currentTime.Format("2006-01-02T15:04:05Z")
 	c.Updated = currentTime.Format("2006-01-02T15:04:05Z")
 
-	if _, err := GetCascadeByName(c.Name); err == nil {
+	cc, err := GetCascadeByName(c.Name)
+	if err != nil {
+		return fmt.Errorf("error getting cascades: %s", err.Error())
+	}
+	if cc != nil {
 		return fmt.Errorf("cascade already exists with name %s", c.Name)
 	}
 
-	_, err := mongodb.Collections[constants.MONGODB_CASCADE_COLLECTION_NAME].InsertOne(mongodb.Ctx, c)
+	_, err = mongodb.Collections[constants.MONGODB_CASCADE_COLLECTION_NAME].InsertOne(mongodb.Ctx, c)
 
 	if err != nil {
 		return err
@@ -89,7 +92,7 @@ func DeleteCascadeByName(name string) error {
 	}
 
 	if result.DeletedCount != 1 {
-		return fmt.Errorf("no cascade found with name %s", name)
+		return fmt.Errorf("unable to delete cascade %s, doesn't exist", name)
 	}
 
 	if err := task.DeleteTasksByCascade(name); err != nil {
@@ -100,7 +103,7 @@ func DeleteCascadeByName(name string) error {
 		return err
 	}
 
-	err = datastore.DeleteDataStoreByName(name)
+	err = datastore.DeleteDataStoreByCascade(name)
 	return err
 
 }
@@ -119,11 +122,12 @@ func GetCascadeByName(name string) (*Cascade, error) {
 	cascades, err := FilterCascades(filter)
 
 	if err != nil {
+		logger.Errorf("filter cascades returned error %s", err.Error())
 		return nil, err
 	}
 
 	if len(cascades) == 0 {
-		return nil, fmt.Errorf("no cascade found with name %s", name)
+		return nil, nil
 	}
 
 	if len(cascades) > 1 {
@@ -230,10 +234,6 @@ func FilterCascades(filter interface{}) ([]*Cascade, error) {
 
 	// once exhausted, close the cursor
 	cur.Close(ctx)
-
-	if len(cascades) == 0 {
-		return cascades, mongo.ErrNoDocuments
-	}
 
 	return cascades, nil
 }
