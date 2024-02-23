@@ -20,6 +20,9 @@
             <th>
                 <span class="table-title-text"></span>
             </th>
+            <th>
+                <span class="table-title-text"></span>
+            </th>
         </tr>
         {{ range .cascades }}
             {{ if .in_group }}
@@ -32,6 +35,13 @@
                     <a href="/ui/cascades/{{ .name }}" class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;">
                         <i class="fa-solid fa-link"></i>
                     </a>
+                </td>
+                <td class="table-link-cell">
+                    {{ if .is_admin }}
+                    <div class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;">
+                        <i class="fa-solid fa-trash" style="cursor:pointer;" onclick="deleteCascade('{{ .name }}')"></i>
+                    </div>
+                    {{ end }}
                 </td>
             </tr>
             {{ end }}

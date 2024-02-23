@@ -77,9 +77,12 @@ func ShowCascadesPage(c *gin.Context) {
 		var data map[string]interface{}
 		json.Unmarshal(objBytes, &data)
 		isInGroup := false
+		is_admin := false
+		is_write := false
 		for _, ug := range u.Groups {
 			if ug == "admin" {
 				isInGroup = true
+				is_admin = true
 				break
 			}
 			for _, cg := range obj.Groups {
@@ -92,7 +95,20 @@ func ShowCascadesPage(c *gin.Context) {
 				break
 			}
 		}
+		for _, ur := range u.Roles {
+			if ur == "admin" {
+				is_admin = true
+				is_write = true
+				break
+			}
+			if ur == "write" {
+				is_write = true
+				break
+			}
+		}
 		data["in_group"] = isInGroup
+		data["is_admin"] = is_admin
+		data["is_write"] = is_write
 		cascades[idx] = data
 	}
 
