@@ -1,5 +1,5 @@
 dist
-src/server/ui-dist
+src/server/ui/dist
 .python-version
 temp
 test/\.*\.yaml
@@ -13,3 +13,5 @@ rendered.yaml
 cert.crt
 cert.key
 *.log
+src/server/ui.new
+.floorplan*

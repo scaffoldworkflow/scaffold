@@ -1,40 +1,78 @@
 version: v1
 name: foo
-inputs:
-  - name: name
-    description: Name to write with greeting
-    type: password 
-    default: "John Doe"
-  - name: greeting
-    description: Greeting to write out
-    type: text 
-    default: "Hello, "
-links:
-  website: https://johnfcarter.tech
-  google: https://google.com
 groups:
   - foo
+inputs:
+  - name: foo
+    description: foo
+    default: foo
+    type: text
 tasks:
-- name: a
+- name: get_latest_build
   image: ubuntu:20.04
   run: |
     echo "a"
-- name: b
+    export foo="a"
+  store:
+    env:
+      - foo
+- name: setup_kubeconfig
   image: ubuntu:20.04
   run: |
     echo "b"
-  depends_on:
-    always:
-      - a
-  auto_execute: true
-- name: c
+- name: update_values_file
   image: ubuntu:20.04
   run: |
     echo "c"
   depends_on:
-    always:
-      - a
+    success:
+      - get_latest_build
   auto_execute: true
+- name: sanity_check
+  image: ubuntu:20.04
+  run: |
+    echo "d"
+  depends_on:
+    success:
+      - update_values_file
+  auto_execute: true
+- name: do_deploy
+  image: ubuntu:20.04
+  run: |
+    echo "e"
+  depends_on:
+    success:
+      - sanity_check
+      - setup_kubeconfig
+- name: network_test
+  image: ubuntu:20.04
+  run: |
+    echo "f"
+  depends_on:
+    always:
+      - do_deploy
+- name: rollback
+  image: ubuntu:20.04
+  run: |
+    echo "g"
+  depends_on:
+    error:
+      - do_deploy
+- name: promote_image
+  image: ubuntu:20.04
+  run: |
+    echo "h"
+  depends_on:
+    success:
+      - do_deploy
+- name: load_test
+  image: ubuntu:20.04
+  run: |
+    echo "i"
+  depends_on:
+    success:
+      - network_test
+
     
 # - name: write_file
 #   image: ubuntu:20.04

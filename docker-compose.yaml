@@ -8,7 +8,7 @@ services:
     environment:
       BULWARK_PORT: "1380"
       BULWARK_API_PORT: "1381"
-      BULWARK_LOG_LEVEL: "NONE"
+      BULWARK_LOG_LEVEL: "INFO"
       BULWARK_LOG_FORMAT: "console"
       BULWARK_QUEUE_LIFETIME: "-1"
       BULWARK_BUFFER_LIFETIME: "-1"

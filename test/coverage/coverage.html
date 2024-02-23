@@ -533,10 +533,10 @@ func CreateDataStore(ctx *gin.Context) <span class="cov1" title="1">{
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/datastore/{datastore_name} [delete]
-func DeleteDataStoreByName(ctx *gin.Context) <span class="cov1" title="1">{
+func DeleteDataStoreByCascade(ctx *gin.Context) <span class="cov1" title="1">{
         name := ctx.Param("name")
 
-        err := datastore.DeleteDataStoreByName(name)
+        err := datastore.DeleteDataStoreByCascade(name)
 
         if err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
@@ -604,10 +604,10 @@ func GetAllDataStores(ctx *gin.Context) <span class="cov6" title="6">{
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/datastore/{datastore_name} [get]
-func GetDataStoreByName(ctx *gin.Context) <span class="cov8" title="12">{
+func GetDataStoreByCascade(ctx *gin.Context) <span class="cov8" title="12">{
         name := ctx.Param("name")
 
-        d, err := datastore.GetDataStoreByName(name)
+        d, err := datastore.GetDataStoreByCascade(name)
 
         if err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
@@ -632,7 +632,7 @@ func GetDataStoreByName(ctx *gin.Context) <span class="cov8" title="12">{
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/datastore/{datastore_name} [put]
-func UpdateDataStoreByName(ctx *gin.Context) <span class="cov3" title="2">{
+func UpdateDataStoreByCascade(ctx *gin.Context) <span class="cov3" title="2">{
         name := ctx.Param("name")
 
         var d datastore.DataStore
@@ -653,7 +653,7 @@ func UpdateDataStoreByName(ctx *gin.Context) <span class="cov3" title="2">{
                 <span class="cov3" title="2">inputs = c.Inputs</span>
         }
 
-        <span class="cov3" title="2">err := datastore.UpdateDataStoreByName(name, &amp;d, inputs)
+        <span class="cov3" title="2">err := datastore.UpdateDataStoreByCascade(name, &amp;d, inputs)
         if err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
                 return
@@ -676,7 +676,7 @@ func UpdateDataStoreByName(ctx *gin.Context) <span class="cov3" title="2">{
 //        @in                                                        header
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
-//        @router                                                /api/v1/datastore/file/{datastore_name}/{file_name} [get]
+//        @router                                                /api/v1/file/{datastore_name}/{file_name} [get]
 func DownloadFile(ctx *gin.Context) <span class="cov0" title="0">{
         name := ctx.Param("name")
         fileName := ctx.Param("file")
@@ -730,7 +730,7 @@ func DownloadFile(ctx *gin.Context) <span class="cov0" title="0">{
 //        @in                                                        header
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
-//        @router                                                /api/v1/datastore/file/{datastore_name} [post]
+//        @router                                                /api/v1/file/{datastore_name} [post]
 func UploadFile(ctx *gin.Context) <span class="cov0" title="0">{
         name := ctx.Param("name")
 
@@ -771,7 +771,7 @@ func UploadFile(ctx *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">ds, err := datastore.GetDataStoreByName(name)
+        <span class="cov0" title="0">ds, err := datastore.GetDataStoreByCascade(name)
         if err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
                 return
@@ -781,7 +781,7 @@ func UploadFile(ctx *gin.Context) <span class="cov0" title="0">{
 
         inputs := []input.Input{}
 
-        if err := datastore.UpdateDataStoreByName(name, ds, inputs); err != nil </span><span class="cov0" title="0">{
+        if err := datastore.UpdateDataStoreByCascade(name, ds, inputs); err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
                 return
         }</span>
@@ -2671,7 +2671,7 @@ func DeleteCascadeByName(name string) error <span class="cov1" title="1">{
                 return err
         }</span>
 
-        <span class="cov1" title="1">err = datastore.DeleteDataStoreByName(name)
+        <span class="cov1" title="1">err = datastore.DeleteDataStoreByCascade(name)
         return err</span>
 
 }
@@ -3528,7 +3528,7 @@ func CreateDataStore(d *DataStore) error <span class="cov5" title="6">{
         d.Created = currentTime.Format("2006-01-02T15:04:05Z")
         d.Updated = currentTime.Format("2006-01-02T15:04:05Z")
 
-        if _, err := GetDataStoreByName(d.Name); err == nil </span><span class="cov0" title="0">{
+        if _, err := GetDataStoreByCascade(d.Name); err == nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("datastore already exists with name %s", d.Name)
         }</span>
 
@@ -3536,7 +3536,7 @@ func CreateDataStore(d *DataStore) error <span class="cov5" title="6">{
         return err</span>
 }
 
-func DeleteDataStoreByName(name string) error <span class="cov2" title="2">{
+func DeleteDataStoreByCascade(name string) error <span class="cov2" title="2">{
         filter := bson.M{"name": name}
 
         collection := mongodb.Collections[constants.MONGODB_DATASTORE_COLLECTION_NAME]
@@ -3564,7 +3564,7 @@ func GetAllDataStores() ([]*DataStore, error) <span class="cov5" title="6">{
         return datastores, err
 }</span>
 
-func GetDataStoreByName(name string) (*DataStore, error) <span class="cov8" title="20">{
+func GetDataStoreByCascade(name string) (*DataStore, error) <span class="cov8" title="20">{
         filter := bson.M{"name": name}
 
         datastores, err := FilterDataStores(filter)
@@ -3584,7 +3584,7 @@ func GetDataStoreByName(name string) (*DataStore, error) <span class="cov8" titl
         <span class="cov7" title="14">return datastores[0], nil</span>
 }
 
-func UpdateDataStoreByName(name string, d *DataStore, is []input.Input) error <span class="cov2" title="2">{
+func UpdateDataStoreByCascade(name string, d *DataStore, is []input.Input) error <span class="cov2" title="2">{
         filter := bson.M{"name": name}
 
         currentTime := time.Now().UTC()
@@ -3593,7 +3593,7 @@ func UpdateDataStoreByName(name string, d *DataStore, is []input.Input) error <s
         if config.Config.Node.Type == constants.NODE_TYPE_MANAGER </span><span class="cov2" title="2">{
                 logger.Infof("", "Node is of type %s", constants.NODE_TYPE_MANAGER)
                 toChange := []string{}
-                old, err := GetDataStoreByName(name)
+                old, err := GetDataStoreByCascade(name)
                 if err != nil </span><span class="cov0" title="0">{
                         logger.Errorf("", "Error getting datastore %s: %s\n", name, err.Error())
                         return err
@@ -8079,10 +8079,10 @@ func initializeRoutes() <span class="cov2" title="2">{
                                 <span class="cov1" title="1">datastoreRoutes := v1Routes.Group("/datastore")
                                 </span><span class="cov1" title="1">{
                                         datastoreRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetAllDataStores)
-                                        datastoreRoutes.GET("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.GetDataStoreByName)
-                                        datastoreRoutes.DELETE("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("name"), api.DeleteDataStoreByName)
+                                        datastoreRoutes.GET("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.GetDataStoreByCascade)
+                                        datastoreRoutes.DELETE("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("name"), api.DeleteDataStoreByCascade)
                                         datastoreRoutes.POST("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.CreateDataStore)
-                                        datastoreRoutes.PUT("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("name"), api.UpdateDataStoreByName)
+                                        datastoreRoutes.PUT("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("name"), api.UpdateDataStoreByCascade)
                                         datastoreRoutes.GET("/file/:name/:file", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.DownloadFile)
                                         datastoreRoutes.POST("/file/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.UploadFile)
                                 }</span>
@@ -8223,7 +8223,7 @@ func StartRun(r *Run) (bool, error) <span class="cov0" title="0">{
 
         cName := strings.Split(r.Name, ".")[0]
         logger.Debugf("", "Getting datastore by name %s", cName)
-        ds, err := datastore.GetDataStoreByName(cName)
+        ds, err := datastore.GetDataStoreByCascade(cName)
         if err != nil </span><span class="cov0" title="0">{
                 logger.Errorf("", "Cannot get datastore %s", cName)
                 return false, err
@@ -8452,7 +8452,7 @@ func StartRun(r *Run) (bool, error) <span class="cov0" title="0">{
                 }</span>
 
                 <span class="cov0" title="0">inputs := []input.Input{}
-                if err := datastore.UpdateDataStoreByName(cName, ds, inputs); err != nil </span><span class="cov0" title="0">{
+                if err := datastore.UpdateDataStoreByCascade(cName, ds, inputs); err != nil </span><span class="cov0" title="0">{
                         logger.Errorf("", "Error updating datastore %s\n", err.Error())
                         setErrorStatus(r, err.Error())
                 }</span>
