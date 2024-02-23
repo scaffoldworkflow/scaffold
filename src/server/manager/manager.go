@@ -226,10 +226,10 @@ func stateChange(cn, tn, status string) error {
 				}
 			}
 			if shouldExecute {
-				if err := DoTrigger(cn, t.Name); err != nil {
+				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
 					return err
 				}
-				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
+				if err := DoTrigger(cn, t.Name); err != nil {
 					return err
 				}
 			}
@@ -264,10 +264,10 @@ func stateChange(cn, tn, status string) error {
 				}
 			}
 			if shouldExecute {
-				if err := DoTrigger(cn, t.Name); err != nil {
+				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
 					return err
 				}
-				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
+				if err := DoTrigger(cn, t.Name); err != nil {
 					return err
 				}
 			}
