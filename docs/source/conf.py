@@ -7,7 +7,7 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'Scaffold'
-copyright = '2023, John Carter'
+copyright = '2024, John Carter'
 author = 'John Carter'
 release = '0.1.0'
 
