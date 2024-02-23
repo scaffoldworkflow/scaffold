@@ -27,14 +27,17 @@ func main() {
 
 	parser := argparse.NewParser("scaffold", "Scaffold infrastructure management client")
 
-	applyCommand := parser.NewCommand("apply", "Create or update a cascade")
+	applyCommand := parser.NewCommand("apply", "Create or update a Scaffold object")
+	applyObject := applyCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object type to create. Valid object types are 'cascade', 'datastore', 'task', 'state', 'file', and 'user"})
+	applyContext := applyCommand.String("c", "context", &argparse.Options{Help: "Cascade context to use. If not set the value in your config file will be pulled", Default: ""})
 	applyProfile := applyCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
 	applyFile := applyCommand.String("f", "file", &argparse.Options{Required: true, Help: "Scaffold manifest to apply"})
 	applyLogLevel := applyCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
-	deleteCommand := parser.NewCommand("delete", "Delete an existing cascade")
+	deleteCommand := parser.NewCommand("delete", "Delete an existing Scaffold object")
+	deleteObject := deleteCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object to get. Can be of format '<object type>', or '<object type>/<object name>'. Valid object types are 'cascade', 'datastore', 'task', 'state', 'file', and 'user"})
+	deleteContext := deleteCommand.String("c", "context", &argparse.Options{Help: "Cascade context to use. If not set the value in your config file will be pulled", Default: ""})
 	deleteProfile := deleteCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
-	deleteName := deleteCommand.String("n", "name", &argparse.Options{Required: true, Help: "Name of the cascade to remove"})
 	deleteLogLevel := deleteCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
 	execCommand := parser.NewCommand("exec", "Exec into a scaffold container")
@@ -42,13 +45,13 @@ func main() {
 	execLogLevel := execCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
 	getCommand := parser.NewCommand("get", "Get Scaffold objects")
-	getObject := getCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object to get. Can be of format '<object type>', or '<object type>/<object name>'. Valid object types are 'cascade', 'datastore', 'task', and 'state'"})
-	getProfile := getCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
+	getObject := getCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object to get. Can be of format '<object type>', or '<object type>/<object name>'. Valid object types are 'cascade', 'datastore', 'task', 'state', 'file', and 'user"})
 	getContext := getCommand.String("c", "context", &argparse.Options{Help: "Cascade context to use. If not set the value in your config file will be pulled", Default: ""})
+	getProfile := getCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
 	getLogLevel := getCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
 	describeCommand := parser.NewCommand("describe", "Describe a Scaffold object")
-	describeObject := describeCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object to describe. Must be of format '<object type>/<object name>'. Valid object types are 'cascade', 'datastore', 'task', and 'state'"})
+	describeObject := describeCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object to describe. Must be of format '<object type>/<object name>'. Valid object types are 'cascade', 'datastore', 'task', 'state', 'file', and 'user'"})
 	describeProfile := describeCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
 	describeContext := describeCommand.String("c", "context", &argparse.Options{Help: "Cascade context to use. If not set the value in your config file will be pulled", Default: ""})
 	describeFormat := describeCommand.Selector("o", "output", []string{"yaml", "json"}, &argparse.Options{Help: "Output format to print. Valid options are 'yaml' and 'json'. Defaults to 'yaml'", Default: "yaml"})
@@ -104,13 +107,13 @@ func main() {
 
 	if applyCommand.Happened() {
 		logger.SetLevel(*applyLogLevel)
-		apply.DoApply(*applyProfile, *applyFile)
+		apply.DoApply(*applyProfile, *applyObject, *applyContext, *applyFile)
 		os.Exit(0)
 	}
 
 	if deleteCommand.Happened() {
 		logger.SetLevel(*deleteLogLevel)
-		delete.DoDelete(*deleteProfile, *deleteName)
+		delete.DoDelete(*deleteProfile, *deleteObject, *deleteContext)
 		os.Exit(0)
 	}
 
