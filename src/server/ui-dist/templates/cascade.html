@@ -124,6 +124,11 @@
                     </div>
                 </div>
                 <br> -->
+                <br>
+                <br>
+                <div style="position: absolute; bottom: 10px;" id="cascade-top-button" class="w3-button w3-round scaffold-hover-grey scaffold-grey" onclick="goToTop()">
+                    Go to Top
+                </div>
             </div>
         </div>
     </div>
@@ -311,12 +316,14 @@
               <div class="w3-container scaffold-green w3-round cascade-title">
                   <!--<h4>{{ .cascade.Name }}</h4>-->
                   <input id="search" class="w3-input w3-round search-bar light theme-light" type="text" name="search" placeholder="Search Tasks" style="margin-right:4px;margin-top:8px;margin-bottom:8px;" oninput="render()">
+                  <div class="w3-dropdown-hover card-button light theme-light w3-round scaffold-hover-green" id="auto-execute-dropdown" style="margin-right:4px;margin-bottom:9px;">
+                  </div>
                   <div id="cascade-legend-button" class="card-button light" style="margin-right:4px;">
                       <span onclick="toggleCurrentLegend()" class="w3-button light theme-light w3-round scaffold-hover-green">Legend&nbsp;<i class="fa-solid fa-circle-info"></i></span>
                   </div>
-                  <div id="cascade-state-button" class="card-button light" style="margin-right:4px;">
+                  <!-- <div id="cascade-state-button" class="card-button light" style="margin-right:4px;">
                       <span onclick="toggleCurrentState()" class="w3-button light theme-light w3-round scaffold-hover-green">Current State&nbsp;<i class="fa-solid fa-database"></i></span>
-                  </div>
+                  </div> -->
                   <div id="cascade-input-button" class="card-button light" style="margin-right:4px;">
                       <span onclick="openInput()" class="w3-button light theme-light w3-round scaffold-hover-green">Inputs&nbsp;<i class="fa-solid fa-pencil"></i></span>
                   </div>

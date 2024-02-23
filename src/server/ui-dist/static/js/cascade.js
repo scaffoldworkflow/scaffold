@@ -533,34 +533,6 @@ const Workflow = class {
     }
 }
 
-function toggleSidebar() {
-    var sidebar = document.getElementById("sidebar")
-    var page_darken = document.getElementById("page-darken")
-    if (sidebar.className.indexOf("show") == -1) {
-        sidebar.classList.add("show");
-        sidebar.classList.remove("left-slide-out-300");
-        void sidebar.offsetWidth;
-        sidebar.classList.add("left-slide-in-300")
-        $("#sidebar").css("left", "0px")
-
-        page_darken.classList.remove("fade-out");
-        void page_darken.offsetWidth;
-        page_darken.classList.add("fade-in");
-        $("#page-darken").css("opacity", "1")
-    } else {
-        sidebar.classList.remove("show");
-        sidebar.classList.remove("left-slide-in-300");
-        void sidebar.offsetWidth;
-        sidebar.classList.add("left-slide-out-300")
-        $("#sidebar").css("left", "-300px")
-
-        page_darken.classList.remove("fade-in");
-        void page_darken.offsetWidth;
-        page_darken.classList.add("fade-out");
-        $("#page-darken").css("opacity", "0")
-    }
-}
-
 var theme;
 
 $(document).ready(function() {
@@ -1035,6 +1007,19 @@ function toggleDisable() {
 }
 
 function changeStateName(name) {
+    // Close input
+    let input = document.getElementById("current-input")
+    input.classList.remove("show");
+    $("#current-input").css("left", `calc(100%)`)
+    // Close legend
+    let legend = document.getElementById("current-legend")
+    legend.classList.remove("show");
+    $("#current-legend").css("left", `calc(100%)`)
+    // Close state
+    let state = document.getElementById("current-state")
+    state.classList.remove("show");
+    $("#current-state").css("left", `calc(100%)`)
+    
     if (CurrentStateName != "") {
         closeModal("state-modal")
     }
@@ -1204,6 +1189,7 @@ var node_data = []
 var structure = {}
 var elements = []
 var positions = {}
+var rawTasks = []
 
 right_panel_width = 500
 
@@ -1270,6 +1256,60 @@ function render() {
         }
     }
     updateNodes()
+}
+
+function toggleSidebar() {
+    var sidebar = document.getElementById("sidebar")
+    var page_darken = document.getElementById("page-darken")
+    if (sidebar.className.indexOf("show") == -1) {
+        // Close input
+        let input = document.getElementById("current-input")
+        input.classList.remove("show");
+        $("#current-input").css("left", `calc(100%)`)
+        // Close legend
+        let legend = document.getElementById("current-legend")
+        legend.classList.remove("show");
+        $("#current-legend").css("left", `calc(100%)`)
+        // Close state
+        let state = document.getElementById("current-state")
+        state.classList.remove("show");
+        $("#current-state").css("left", `calc(100%)`)
+
+        sidebar.classList.add("show");
+        sidebar.classList.remove("left-slide-out-300");
+        void sidebar.offsetWidth;
+        sidebar.classList.add("left-slide-in-300")
+        $("#sidebar").css("left", "0px")
+
+        page_darken.classList.remove("fade-out");
+        void page_darken.offsetWidth;
+        page_darken.classList.add("fade-in");
+        $("#page-darken").css("opacity", "1")
+    } else {
+        // Close input
+        let input = document.getElementById("current-input")
+        input.classList.remove("show");
+        $("#current-input").css("left", `calc(100%)`)
+        // Close legend
+        let legend = document.getElementById("current-legend")
+        legend.classList.remove("show");
+        $("#current-legend").css("left", `calc(100%)`)
+        // Close state
+        let state = document.getElementById("current-state")
+        state.classList.remove("show");
+        $("#current-state").css("left", `calc(100%)`)
+
+        sidebar.classList.remove("show");
+        sidebar.classList.remove("left-slide-in-300");
+        void sidebar.offsetWidth;
+        sidebar.classList.add("left-slide-out-300")
+        $("#sidebar").css("left", "-300px")
+
+        page_darken.classList.remove("fade-in");
+        void page_darken.offsetWidth;
+        page_darken.classList.add("fade-out");
+        $("#page-darken").css("opacity", "0")
+    }
 }
 
 function toggleCurrentState() {
@@ -1394,6 +1434,58 @@ function getDatastore() {
     });
 }
 
+function goToTop() {
+    // $('body').scrollTop(0);
+    // This prevents the page from scrolling down to where it was previously.
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+    // This is needed if the user scrolls down during page load and you want to make sure the page is scrolled to the top once it's fully loaded. This has Cross-browser support.
+    window.scrollTo(0,0);
+}
+
+function toggleCheckbox(taskName) {
+    let parts = window.location.href.split('/')
+    let cascadeName = parts[parts.length - 1]
+    data = rawTasks[taskName]
+
+    if (document.getElementById(`${taskName}-checkbox`).checked) {
+        tasks[taskName].auto_execute = true
+        data.auto_execute = true
+    } else {
+        tasks[taskName].auto_execute = false
+        data.auto_execute = false
+    }
+
+    tasks[taskName].extra_icons = ''
+
+    if (tasks[taskName].cron != "" && tasks[taskName].cron != null && tasks[taskName].cron != undefined) {
+        tasks[taskName].extra_icons = '<i class="fa-solid fa-clock w3-medium" style="float:right;margin-right:4px;margin-left:4px;"></i>'
+    }
+    if (tasks[taskName].auto_execute) {
+        tasks[taskName].extra_icons += '<i class="fa-solid fa-forward w3-medium" style="float:right;margin-right:4px;margin-left:4px;"></i>'
+    }
+
+    rawTasks[taskName] = data
+
+    $.ajax({
+        url: "/api/v1/task/" + cascadeName + "/" + taskName,
+        type: "PUT",
+        contentType: "application/json",
+        dataType: "json",
+        data: JSON.stringify(data),
+        success: function (result) {
+            console.log("Task updated")
+        },
+        error: function (result) {
+            console.log(result)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
+        }
+    })
+}
+
 function getTasks() {
     let parts = window.location.href.split('/')
     let cascadeName = parts[parts.length - 1]
@@ -1403,8 +1495,20 @@ function getTasks() {
         type: "GET",
         contentType: "application/json",
         success: function (result) {
-            rawTasks = result
-            for (let task of rawTasks) {
+            rawTasks = {}
+            // autoExecuteDropdownContents = '<button class="card-button light" style="margin-right:4px;">Dropdown</button>'
+            autoExecuteDropdownContents = '<button class="w3-button w3-round">Auto Execute</button>'
+            autoExecuteDropdownContents += '<div class="w3-dropdown-content w3-bar-block w3-card-4 w3-container">'
+            for (let task of result) {
+                rawTasks[task.name] = task
+                autoExecuteDropdownContents += `<label class="container">${task.name}`
+                if (task.auto_execute) {
+                    autoExecuteDropdownContents += `<input id="${task.name}-checkbox" type="checkbox" onclick="toggleCheckbox('${task.name}')" checked="checked">`
+                } else {
+                    autoExecuteDropdownContents += `<input id="${task.name}-checkbox" type="checkbox" onclick="toggleCheckbox('${task.name}')">`
+                }
+                autoExecuteDropdownContents += '<span class="checkmark"></span>'
+                autoExecuteDropdownContents += '</label>'
                 let status = getStatusFromName(task.name)
                 let extra_icons = ""
                 if (task.auto_execute) {
@@ -1427,9 +1531,10 @@ function getTasks() {
                     "parents": []
                 }
             }
-            console.log(JSON.stringify(rawTasks))
-            console.log(JSON.stringify(tasks))
-            for (let task of rawTasks) {
+            $("#auto-execute-dropdown").html(autoExecuteDropdownContents)
+            // console.log(JSON.stringify(rawTasks))
+            // console.log(JSON.stringify(tasks))
+            for (let task of result) {
                 if (task.depends_on.success != null && task.depends_on.success != undefined && task.depends_on.success.length > 0) {
                     for (let name of task.depends_on.success) {
                         console.log(name)
@@ -1596,3 +1701,13 @@ $(document).ready(
         
     }
 )
+
+
+function toggleAutoExecuteMenu() {
+    var x = document.getElementById("auto-execute-menu");
+    if (x.className.indexOf("w3-show") == -1) { 
+        x.className += " w3-show";
+    } else {
+        x.className = x.className.replace(" w3-show", "");
+    }
+}

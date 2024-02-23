@@ -210,6 +210,35 @@ func UpdateTaskByNames(cascade, task string, t *Task) error {
 	t.Updated = currentTime.Format("2006-01-02T15:04:05Z")
 	t.Cascade = cascade
 
+	// tt, err := GetTaskByNames(cascade, task)
+	// if err != nil {
+	// 	return fmt.Errorf("task %s does not exist in cascade %s", task, cascade)
+	// }
+	// if t.Cron == "" {
+	// 	t.Cron = tt.Cron
+	// }
+	// if t.Verb == "" {
+	// 	t.Verb = tt.Verb
+	// }
+	// if t.Image == "" {
+	// 	t.Image = tt.Image
+	// }
+	// if t.Run == "" {
+	// 	t.Run = tt.Run
+	// }
+	// if t.Env == nil {
+	// 	t.Env = tt.Env
+	// }
+	// if t.Inputs == nil {
+	// 	t.Inputs = tt.Inputs
+	// }
+	// if t.RunNumber == 0 {
+	// 	t.RunNumber = tt.RunNumber
+	// }
+	// if t.ContainerLoginCommand == "" {
+	// 	t.ContainerLoginCommand = tt.ContainerLoginCommand
+	// }
+
 	logger.Debugf("", "Updating task %v", *t)
 
 	collection := mongodb.Collections[constants.MONGODB_TASK_COLLECTION_NAME]

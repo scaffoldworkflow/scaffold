@@ -281,6 +281,19 @@ function toggleDisable() {
 }
 
 function changeStateName(name) {
+    // Close input
+    let input = document.getElementById("current-input")
+    input.classList.remove("show");
+    $("#current-input").css("left", `calc(100%)`)
+    // Close legend
+    let legend = document.getElementById("current-legend")
+    legend.classList.remove("show");
+    $("#current-legend").css("left", `calc(100%)`)
+    // Close state
+    let state = document.getElementById("current-state")
+    state.classList.remove("show");
+    $("#current-state").css("left", `calc(100%)`)
+    
     if (CurrentStateName != "") {
         closeModal("state-modal")
     }
