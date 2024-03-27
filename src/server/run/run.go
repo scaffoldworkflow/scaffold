@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -25,6 +26,7 @@ import (
 )
 
 var runError error
+var killed = false
 
 // type CheckRun struct {
 // 	Enabled bool           `json:"disabled" yaml:"disabled"`
@@ -40,9 +42,12 @@ type Run struct {
 	Number int         `json:"number" yaml:"number"`
 	Groups []string    `json:"groups" yaml:"groups"`
 	Worker string      `json:"worker" yaml:"worker"`
+	PID    int         `json:"pid" yaml:"pid"`
 }
 
 func setErrorStatus(r *Run, output string) {
+	r.PID = 0
+	r.State.PID = 0
 	r.State.Output = output
 	r.State.Status = constants.STATE_STATUS_ERROR
 	currentTime := time.Now().UTC()
@@ -54,6 +59,7 @@ func runCmd(cmd *exec.Cmd) {
 }
 
 func updateRunState(c *client.Client, r *Run, send bool) error {
+	r.State.PID = r.PID
 	m := msg.RunMsg{
 		Task:    r.Task.Name,
 		Cascade: r.Task.Cascade,
@@ -70,7 +76,7 @@ func updateRunState(c *client.Client, r *Run, send bool) error {
 	return nil
 }
 
-func StartRun(c *client.Client, r *Run) (bool, error) {
+func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 	r.State.Status = constants.STATE_STATUS_RUNNING
 	currentTime := time.Now().UTC()
 	r.State.Started = currentTime.Format("2006-01-02T15:04:05Z")
@@ -100,6 +106,15 @@ func StartRun(c *client.Client, r *Run) (bool, error) {
 	containerName := fmt.Sprintf("%s-%s-%d", cName, tName, r.Number)
 
 	runDir := fmt.Sprintf("/tmp/run/%s/%s/%d", cName, tName, r.Number)
+
+	if _, err := os.Stat(runDir); err != nil {
+		if os.IsNotExist(err) {
+			// file does not exist
+		} else {
+			os.RemoveAll(runDir)
+		}
+	}
+
 	err = os.MkdirAll(runDir, 0755)
 	if err != nil {
 		logger.Errorf("", "Error creating run directory %s", err.Error())
@@ -421,7 +436,7 @@ func StartRun(c *client.Client, r *Run) (bool, error) {
 	return false, err
 }
 
-func Kill(cn, tn string) error {
+func ContainerKill(cn, tn string) error {
 	prefix := fmt.Sprintf("%s.%s", cn, tn)
 	logger.Debugf("", "Trying to kill %s", prefix)
 	output, err := exec.Command("/bin/sh", "-c", "podman ps -a --format \"{{.Names}}\"").CombinedOutput()
@@ -461,6 +476,304 @@ func Kill(cn, tn string) error {
 			// 	logger.Errorf("", "Unable to push killed message to queue: %s", err.Error())
 			// 	return err
 			// }
+		}
+	}
+	return nil
+}
+
+func ExitCode(err error) int {
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		return exitErr.ExitCode()
+	}
+	// No error
+	return 0
+}
+
+func StartLocalRun(c *client.Client, r *Run) (bool, error) {
+	r.State.Status = constants.STATE_STATUS_RUNNING
+	currentTime := time.Now().UTC()
+	r.State.Started = currentTime.Format("2006-01-02T15:04:05Z")
+	if err := state.UpdateStateKilledByNames(r.Task.Cascade, r.Task.Name, false); err != nil {
+		logger.Infof("", "Cannot update state killed: %s %s %s", r.Task.Cascade, r.Task.Name, err.Error())
+		return false, err
+	}
+	if err := updateRunState(c, r, false); err != nil {
+		return false, err
+	}
+
+	cName := r.State.Cascade
+	tName := r.State.Task
+
+	logger.Debugf("", "Getting datastore by name %s", cName)
+	ds, err := datastore.GetDataStoreByCascade(cName)
+	if err != nil {
+		logger.Errorf("", "Cannot get datastore %s", cName)
+		setErrorStatus(r, err.Error())
+		if err := updateRunState(c, r, true); err != nil {
+			return false, err
+		}
+		return false, err
+	}
+
+	runDir := fmt.Sprintf("/tmp/run/%s/%s/%d", cName, tName, r.Number)
+	err = os.MkdirAll(runDir, 0755)
+	if err != nil {
+		logger.Errorf("", "Error creating run directory %s", err.Error())
+		setErrorStatus(r, err.Error())
+		if err := updateRunState(c, r, true); err != nil {
+			return false, err
+		}
+		return false, err
+	}
+
+	scriptPath := runDir + "/.run.sh"
+	envInPath := runDir + "/.envin"
+	displayPath := runDir + "/.display"
+
+	envInput := ""
+	for key, val := range r.Task.Inputs {
+		encoded := base64.StdEncoding.EncodeToString([]byte(ds.Env[val]))
+		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+	}
+	for _, key := range r.Task.Load.Env {
+		encoded := base64.StdEncoding.EncodeToString([]byte(ds.Env[key]))
+		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+	}
+	for key, val := range r.Task.Env {
+		encoded := base64.StdEncoding.EncodeToString([]byte(val))
+		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+	}
+
+	envOutput := ""
+	for _, key := range r.Task.Store.Env {
+		envOutput += fmt.Sprintf("echo \"%s;$(echo \"${%s}\" | base64)\" >> %s/.envout\n", key, key, runDir)
+	}
+
+	runScript := fmt.Sprintf(`
+	# load ENV var
+
+	while read -r line; do
+		name=${line%%;*}
+		value=${line#*;}
+		export ${name}="$(echo "${value}" | base64 -d)"
+	done < %s
+	
+	# run command
+	%s
+	
+	# save ENV vars
+	%s
+	`, envInPath, r.Task.Run, envOutput)
+
+	// Write out our run script
+	data := []byte(runScript)
+	err = os.WriteFile(scriptPath, data, 0777)
+	if err != nil {
+		logger.Errorf("", "Error writing run file %s", err.Error())
+		setErrorStatus(r, err.Error())
+		if err := updateRunState(c, r, true); err != nil {
+			return false, err
+		}
+		return false, err
+	}
+
+	// Write out envin script
+	data = []byte(envInput)
+	err = os.WriteFile(envInPath, data, 0777)
+	if err != nil {
+		logger.Errorf("", "Error writing envin file %s", err.Error())
+		setErrorStatus(r, err.Error())
+		if err := updateRunState(c, r, true); err != nil {
+			return false, err
+		}
+		return false, err
+	}
+
+	for _, name := range r.Task.Load.File {
+		err := filestore.GetFile(fmt.Sprintf("%s/%s", cName, name), fmt.Sprintf("%s/%s", runDir, name))
+		if err != nil {
+			logger.Errorf("", "Error getting file %s", err.Error())
+			setErrorStatus(r, err.Error())
+			if err := updateRunState(c, r, true); err != nil {
+				return false, err
+			}
+			return false, err
+		}
+	}
+
+	if r.PID > 0 {
+		if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill %d", r.PID)).Run(); err != nil {
+			logger.Infof("", "Cannot kill existing run: %s\n", err.Error())
+		}
+	}
+
+	localCommand := fmt.Sprintf("cd %s && ./.run.sh", runDir)
+
+	logger.Debugf("", "command: %s", localCommand)
+
+	cmd := exec.Command("/bin/bash", "-c", localCommand)
+	var outb, errb bytes.Buffer
+	cmd.Stdout = &outb
+	cmd.Stderr = &errb
+
+	runError = cmd.Start()
+	if err != nil {
+		return false, runError
+	}
+	r.PID = cmd.Process.Pid
+
+	killed = false
+
+	go func() {
+		runError = cmd.Wait()
+		killed = true
+	}()
+
+	for !killed {
+		if runError != nil {
+			logger.Errorf("", "Error running pod %s\n", runError.Error())
+			setErrorStatus(r, fmt.Sprintf("Error running pod %s\n", runError.Error()))
+			if err := updateRunState(c, r, true); err != nil {
+				return false, err
+			}
+		}
+		output := outb.String() + "\n\n" + errb.String()
+		logger.Tracef("", "setting output 1 %s", output)
+		r.State.Output = output
+
+		logger.Tracef("", "Checking for display at %s", displayPath)
+		if _, err = os.Stat(displayPath); err == nil {
+			logger.Tracef("", "Display path is present")
+			if data, err := os.ReadFile(displayPath); err == nil {
+				logger.Tracef("", "Read display file")
+				var obj []map[string]interface{}
+				if err := json.Unmarshal(data, &obj); err != nil {
+					logger.Errorf("", "Error unmarshalling display JSON: %v", err)
+				} else {
+					logger.Tracef("", "Updating display object")
+					r.State.Display = obj
+				}
+			} else {
+				logger.Tracef("", "Display read error: %s", err.Error())
+			}
+		} else {
+			logger.Tracef("", "Display stat error: %s", err.Error())
+		}
+		if err := updateRunState(c, r, false); err != nil {
+			logger.Errorf("", "Error updating run %v: %s", c, err.Error())
+			return false, err
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	output := outb.String() + "\n\n" + errb.String()
+	logger.Tracef("", "setting output 2 %s", output)
+	r.State.Output = output
+
+	if err := updateRunState(c, r, false); err != nil {
+		logger.Errorf("", "Error updating run %v: %s", c, err.Error())
+		return false, err
+	}
+
+	returnCode := 0
+	returnCode = ExitCode(runError)
+
+	for _, name := range r.Task.Store.File {
+		filePath := fmt.Sprintf("%s/%s", runDir, name)
+		if _, err = os.Stat(filePath); err == nil {
+			err := filestore.UploadFile(filePath, fmt.Sprintf("%s/%s", r.Task.Cascade, name))
+			if err != nil {
+				logger.Errorf("", "ERROR UPLOADING %s: %s\n", fmt.Sprintf("%s/%s", r.Task.Cascade, name), err.Error())
+			}
+			ds.Files = append(ds.Files, name)
+			ds.Files = utils.RemoveDuplicateValues(ds.Files)
+		}
+	}
+
+	// Load in display file if present and able
+	logger.Tracef("", "Checking for display at %s", displayPath)
+	if _, err = os.Stat(displayPath); err == nil {
+		logger.Tracef("", "Display path is present")
+		if data, err := os.ReadFile(displayPath); err == nil {
+			logger.Tracef("", "Read display file")
+			var obj []map[string]interface{}
+			if err := json.Unmarshal(data, &obj); err != nil {
+				logger.Errorf("", "Error unmarshalling display JSON: %v", err)
+			} else {
+				logger.Tracef("", "Updating display object")
+				r.State.Display = obj
+			}
+		} else {
+			logger.Errorf("", "read error: %s", err.Error())
+		}
+	} else {
+		logger.Tracef("", "stat error: %s", err.Error())
+	}
+
+	if err := updateRunState(c, r, false); err != nil {
+		return false, err
+	}
+
+	envOutPath := fmt.Sprintf("%s/.envout", runDir)
+	var dat []byte
+	if _, err := os.Stat(envOutPath); err == nil {
+		dat, err = os.ReadFile(envOutPath)
+		if err != nil {
+			logger.Errorf("", "Error reading file %s\n", err.Error())
+			setErrorStatus(r, err.Error())
+			if err := updateRunState(c, r, true); err != nil {
+				return false, err
+			}
+		}
+	}
+	envVarList := strings.Split(string(dat), "\n")
+	envVarMap := map[string]string{}
+
+	for _, val := range envVarList {
+		name, val, _ := strings.Cut(val, ";")
+		decoded, _ := base64.StdEncoding.DecodeString(val)
+		envVarMap[name] = string(decoded)
+	}
+
+	for _, name := range r.Task.Store.Env {
+		ds.Env[name] = envVarMap[name]
+	}
+
+	inputs := []input.Input{}
+	if err := datastore.UpdateDataStoreByCascade(cName, ds, inputs); err != nil {
+		logger.Errorf("", "Error updating datastore %s\n", err.Error())
+		if err := updateRunState(c, r, true); err != nil {
+			return false, err
+		}
+		setErrorStatus(r, err.Error())
+	}
+
+	currentTime = time.Now().UTC()
+	r.State.Finished = currentTime.Format("2006-01-02T15:04:05Z")
+	if returnCode == 0 {
+		r.State.Status = constants.STATE_STATUS_SUCCESS
+	} else {
+		r.State.Status = constants.STATE_STATUS_ERROR
+	}
+
+	r.PID = 0
+
+	if err := updateRunState(c, r, true); err != nil {
+		return false, err
+	}
+	return false, err
+}
+
+func LocalKill(cn, tn string) error {
+	s, err := state.GetStateByNames(cn, tn)
+	if err != nil {
+		return err
+	}
+	if s.PID > 0 {
+		if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill %d", s.PID)).Run(); err != nil {
+			logger.Errorf("", "Cannot kill existing run: %s\n", err.Error())
+			return err
 		}
 	}
 	return nil

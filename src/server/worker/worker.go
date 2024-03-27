@@ -194,11 +194,21 @@ func QueueDataReceive(endpoint, data string) error {
 		currentTask = m.Task
 		currentCascade = m.Cascade
 
-		run.Kill(m.Cascade, m.Task)
+		if t.Kind == constants.TASK_KIND_CONTAINER {
+			run.ContainerKill(m.Cascade, m.Task)
 
-		shouldRestart, _ := run.StartRun(bulwark.ManagerClient, &r)
-		for shouldRestart {
-			shouldRestart, _ = run.StartRun(bulwark.ManagerClient, &r)
+			shouldRestart, _ := run.StartContainerRun(bulwark.ManagerClient, &r)
+			for shouldRestart {
+				shouldRestart, _ = run.StartContainerRun(bulwark.ManagerClient, &r)
+			}
+		}
+		if t.Kind == constants.TASK_KIND_LOCAL {
+			run.LocalKill(m.Cascade, m.Task)
+
+			shouldRestart, _ := run.StartLocalRun(bulwark.ManagerClient, &r)
+			for shouldRestart {
+				shouldRestart, _ = run.StartLocalRun(bulwark.ManagerClient, &r)
+			}
 		}
 
 		logger.Debugf("", "Run finished")
@@ -253,7 +263,7 @@ func bufferCheck() {
 			time.Sleep(time.Duration(config.Config.BulwarkCheckInterval) * time.Millisecond)
 			logger.Debugf("", "Worker checking buffer")
 			// bulwark.BufferGet(bulwark.BufferClient)
-			logger.Errorf("", "Current run: %s.%s", currentCascade, currentTask)
+			logger.Debugf("", "Current run: %s.%s", currentCascade, currentTask)
 			if currentTask != "" && currentCascade != "" {
 				s, err := state.GetStateByNames(currentCascade, currentTask)
 				if err != nil {

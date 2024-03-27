@@ -85,6 +85,7 @@ func KillRun(ctx *gin.Context) {
 	c, err := cascade.GetCascadeByName(cn)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusNotFound)
+		return
 	}
 	if c.Groups != nil {
 		if !validateUserGroup(ctx, c.Groups) {
@@ -92,9 +93,22 @@ func KillRun(ctx *gin.Context) {
 		}
 	}
 
-	if err := run.Kill(cn, tn); err != nil {
+	t, err := task.GetTaskByNames(cn, tn)
+	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
+	}
+
+	if t.Kind == constants.TASK_KIND_CONTAINER {
+		if err := run.ContainerKill(cn, tn); err != nil {
+			utils.Error(err, ctx, http.StatusInternalServerError)
+			return
+		}
+	} else if t.Kind == constants.TASK_KIND_LOCAL {
+		if err := run.LocalKill(cn, tn); err != nil {
+			utils.Error(err, ctx, http.StatusInternalServerError)
+			return
+		}
 	}
 
 	ctx.Status(http.StatusOK)

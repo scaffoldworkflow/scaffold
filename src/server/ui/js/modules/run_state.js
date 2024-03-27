@@ -74,8 +74,9 @@ function updateStateStatus() {
 }
 
 function buildDisplayTable(cd, color, text_color) {
+    theme = localStorage.getItem('scaffold-theme');
     // create the card
-    let output = `<div class="w3-border w3-card light theme-light theme-border-light w3-round">`
+    let output = `<div class="w3-border w3-card ${theme} theme-light theme-border-light w3-round">`
     if (cd.name != null && cd.name != undefined && cd.name != "") {
         output += `
             <header class="w3-container ${color}">
@@ -127,8 +128,9 @@ function buildDisplayTable(cd, color, text_color) {
 }
 
 function buildDisplayPre(cd, color) {
+    theme = localStorage.getItem('scaffold-theme');
     // create the card
-    let output = `<div class="w3-border w3-card light theme-light theme-border-light w3-round">`
+    let output = `<div class="w3-border w3-card ${theme} theme-light theme-border-light w3-round">`
     if (cd.name != null && cd.name != undefined && cd.name != "") {
         output += `
             <header class="w3-container ${color}">
@@ -158,8 +160,9 @@ function buildDisplayPre(cd, color) {
 }
 
 function buildDisplayValue(cd, color) {
+    theme = localStorage.getItem('scaffold-theme');
     // create the card
-    let output = `<div class="w3-border w3-card light theme-light theme-border-light w3-round">`
+    let output = `<div class="w3-border w3-card ${theme} theme-light theme-border-light w3-round">`
     if (cd.name != null && cd.name != undefined && cd.name != "") {
         output += `
             <header class="w3-container ${color}">

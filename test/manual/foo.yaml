@@ -13,11 +13,17 @@ tasks:
   run: |
     echo "a"
     export foo="a"
+    ls
+    pwd
   store:
     env:
       - foo
+  load:
+    file:
+      - foo.yaml
 - name: setup_kubeconfig
   image: ubuntu:20.04
+  kind: container
   run: |
     echo "b"
 - name: update_values_file
@@ -32,6 +38,8 @@ tasks:
   image: ubuntu:20.04
   run: |
     echo "d"
+    sleep 5
+    echo "f"
   depends_on:
     success:
       - update_values_file

@@ -94,7 +94,7 @@ func NewProxy() *WebsocketProxy {
 			log.Fatalln("User is not permitted to access this container")
 		}
 
-		logger.Tracef("Trying to exec with information %s, %s, %s, %s, %s", host, port, cascadeName, run, version)
+		logger.Tracef("", "Trying to exec with information %s, %s, %s, %s, %s", host, port, cascadeName, run, version)
 
 		url, err := url.Parse(fmt.Sprintf("ws://%s:%s/ws/%s/%s/%s", host, port, cascadeName, run, version))
 		if err != nil {

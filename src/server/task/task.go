@@ -41,6 +41,7 @@ type TaskCheck struct {
 
 type Task struct {
 	Name                  string            `json:"name" bson:"name" yaml:"name"`
+	Kind                  string            `json:"kind" bson:"kind" yaml:"kind"`
 	Cron                  string            `json:"cron" bson:"cron" yaml:"cron"`
 	Cascade               string            `json:"cascade" bson:"cascade" yaml:"cascade"`
 	Verb                  string            `json:"verb" bson:"verb" yaml:"verb"`
@@ -67,6 +68,10 @@ func CreateTask(t *Task) error {
 	}
 	if tt != nil {
 		return fmt.Errorf("task already exists with names %s, %s", t.Cascade, t.Name)
+	}
+
+	if t.Kind == "" {
+		t.Kind = constants.TASK_KIND_LOCAL
 	}
 
 	s := state.State{

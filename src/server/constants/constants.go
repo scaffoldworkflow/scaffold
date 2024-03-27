@@ -63,3 +63,6 @@ const ACTION_KILL = "kill"
 
 const FILESTORE_TYPE_S3 = "s3"
 const FILESTORE_TYPE_ARTIFACTORY = "artifactory"
+
+const TASK_KIND_LOCAL = "local"
+const TASK_KIND_CONTAINER = "container"

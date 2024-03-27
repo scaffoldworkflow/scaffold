@@ -107,12 +107,14 @@ func QueueDataReceive(endpoint, data string) error {
 	switch m.Status {
 	case constants.STATE_STATUS_SUCCESS:
 		logger.Debugf("", "Task %s has completed with status success", m.Task)
-		stateChange(m.Cascade, m.Task, constants.STATUS_TRIGGER_SUCCESS)
-		stateChange(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS)
+		stateChange(m.Cascade, m.Task, constants.STATE_STATUS_SUCCESS)
+		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_SUCCESS)
+		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS)
 	case constants.STATE_STATUS_ERROR:
 		logger.Debugf("", "Task %s has completed with status error", m.Task)
-		stateChange(m.Cascade, m.Task, constants.STATUS_TRIGGER_ERROR)
-		stateChange(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS)
+		stateChange(m.Cascade, m.Task, constants.STATE_STATUS_ERROR)
+		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ERROR)
+		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS)
 	case constants.STATE_STATUS_KILLED:
 		logger.Debugf("", "Task %s has completed with status killed", m.Task)
 		id := fmt.Sprintf("%s-%s", m.Cascade, m.Task)
@@ -229,9 +231,6 @@ func stateChange(cn, tn, status string) error {
 				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
 					return err
 				}
-				if err := DoTrigger(cn, t.Name); err != nil {
-					return err
-				}
 			}
 		}
 	case constants.STATE_STATUS_ERROR:
@@ -265,9 +264,6 @@ func stateChange(cn, tn, status string) error {
 			}
 			if shouldExecute {
 				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
-					return err
-				}
-				if err := DoTrigger(cn, t.Name); err != nil {
 					return err
 				}
 			}
@@ -324,6 +320,95 @@ func stateChange(cn, tn, status string) error {
 	return nil
 }
 
+func checkDeps(cn string, t *task.Task) (bool, error) {
+	for _, n := range t.DependsOn.Success {
+		s, err := state.GetStateByNames(cn, n)
+		if err != nil {
+			return false, err
+		}
+		if s.Status != constants.STATE_STATUS_SUCCESS {
+			return false, nil
+		}
+	}
+	for _, n := range t.DependsOn.Error {
+		s, err := state.GetStateByNames(cn, n)
+		if err != nil {
+			return false, err
+		}
+		if s.Status != constants.STATE_STATUS_ERROR {
+			return false, nil
+		}
+	}
+	for _, n := range t.DependsOn.Always {
+		s, err := state.GetStateByNames(cn, n)
+		if err != nil {
+			return false, err
+		}
+		if s.Status != constants.STATE_STATUS_SUCCESS && s.Status != constants.STATE_STATUS_ERROR {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func autoTrigger(cn, tn, status string) error {
+	logger.Debugf("", "Doing auto trigger for %s %s with status %s", cn, tn, status)
+	ts, err := task.GetTasksByCascade(cn)
+	if err != nil {
+		logger.Errorf("", "Cannot perform auto trigger for %s", cn)
+		return err
+	}
+	toTrigger := []string{}
+
+	switch status {
+	case constants.STATUS_TRIGGER_SUCCESS:
+		for _, t := range ts {
+			if utils.Contains(t.DependsOn.Success, tn) && t.AutoExecute {
+				trigger, err := checkDeps(cn, t)
+				if err != nil {
+					logger.Errorf("", "Error checking dependency states: %s", err.Error())
+					return err
+				}
+				if trigger {
+					toTrigger = append(toTrigger, t.Name)
+				}
+			}
+		}
+	case constants.STATUS_TRIGGER_ERROR:
+		for _, t := range ts {
+			if utils.Contains(t.DependsOn.Error, tn) && t.AutoExecute {
+				trigger, err := checkDeps(cn, t)
+				if err != nil {
+					logger.Errorf("", "Error checking dependency states: %s", err.Error())
+					return err
+				}
+				if trigger {
+					toTrigger = append(toTrigger, t.Name)
+				}
+			}
+		}
+	case constants.STATUS_TRIGGER_ALWAYS:
+		for _, t := range ts {
+			if utils.Contains(t.DependsOn.Always, tn) && t.AutoExecute {
+				trigger, err := checkDeps(cn, t)
+				if err != nil {
+					logger.Errorf("", "Error checking dependency states: %s", err.Error())
+					return err
+				}
+				if trigger {
+					toTrigger = append(toTrigger, t.Name)
+				}
+			}
+		}
+	}
+	for _, t := range toTrigger {
+		if err := DoTrigger(cn, t); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func DoTrigger(cn, tn string) error {
 	c, err := cascade.GetCascadeByName(cn)
 	if err != nil {
@@ -337,6 +422,34 @@ func DoTrigger(cn, tn string) error {
 
 	if t.Disabled {
 		return nil
+	}
+
+	for _, s := range t.DependsOn.Success {
+		ss, err := state.GetStateByNames(cn, s)
+		if err != nil {
+			return err
+		}
+		if ss.Status != constants.STATE_STATUS_SUCCESS {
+			return nil
+		}
+	}
+	for _, s := range t.DependsOn.Error {
+		ss, err := state.GetStateByNames(cn, s)
+		if err != nil {
+			return err
+		}
+		if ss.Status != constants.STATE_STATUS_SUCCESS {
+			return nil
+		}
+	}
+	for _, s := range t.DependsOn.Success {
+		ss, err := state.GetStateByNames(cn, s)
+		if err != nil {
+			return err
+		}
+		if ss.Status == constants.STATE_STATUS_NOT_STARTED {
+			return nil
+		}
 	}
 
 	s, err := state.GetStateByNames(cn, tn)

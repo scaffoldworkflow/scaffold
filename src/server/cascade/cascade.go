@@ -122,7 +122,7 @@ func GetCascadeByName(name string) (*Cascade, error) {
 	cascades, err := FilterCascades(filter)
 
 	if err != nil {
-		logger.Errorf("filter cascades returned error %s", err.Error())
+		logger.Errorf("", "filter cascades returned error %s", err.Error())
 		return nil, err
 	}
 

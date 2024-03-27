@@ -24,6 +24,7 @@ type State struct {
 	Number   int                      `json:"number" bson:"number" yaml:"number"`
 	Disabled bool                     `json:"disabled" bson:"disabled" yaml:"disabled"`
 	Killed   bool                     `json:"killed" bson:"killed" yaml:"killed"`
+	PID      int                      `json:"pid" bson:"pid" yaml:"pid"`
 }
 
 func CreateState(s *State) error {
@@ -201,7 +202,7 @@ func UpdateStateKilledByNames(cascade, task string, killed bool) error {
 
 	if result.ModifiedCount != 1 {
 		// return fmt.Errorf("no state found with names %s, %s", cascade, task)
-		logger.Tracef("no state found with names %s, %s", cascade, task)
+		logger.Tracef("", "no state found with names %s, %s", cascade, task)
 	}
 
 	return nil
@@ -229,7 +230,7 @@ func UpdateStateRunByNames(cascade, task string, s State) error {
 
 	if result.ModifiedCount != 1 {
 		// return fmt.Errorf("no state found with names %s, %s", cascade, task)
-		logger.Tracef("no state found with names %s, %s", cascade, task)
+		logger.Tracef("", "no state found with names %s, %s", cascade, task)
 	}
 
 	return nil
