@@ -6,18 +6,39 @@
 // import deploy_status.js
 // import data.js
 
-var cascades
+var cascades = {}
 var healthIntervalMilliSeconds = "5000"
+
+function deleteCascade(cascadeName) {
+    $.ajax({
+        url: "/api/v1/cascade/" + cascadeName,
+        type: "DELETE",
+        success: function (result) {
+            console.log(`Cascade ${cascadeName} deleted`)
+        },
+        error: function (result) {
+            console.log(result)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
+        }
+    })
+}
 
 function getCascades() {
     $.ajax({
         url: "/api/v1/cascade",
         type: "GET",
         success: function (result) {
-            cascades = result
+            for (let idx = 0; idx < result.length; idx++) {
+                cascades[result[idx].name] = result[idx]
+            }
         },
         error: function(result) {
             console.log(result)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
         }
     });
 }

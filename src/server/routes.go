@@ -41,6 +41,7 @@ func initializeRoutes() {
 			healthRoutes.GET("/available", api.Available)
 		} else {
 			healthRoutes.GET("/status", middleware.EnsureLoggedIn(), manager.GetStatus)
+			healthRoutes.POST("/ping/:name", middleware.EnsureLoggedIn(), api.Ping)
 		}
 	}
 
@@ -72,11 +73,18 @@ func initializeRoutes() {
 				{
 					datastoreRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetAllDataStores)
 					datastoreRoutes.GET("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.GetDataStoreByName)
-					datastoreRoutes.DELETE("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("name"), api.DeleteDataStoreByName)
+					datastoreRoutes.DELETE("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("name"), api.DeleteDataStoreByCascade)
 					datastoreRoutes.POST("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.CreateDataStore)
-					datastoreRoutes.PUT("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("name"), api.UpdateDataStoreByName)
-					datastoreRoutes.GET("/file/:name/:file", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.DownloadFile)
-					datastoreRoutes.POST("/file/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.UploadFile)
+					datastoreRoutes.PUT("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("name"), api.UpdateDataStoreByCascade)
+				}
+				fileRoutes := v1Routes.Group("/file")
+				{
+					fileRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetAllFiles)
+					fileRoutes.GET("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.GetFilesByCascade)
+					fileRoutes.GET("/:name/:file", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.GetFileByNames)
+					// fileRoutes.GET("/:name/:file/view", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.ViewFile)
+					fileRoutes.GET("/:name/:file/download", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.DownloadFile)
+					fileRoutes.POST("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.UploadFile)
 				}
 				stateRoutes := v1Routes.Group("/state")
 				{
@@ -108,6 +116,7 @@ func initializeRoutes() {
 					taskRoutes.DELETE("/:cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.DeleteTaskByNames)
 					taskRoutes.POST("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.CreateTask)
 					taskRoutes.PUT("/:cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.UpdateTaskByNames)
+					taskRoutes.PUT("/:cascade/:task/enabled", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.ToggleTaskEnabled)
 				}
 				userRoutes := v1Routes.Group("/user")
 				{
@@ -120,9 +129,8 @@ func initializeRoutes() {
 				runRoutes := v1Routes.Group("/run")
 				{
 					runRoutes.POST(":cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.CreateRun)
-					runRoutes.POST(":cascade/:task/check", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.CreateCheckRun)
 					runRoutes.GET("/containers", middleware.EnsureLoggedIn(), api.GetAllContainers)
-					runRoutes.DELETE("/:cascade/:task/:number", middleware.EnsureLoggedIn(), middleware.EnsureCascadeGroup("cascade"), api.ManagerKillRun)
+					runRoutes.DELETE("/:cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureCascadeGroup("cascade"), api.ManagerKillRun)
 				}
 			}
 		}
@@ -149,10 +157,10 @@ func initializeRoutes() {
 		{
 			v1Routes := apiRoutes.Group("/v1")
 			{
-				v1Routes.POST("/trigger", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.TriggerRun)
-				v1Routes.GET("/state/:cascade/:task/:number", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetRunState)
-				v1Routes.GET("/available", middleware.EnsureLoggedIn(), api.GetAvailableContainers)
-				v1Routes.DELETE("/kill/:cascade/:task/:number", middleware.EnsureLoggedIn(), api.KillRun)
+				taskRoutes := v1Routes.Group("/run")
+				{
+					taskRoutes.DELETE("/:cascade/:task", middleware.EnsureLoggedIn(), api.KillRun)
+				}
 			}
 		}
 	}

@@ -1,25 +1,41 @@
 version: "3.9"
 services:
+  bulwark:
+    image: "bulwark"
+    ports:
+      - "127.0.0.1:1380:1380"
+      - "127.0.0.1:1381:1381"
+    environment:
+      BULWARK_PORT: "1380"
+      BULWARK_API_PORT: "1381"
+      BULWARK_LOG_LEVEL: "INFO"
+      BULWARK_LOG_FORMAT: "console"
+      BULWARK_QUEUE_LIFETIME: "-1"
+      BULWARK_BUFFER_LIFETIME: "-1"
+      BULWARK_SECRET_KEY: "MyCoolBulwarkSecretKey"
+      BULWARK_TLS_ENABLED: "false"
+      BULWARK_TLS_SKIP_VERIFY: "true"
+      BULWARK_TLS_CERT_CRT: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUViVENDQWxXZ0F3SUJBZ0lVVHZvRDJiTGZkeEVWd1ZCa2xCUFkzaVUybGlNd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1B6RUxNQWtHQTFVRUJoTUNWVk14Q3pBSkJnTlZCQWdNQWtsTU1SRXdEd1lEVlFRS0RBaFRZMkZtWm05cwpaREVRTUE0R0ExVUVBd3dIWW5Wc2QyRnlhekFlRncweU16RXlNRGd4T0RBME1qRmFGdzB5TlRBME1qRXhPREEwCk1qRmFNRDh4Q3pBSkJnTlZCQVlUQWxWVE1Rc3dDUVlEVlFRSURBSkpUREVSTUE4R0ExVUVDZ3dJVTJOaFptWnYKYkdReEVEQU9CZ05WQkFNTUIySjFiSGRoY21zd2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFSwpBb0lCQVFDV2ZVNWhOSnl2b24ydk9sY05SSFg3d0FKYkMvQklBNm9NYnVMN2g4amc0N2Fsc1YrQzg3ZTNxaXJKCklTc1Q5cElnK1ByZ0xXNktVcWMzZlliZnNvTWdTUlU4SXdlQ0xubUYySjh3aWZRM2JucENUZTd3YW82NkJ5TnQKVzVibldxV2FwM1dkdTlMTVBWalR2OVZvOWNvWXZPdFczWVJWQ1V1Vk5KVHNvNzh3ajhoaCtIcnB5OU00Z2F0RAoxR2duZnVUUCtQbjB3bFBkdktPYVBZSEtJamROTlAyZzFkWk9sTkNxYXloNmpLbFpjUnZmeHhGU0FpSy9yRDlECnZLdlMzVW1wcmpCRHpISTRteGV6Ym5LaDZDR3BBRmFXWk5xdDJNSDJNbk1CdkhpZWFVa3JNOHphYVhkRXcxc1kKU1RQckI3cy90U3ZKY0l2QURkT2dnTVI4QXNOakFnTUJBQUdqWVRCZk1CMEdBMVVkRVFRV01CU0NCMkoxYkhkaApjbXVDQ1d4dlkyRnNhRzl6ZERBZEJnTlZIUTRFRmdRVUU1a1B5RmhSUnMvVmZJVFdERzZncTRFV1ZuZ3dId1lEClZSMGpCQmd3Rm9BVUpJUE5MUUtrRDVlQ1FaSTEwTkdHYXQvMVhDQXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnSUIKQUFnQzdZUmlqMU5jeFFGZXhYL0hKV0dreGswcnYyOGNFcmlaV0RCMldvQnF5NEl5OTFKMXo0TVVrMlJJV1ZRagpVWno5bmNLdEpZY05oOExlTFNyd1JQcFB6aFh6RFJKVlovOXY5VlZtaEVxcHBZbDdtL0E2bnBsVlpWZWJHT1JiCk0wQnVNSXF3NlJDdGwwb0ljck1Idnp3ZTZ2OGgyRE9xRm1mZTF4SGc5bXErVk8vK0RSN3ViTEF6NTZ0ajlHQVkKRFV2ZmorZ3JMTnQxZWY2VmtvRXgrWlpJSnkwOElIT0NSOGpBMERkYUlMZHlzcFJNUGQ5MEgyV0NBczNOczZQVwpvemthUGMxYkMySmZZWEIzTDcxUi9ySmVOSlpCVXF5ODdBaGM3cTFKakhIOWtyY2hxM0dmRWs2TkZFVjM2SEl0Cm9ac3EwOHpBb1NoNWZBNVZKWGNmeXhjTnNCRDVNWXdpeW5qREZCMkE2bzRYYWxZRVpYVlBYc2pwT1FEc094UFoKQmF4b0FWZzZXd0V6aVJZQWJxanVoeGZ1cDZ4Q1dMUnl3VXlyZjg5K3JRbmxORlBOMDNFejRkMDlwQ3B3OFNGRQp1Y2Q1WEw2Njl0L29xWUZsNks1aW9DTU1jNlhzaXp2ZE5CMG9Zc3VkOXlyZTQ4SVJwekNuODE0SUlyM25LVUJKClhzMXRLdlVTei9Wcmh4NDBORGpXN0NCSFZNeE1zSGhJTTNicnZXYTdJVEtYRnEzczJFcUZZNEQwWktCTXRaN00KMXR0YS9DV3hnd3liM0E2cFg5ZXRpVTdwN0RvbU5CZVA1aE9MMDNYSlI2TEx2ajBoYzFWWEYyaUN6Skg1VkZHaApyS3Rnd3gvODJJQ0hJTm9neklXQXlhRmxobnlmbVVXa0xLYjRGVFcxUStBVgotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg=="
+      BULWARK_TLS_CERT_KEY: "LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2UUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktjd2dnU2pBZ0VBQW9JQkFRQ1dmVTVoTkp5dm9uMnYKT2xjTlJIWDd3QUpiQy9CSUE2b01idUw3aDhqZzQ3YWxzVitDODdlM3FpckpJU3NUOXBJZytQcmdMVzZLVXFjMwpmWWJmc29NZ1NSVThJd2VDTG5tRjJKOHdpZlEzYm5wQ1RlN3dhbzY2QnlOdFc1Ym5XcVdhcDNXZHU5TE1QVmpUCnY5Vm85Y29Zdk90VzNZUlZDVXVWTkpUc283OHdqOGhoK0hycHk5TTRnYXREMUdnbmZ1VFArUG4wd2xQZHZLT2EKUFlIS0lqZE5OUDJnMWRaT2xOQ3FheWg2aktsWmNSdmZ4eEZTQWlLL3JEOUR2S3ZTM1VtcHJqQkR6SEk0bXhlegpibktoNkNHcEFGYVdaTnF0Mk1IMk1uTUJ2SGllYVVrck04emFhWGRFdzFzWVNUUHJCN3MvdFN2SmNJdkFEZE9nCmdNUjhBc05qQWdNQkFBRUNnZ0VBTnhMRWpHNWtxU0llUFBKc3lUNDByMTBsZjR4dTh1dmtYNGgxS1BnWVc3VDYKTXNrbTJ4VzJObERnTjVzYjJNSnoxLzFHVXFSTnYvRmZvTDhmak40WGZzbEFMREhsblk3RWltY3NXdWNocU9lVgpkbzV1MHkwcjdvaU9Qb2MyUXBTNTVrOUNpK2NnemYzbGRCalFVUWtpWE10R2xST2NTa0tNbHA0WG9rS0t4WXBKCllKaUI4R3pmYzJOMzNsTzU1SloySzJJZmdSRGxNYUlTbjlXQUo1NVdrcWR5eW5LaTVad3ZiVWVhR2RlUU5LTnUKWmhCaEZ3OW5OYVBOR3hueURYNGN4M1N4VFcxY0M1czBWd0lIc2kxdTlmL0Zzd3BFU0o4Si9ONEg1cXE0V0F4VAozSGFxY09MOWoxQ2JSYVNaZ2RadkNqa2tOL3haNEZwYkROSFVqWmg5QVFLQmdRQytjUkxrVm9yUkQ2TFZYMkFVCjZqamEwNFhvbmVxOFgvTml6VkRDUnR3b3crWWlDbEVRTVZTYlVUK0NReVZtcmVHOENBcEZuNEdGWFdHbjJRTjQKY1FJR3ZjUTMzcXZvc0p3QlkxVHU5aWc1ZnRhc2hGUzR4eVdla2ROZ1Y1Z3hzZ2tSRjE4NlBDQzBrRVh2emQ4YgpMWlh5V2N4V0cxRzFSR3NaeE5PTDZna2cyd0tCZ1FES1MyUHdUM2Q5SG12emF4T1RYVFNzNUJ3eDdKekd4VVAvCnRuZEFUK0tDMDhvYWFqcURRRVZITGVOVWtXTU44SVE5d1l5UEtWeEJ5ckVIelZ2OEpBZzg0b0ZiNy94bXhHQVgKVUYrTVZmYUxaT3k5MmVCb0Q2YlFiN3BqdkRkcVB0QWZ1NWhpWUtqdE5HeVIwZ1A2blNybXh4VHBwa0lyWldPVwpGcUVVdG1JS0dRS0JnQnh2MGZ4YWw5dmowOUs4clNJeVgwNzlxczh6Vld2UGdBNU96akpVVm1lWDZQTklTeFo1CjUwSlIvWU83OXdmQUN5Y0NwRllGSFZnR3U2Qk9uV0FNcjlyRjExam9YUThmNEF1dEEyK3pQZ3BuMERKdWlDQVgKVEp6QzlhYzdMVFN1ZXdBY1YxSGd6SmxwdWFlM1BBdFk0VDBRLzV3VDlEMTIrKzhiSHVPVGpNMWxBb0dBTkVySwp1YnNCQzBISzYvQjQ3ZllCQU5ReWlhRTlZWkJxcEhaWld6R0xQd0JhVlB1eXhtemR1Nm1jQXlkVjhLdUVzNllOCm5KQTNmZlpVVHMwQ0F5cVpTb3ZPbnFKcG4zTVIxOVQ1N2YvbXJGL1pacllrY1NIaW9DelJoS2lKdHBnb0dwdlcKcDArUE8wbjY2ckxjUG5OVVBMV25yVUpDQm8rOTczVklERitjOWprQ2dZRUFseER5NFZuOGtVZVFtaFJVaXdHRQp2T0s2Y1hPNFEvM1dnVkQ4SHFIRWhKZU9tSGtXWlJoSUl2a1F5T3Z0U1F2K0dpU0x1NlFPcVZHSDI3VlEyRzc2CkVWUUNWZEZ4NXA1MkFBcUhrbkhSWTFGVkZZSXNFRXFsY3NhRU5SZFlmaTdsSUlmNHFEYTBHNDd0NXpLY0JzVGgKZFlQTFRzOUZwUHdNRzBkSEdpRTZobVk9Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K"
+    tty: true
   scaffold-manager:
     image: "scaffold"
     ports:
       - "127.0.0.1:2997:2997"
       - "127.0.0.1:8080:8080"
     environment:
-      SCAFFOLD_PORT: "2997"
-      SCAFFOLD_HOST: "scaffold-manager"
+      SCAFFOLD_BASE_URL: http://scaffold-manager:2997
       SCAFFOLD_WS_PORT: "8080"
       SCAFFOLD_LOG_LEVEL: "INFO"
-      SCAFFOLD_PROTOCOL: "http"
-      SCAFFOLD_DB: |
+      SCAFFOLD_LOG_FORMAT: "console"
+      SCAFFOLD_SLEEP: "10"
+      SCAFFOL_BULWARK_CHECK_INTERVAL: 100
+      SCAFFOLD_ADMIN: |
         {
-          "username": "MyCoolMongoDBUsername",
-          "password": "MyCoolMongoDBPassword",
-          "name": "scaffold",
-          "host": "mongodb",
-          "port": 27017,
-          "protocol": "http"
+          "username": "admin",
+          "password": "admin"
         }
+      SCAFFOLD_DB_CONNECTION_STRING: "mongodb://MyCoolMongoDBUsername:MyCoolMongoDBPassword@mongodb:27017/scaffold"
       SCAFFOLD_NODE: |
         {
           "type": "manager",
@@ -29,7 +45,7 @@ services:
           "primary_key": "MyCoolPrimaryKey12345",
           "manager_protocol": "http"
         }
-      SCAFFOLD_FILE_STORE: |
+      SCAFFOLD_FILESTORE: |
         {
           "access_key": "MyCoolMinIOAccessKey",
           "secret_key": "MyCoolMinIOSecretKey",
@@ -37,11 +53,13 @@ services:
           "port": 9090,
           "bucket": "scaffold",
           "region": "default-region",
-          "protocol": "http"
+          "protocol": "http",
+          "type": "s3"
         }
     depends_on:
       - "mongodb"
       - "minio"
+      - "bulwark"
     tty: true
   scaffold-worker-1:
     image: "scaffold"
@@ -49,21 +67,17 @@ services:
       - "127.0.0.1:2998:2998"
       - "127.0.0.1:8081:8081"
     environment:
-      SCAFFOLD_PORT: "2998"
-      SCAFFOLD_HOST: "scaffold-worker-1"
-      SCAFFOLD_LOG_LEVEL: "INFO"
+      SCAFFOLD_BASE_URL: http://scaffold-worker-1:2998
       SCAFFOLD_WS_PORT: "8081"
-      SCAFFOLD_SLEEP: "20"
-      SCAFFOLD_PROTOCOL: "http"
-      SCAFFOLD_DB: |
+      SCAFFOLD_LOG_LEVEL: "TRACE"
+      SCAFFOLD_LOG_FORMAT: "console"
+      SCAFFOLD_ADMIN: |
         {
-          "username": "MyCoolMongoDBUsername",
-          "password": "MyCoolMongoDBPassword",
-          "name": "scaffold",
-          "host": "mongodb",
-          "port": 27017,
-          "protocol": "http"
+          "username": "admin",
+          "password": "admin"
         }
+      SCAFFOLD_SLEEP: "20"
+      SCAFFOLD_DB_CONNECTION_STRING: "mongodb://MyCoolMongoDBUsername:MyCoolMongoDBPassword@mongodb:27017/scaffold"
       SCAFFOLD_NODE: |
         {
           "type": "worker",
@@ -73,7 +87,7 @@ services:
           "primary_key": "MyCoolPrimaryKey12345",
           "manager_protocol": "http"
         }
-      SCAFFOLD_FILE_STORE: |
+      SCAFFOLD_FILESTORE: |
         {
           "access_key": "MyCoolMinIOAccessKey",
           "secret_key": "MyCoolMinIOSecretKey",
@@ -81,7 +95,8 @@ services:
           "port": 9090,
           "bucket": "scaffold",
           "region": "default-region",
-          "protocol": "http"
+          "protocol": "http",
+          "type": "s3"
         }
     depends_on:
       - "scaffold-manager"
@@ -95,21 +110,17 @@ services:
       - "127.0.0.1:2999:2999"
       - "127.0.0.1:8082:8082"
     environment:
-      SCAFFOLD_PORT: "2999"
-      SCAFFOLD_HOST: "scaffold-worker-2"
-      SCAFFOLD_LOG_LEVEL: "INFO"
+      SCAFFOLD_BASE_URL: http://scaffold-worker-2:2999
       SCAFFOLD_WS_PORT: "8082"
-      SCAFFOLD_SLEEP: "20"
-      SCAFFOLD_PROTOCOL: "http"
-      SCAFFOLD_DB: |
+      SCAFFOLD_LOG_LEVEL: "TRACE"
+      SCAFFOLD_LOG_FORMAT: "console"
+      SCAFFOLD_ADMIN: |
         {
-          "username": "MyCoolMongoDBUsername",
-          "password": "MyCoolMongoDBPassword",
-          "name": "scaffold",
-          "host": "mongodb",
-          "port": 27017,
-          "protocol": "http"
+          "username": "admin",
+          "password": "admin"
         }
+      SCAFFOLD_SLEEP: "20"
+      SCAFFOLD_DB_CONNECTION_STRING: "mongodb://MyCoolMongoDBUsername:MyCoolMongoDBPassword@mongodb:27017/scaffold"
       SCAFFOLD_NODE: |
         {
           "type": "worker",
@@ -119,7 +130,7 @@ services:
           "primary_key": "MyCoolPrimaryKey12345",
           "manager_protocol": "http"
         }
-      SCAFFOLD_FILE_STORE: |
+      SCAFFOLD_FILESTORE: |
         {
           "access_key": "MyCoolMinIOAccessKey",
           "secret_key": "MyCoolMinIOSecretKey",
@@ -127,7 +138,8 @@ services:
           "port": 9090,
           "bucket": "scaffold",
           "region": "default-region",
-          "protocol": "http"
+          "protocol": "http",
+          "type": "s3"
         }
     depends_on:
       - "scaffold-manager"

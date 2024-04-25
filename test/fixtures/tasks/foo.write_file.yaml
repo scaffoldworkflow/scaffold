@@ -7,12 +7,16 @@ check:
   interval: 0
   load:
     env: null
+    env_passthrough: null
     file: null
+    mounts: null
   run: ''
   run_number: 0
   store:
     env: null
+    env_passthrough: null
     file: null
+    mounts: null
   updated: ''
 depends_on:
   always: null
@@ -24,7 +28,9 @@ image: ubuntu:20.04
 inputs: null
 load:
   env: null
+  env_passthrough: null
   file: null
+  mounts: null
 name: write_file
 run: 'echo "${file_contents}" > /tmp/run/foo.txt
 
@@ -37,7 +43,9 @@ run_number: 0
 should_rm: false
 store:
   env: null
+  env_passthrough: null
   file:
   - foo.txt
-updated: '2023-08-21T16:45:59Z'
+  mounts: null
+updated: '2023-10-31T18:00:35Z'
 verb: ''

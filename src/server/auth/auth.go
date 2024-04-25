@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"scaffold/server/cascade"
 	"scaffold/server/config"
-	"scaffold/server/logger"
 	"scaffold/server/user"
 	"scaffold/server/utils"
 	"strings"
+	"sync"
 	"time"
+
+	logger "github.com/jfcarter2358/go-logger"
 
 	"encoding/base64"
 
@@ -43,17 +45,12 @@ type NodeObject struct {
 	Healthy   bool   `json:"healthy" bson:"healthy"`
 	Available bool   `json:"available" bson:"available"`
 	Version   string `json:"version" bson:"version"`
+	Ping      int    `json:"ping" bson:"ping"`
 }
 
-type DegradedNodeObject struct {
-	Count int
-	Node  NodeObject
-}
-
-var Nodes []NodeObject
-var UnknownNodes map[string]DegradedNodeObject
-var UnhealthyNodes map[string]DegradedNodeObject
+var Nodes = make(map[string]NodeObject)
 var LastScheduledIdx = 0
+var NodeLock = &sync.RWMutex{}
 
 func PerformLogin(c *gin.Context) {
 	username := c.PostForm("username")
@@ -220,15 +217,25 @@ func JoinNode(ctx *gin.Context) {
 	}
 
 	if n.JoinKey == config.Config.Node.JoinKey {
-		logger.Debugf("", "Joining node %s, %d, %d", n.Host, n.Port, n.WSPort)
-		Nodes = append(Nodes, NodeObject{
-			Host:     n.Host,
+		ipAddr := ctx.ClientIP()
+		logger.Debugf("", "Joining node %s, %d, %d", ipAddr, n.Port, n.WSPort)
+		if nd, ok := Nodes[n.Name]; ok {
+			nd.Ping = 0
+			Nodes[n.Name] = nd
+			ctx.Status(http.StatusOK)
+			return
+		}
+
+		Nodes[n.Name] = NodeObject{
+			Name:     n.Name,
+			Host:     ipAddr,
 			Port:     n.Port,
 			WSPort:   n.WSPort,
 			Healthy:  true,
 			Version:  n.Version,
 			Protocol: n.Protocol,
-		})
+			Ping:     0,
+		}
 		ctx.Status(http.StatusOK)
 		return
 	}

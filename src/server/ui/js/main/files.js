@@ -25,5 +25,5 @@ function togglePane(id) {
 
 function openFileUploadModal(cascade) {
     openModal('files-upload-file-modal')
-    $("#files-upload-file-form").attr('action', `/api/v1/datastore/file/${cascade}`)
+    $("#files-upload-file-form").attr('action', `/api/v1/file/${cascade}`)
 }

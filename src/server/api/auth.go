@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"scaffold/server/auth"
 	"scaffold/server/user"
 	"scaffold/server/utils"
 
@@ -58,4 +59,16 @@ func RevokeAPIToken(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
+}
+
+func Ping(c *gin.Context) {
+	name := c.Param("name")
+	auth.NodeLock.Lock()
+	if n, ok := auth.Nodes[name]; ok {
+		n.Ping = 0
+		auth.Nodes[name] = n
+	}
+	auth.NodeLock.Unlock()
+
+	c.Status(http.StatusOK)
 }

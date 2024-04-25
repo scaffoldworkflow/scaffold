@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"net/url"
 	"scaffold/server/cascade"
-	"scaffold/server/logger"
 	"scaffold/server/user"
 	"scaffold/server/utils"
 	"strings"
+
+	logger "github.com/jfcarter2358/go-logger"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -93,7 +94,7 @@ func NewProxy() *WebsocketProxy {
 			log.Fatalln("User is not permitted to access this container")
 		}
 
-		logger.Tracef("Trying to exec with information %s, %s, %s, %s, %s", host, port, cascadeName, run, version)
+		logger.Tracef("", "Trying to exec with information %s, %s, %s, %s, %s", host, port, cascadeName, run, version)
 
 		url, err := url.Parse(fmt.Sprintf("ws://%s:%s/ws/%s/%s/%s", host, port, cascadeName, run, version))
 		if err != nil {

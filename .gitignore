@@ -1,5 +1,5 @@
 dist
-src/server/ui-dist
+src/server/ui/dist
 .python-version
 temp
 test/\.*\.yaml
@@ -9,3 +9,9 @@ __pycache__
 ca
 docs/build
 .vscode
+rendered.yaml
+cert.crt
+cert.key
+*.log
+src/server/ui.new
+.floorplan*

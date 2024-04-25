@@ -35,9 +35,12 @@
                                         <td>{{ .Name }}</td>
                                         <td>{{ .Modified }}</td>
                                         <td>
-                                            <a class="w3-button scaffold-green w3-round" href="/api/v1/datastore/file/{{ .Cascade }}/{{ .Name }}" style="float:right;">
+                                            <a class="w3-button scaffold-green w3-round" href="/api/v1/file/{{ .Cascade }}/{{ .Name }}/download" style="float:right;">
                                                 Download
                                             </button>
+                                            <!-- <a class="w3-button scaffold-green w3-round" href="/api/v1/file/{{ .Cascade }}/{{ .Name }}/view" style="float:right;">
+                                                View
+                                            </button> -->
                                         </td>
                                     </tr>
                                 {{ end }}

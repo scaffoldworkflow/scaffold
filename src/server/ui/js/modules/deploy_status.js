@@ -32,6 +32,9 @@ function updateStatuses() {
                     '<span class="table-title-text">Service</span>' +
                 '</th>' +
                 '<th class="table-title w3-medium scaffold-text-green">' +
+                    '<span class="table-title-text">IP</span>' +
+                '</th>' +
+                '<th class="table-title w3-medium scaffold-text-green">' +
                     '<span class="table-title-text">Status</span>' +
                 '</th>' +
                 '<th class="table-title w3-medium scaffold-text-green">' +
@@ -52,8 +55,9 @@ function updateStatuses() {
                     down_count += 1
                 }
                 tableInnerHTML += '<tr>' +
-                    '<td class="status-table-icon ' + serviceStatusColor + ' ' + serviceStatusIcon + '">' + '</td>' +
+                    '<td class="status-table-icon fa-solid ' + serviceStatusColor + ' ' + serviceStatusIcon + '">' + '</td>' +
                     '<td>' + result.nodes[i].name + '</td>' +
+                    '<td>' + result.nodes[i].ip + '</td>' +
                     '<td class="status-table-status">' + serviceStatusText + '</td>' +
                     '<td>' + serviceStatusVersion + '</td>' +
                 '</tr>'
@@ -69,6 +73,10 @@ function updateStatuses() {
             }
         },
         error: function (result) {
+            console.log(result)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
             tableElements = $('.status-table-icon')
             for (let i = 0; i < tableElements.length; i++) {
                 $(tableElements[i]).removeClass(allHealthClasses)

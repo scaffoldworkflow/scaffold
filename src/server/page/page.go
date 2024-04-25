@@ -10,10 +10,11 @@ import (
 	"scaffold/server/constants"
 	"scaffold/server/datastore"
 	"scaffold/server/filestore"
-	"scaffold/server/logger"
 	"scaffold/server/user"
 	"scaffold/server/utils"
 	"time"
+
+	logger "github.com/jfcarter2358/go-logger"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,19 +24,19 @@ func RedirectIndexPage(c *gin.Context) {
 }
 
 func ShowLoginPage(c *gin.Context) {
-	showPage(c, "login.html", gin.H{})
+	showPage(c, "login.html", gin.H{"version": constants.VERSION})
 }
 
 func ShowForgotPasswordPage(c *gin.Context) {
-	showPage(c, "forgot_password.html", gin.H{})
+	showPage(c, "forgot_password.html", gin.H{"version": constants.VERSION})
 }
 
 func ShowEmailSuccessPage(c *gin.Context) {
-	showPage(c, "email_success.html", gin.H{})
+	showPage(c, "email_success.html", gin.H{"version": constants.VERSION})
 }
 
 func ShowEmailFailurePage(c *gin.Context) {
-	showPage(c, "email_failure.html", gin.H{})
+	showPage(c, "email_failure.html", gin.H{"version": constants.VERSION})
 }
 
 func ShowResetPasswordPage(c *gin.Context) {
@@ -76,9 +77,12 @@ func ShowCascadesPage(c *gin.Context) {
 		var data map[string]interface{}
 		json.Unmarshal(objBytes, &data)
 		isInGroup := false
+		is_admin := false
+		is_write := false
 		for _, ug := range u.Groups {
 			if ug == "admin" {
 				isInGroup = true
+				is_admin = true
 				break
 			}
 			for _, cg := range obj.Groups {
@@ -91,7 +95,20 @@ func ShowCascadesPage(c *gin.Context) {
 				break
 			}
 		}
+		for _, ur := range u.Roles {
+			if ur == "admin" {
+				is_admin = true
+				is_write = true
+				break
+			}
+			if ur == "write" {
+				is_write = true
+				break
+			}
+		}
 		data["in_group"] = isInGroup
+		data["is_admin"] = is_admin
+		data["is_write"] = is_write
 		cascades[idx] = data
 	}
 

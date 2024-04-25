@@ -13,8 +13,8 @@
     - linux/amd64
     - linux/arm64
     - linux/arm/v7
-  image_version: 0.1.0
-  cli_version: 0.1.0
+  image_version: 0.2.0
+  cli_version: 0.2.0
 set-server-version:
   help: Update server version constant from VERSION file
   cmd: |
@@ -38,6 +38,12 @@ build-docker:
     stud set-server-version
     wsc compile
     docker build -t scaffold -f src/server/Dockerfile .
+push-docker:
+  help: Build Scaffold Docker image
+  cmd: |
+    version = ?(cat src/server/VERSION).strip()
+    docker tag scaffold {docker_org}/scaffold:{version}
+    docker push {docker_org}/scaffold:{version}
 build-docker-test:
   help: Build Scaffold test Docker image
   cmd: |

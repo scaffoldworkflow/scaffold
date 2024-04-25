@@ -40,7 +40,7 @@ func CreateInput(ctx *gin.Context) {
 	}
 	if c.Groups != nil {
 		if !validateUserGroup(ctx, c.Groups) {
-			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusForbidden)
 		}
 	}
 
@@ -170,6 +170,11 @@ func GetInputByNames(ctx *gin.Context) {
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	if i == nil {
+		ctx.JSON(http.StatusOK, input.Input{})
 		return
 	}
 

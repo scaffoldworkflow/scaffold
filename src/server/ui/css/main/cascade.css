@@ -9,6 +9,7 @@
 /* import search-bar.css */
 /* import appearance.css */
 /* import arrows.css */
+/* import checkbox.css */
 
 .cascade-title {
     display:flex;
@@ -117,4 +118,14 @@
     width: auto;
     right: 20px;
     display: inline;
+}
+
+.accordion-icon {
+    position: absolute;
+    width: auto;
+    left: 16px;
+    margin-right:16px;
+    margin-top: 4px;
+    margin-left: 16px;
+    display: inline-block;
 }

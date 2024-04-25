@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"scaffold/server/cascade"
 	"scaffold/server/state"
@@ -39,7 +40,7 @@ func CreateState(ctx *gin.Context) {
 	}
 	if c.Groups != nil {
 		if !validateUserGroup(ctx, c.Groups) {
-			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusUnauthorized)
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusForbidden)
 		}
 	}
 
@@ -170,6 +171,11 @@ func GetStateByNames(ctx *gin.Context) {
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	if s == nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("State %s/%s does not exist", cn, tn)})
 		return
 	}
 

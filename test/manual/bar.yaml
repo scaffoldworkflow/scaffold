@@ -1,0 +1,57 @@
+vrersion: v1
+name: bar
+groups:
+  - bar
+inputs:
+  - name: foo
+    description: foo
+    type: text
+    default: foo
+tasks:
+- name: a
+  image: ubuntu:20.04
+  run: |
+    echo "a"
+    export foo="bar"
+    sleep 10
+  store:
+    env:
+      - foo 
+- name: b
+  image: ubuntu:20.04
+  run: |
+    echo "b"
+  depends_on:
+    success:
+      - a
+  cron: '*/15 * * * * *'
+- name: c
+  image: ubuntu:20.04
+  run: |
+    echo "c"
+  depends_on:
+    error:
+      - b
+- name: d
+  image: ubuntu:20.04
+  run: |
+    echo "d"
+  depends_on:
+    error:
+      - a
+- name: e
+  image: ubuntu:20.04
+  run: |
+    echo "e"
+  depends_on:
+    success:
+      - d
+- name: f_this_has_a_really_long_name_thats_too_long
+  image: ubuntu:20.04
+  run: |
+    echo "f"
+  depends_on:
+    success:
+      - e
+  cron: '*/60 * * * * *'
+  auto_execute: true

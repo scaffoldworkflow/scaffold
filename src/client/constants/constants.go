@@ -30,3 +30,5 @@ const LOG_LEVEL_TRACE_NUM = 7
 
 const LOG_FORMAT_JSON = "json"
 const LOG_FORMAT_CONSOLE = "console"
+
+const ALL_CONTEXTS = "all"

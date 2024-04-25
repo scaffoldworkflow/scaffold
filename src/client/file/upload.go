@@ -26,7 +26,7 @@ func DoUpload(profile, cascade, inPath string) {
 	writer.Close()
 
 	httpClient := &http.Client{}
-	requestURL := fmt.Sprintf("%s/api/v1/datastore/file/%s", uri, cascade)
+	requestURL := fmt.Sprintf("%s/api/v1/file/%s", uri, cascade)
 	req, _ := http.NewRequest("POST", requestURL, body)
 	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", p.APIToken))
 	req.Header.Add("Content-Type", writer.FormDataContentType())

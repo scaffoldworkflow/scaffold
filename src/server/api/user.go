@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"scaffold/server/user"
 	"scaffold/server/utils"
@@ -120,6 +121,11 @@ func GetUserByUsername(ctx *gin.Context) {
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	if u == nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("User %s does not exist", username)})
 		return
 	}
 

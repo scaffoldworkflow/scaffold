@@ -22,7 +22,7 @@ func DoDownload(profile, cascade, name, outPath string) {
 
 	// Get the data
 	httpClient := &http.Client{}
-	requestURL := fmt.Sprintf("%s/api/v1/datastore/file/%s/%s", uri, cascade, name)
+	requestURL := fmt.Sprintf("%s/api/v1/file/%s/%s/download", uri, cascade, name)
 	req, _ := http.NewRequest("GET", requestURL, nil)
 	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", p.APIToken))
 	req.Header.Set("Content-Type", "application/json")

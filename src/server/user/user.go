@@ -8,33 +8,34 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 
 	"scaffold/server/mongodb"
+
+	logger "github.com/jfcarter2358/go-logger"
 )
 
 type User struct {
-	Username          string     `json:"username" bson:"username"`
-	Password          string     `json:"password" bson:"password"`
-	GivenName         string     `json:"given_name" bson:"given_name"`
-	FamilyName        string     `json:"family_name" bson:"family_name"`
-	Email             string     `json:"email" bson:"email"`
-	ResetToken        string     `json:"reset_token" bson:"reset_token"`
-	ResetTokenCreated string     `json:"reset_token_created" bson:"reset_token_created"`
-	Created           string     `json:"created" bson:"created"`
-	Updated           string     `json:"updated" bson:"updated"`
-	LoginToken        string     `json:"login_token" bson:"login_token"`
-	APITokens         []APIToken `json:"api_tokens" bson:"api_tokens"`
-	Groups            []string   `json:"groups" bson:"groups"`
-	Roles             []string   `json:"roles" bson:"roles"`
+	Username          string     `json:"username" bson:"username" yaml:"username"`
+	Password          string     `json:"password" bson:"password" yaml:"password"`
+	GivenName         string     `json:"given_name" bson:"given_name" yaml:"given_name"`
+	FamilyName        string     `json:"family_name" bson:"family_name" yaml:"family_name"`
+	Email             string     `json:"email" bson:"email" yaml:"email"`
+	ResetToken        string     `json:"reset_token" bson:"reset_token" yaml:"reset_token"`
+	ResetTokenCreated string     `json:"reset_token_created" bson:"reset_token_created" yaml:"reset_token_created"`
+	Created           string     `json:"created" bson:"created" yaml:"created"`
+	Updated           string     `json:"updated" bson:"updated" yaml:"updated"`
+	LoginToken        string     `json:"login_token" bson:"login_token" yaml:"login_token"`
+	APITokens         []APIToken `json:"api_tokens" bson:"api_tokens" yaml:"api_tokens"`
+	Groups            []string   `json:"groups" bson:"groups" yaml:"groups"`
+	Roles             []string   `json:"roles" bson:"roles" yaml:"roles"`
 }
 
 type APIToken struct {
-	Name    string `json:"name" bson:"name"`
-	Token   string `json:"token" bson:"token"`
-	Created string `json:"created" bson:"created"`
+	Name    string `json:"name" bson:"name" yaml:"name"`
+	Token   string `json:"token" bson:"token" yaml:"token"`
+	Created string `json:"created" bson:"created" yaml:"created"`
 }
 
 func CreateUser(u *User) error {
@@ -42,7 +43,11 @@ func CreateUser(u *User) error {
 	u.Created = currentTime.Format("2006-01-02T15:04:05Z")
 	u.Updated = currentTime.Format("2006-01-02T15:04:05Z")
 
-	if _, err := GetUserByUsername(u.Username); err == nil {
+	uu, err := GetUserByUsername(u.Username)
+	if err != nil {
+		return fmt.Errorf("error getting users: %s", err.Error())
+	}
+	if uu != nil {
 		return fmt.Errorf("user already exists with username %s", u.Username)
 	}
 
@@ -88,14 +93,25 @@ func GetAllUsers() ([]*User, error) {
 func GetUserByUsername(username string) (*User, error) {
 	filter := bson.M{"username": username}
 
+	allUsers, err := GetAllUsers()
+	if err != nil {
+		logger.Errorf("", "Unable to get all users")
+		return nil, err
+	}
+	logger.Debugf("", "All users: %v", allUsers)
+
+	logger.Debugf("", "Searching for username %s with filter %v", username, filter)
+
 	users, err := FilterUsers(filter)
+
+	logger.Debugf("", "Got users: %v", users)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if len(users) == 0 {
-		return nil, fmt.Errorf("no user found with username %s", username)
+		return nil, nil
 	}
 
 	if len(users) > 1 {
@@ -309,6 +325,7 @@ func FilterUsers(filter interface{}) ([]*User, error) {
 		if err != nil {
 			return users, err
 		}
+		logger.Tracef("", "Found user: %s", u.Username)
 
 		users = append(users, &u)
 	}
@@ -320,16 +337,13 @@ func FilterUsers(filter interface{}) ([]*User, error) {
 	// once exhausted, close the cursor
 	cur.Close(ctx)
 
-	if len(users) == 0 {
-		return users, mongo.ErrNoDocuments
-	}
-
 	return users, nil
 }
 
 func VerifyAdmin() error {
 	user, _ := GetUserByUsername(config.Config.Admin.Username)
 
+	logger.Debugf("", "No user found for admin")
 	if user != nil {
 		return nil
 	}
@@ -348,7 +362,13 @@ func VerifyAdmin() error {
 		Roles:             []string{"admin"},
 	}
 
+	logger.Infof("", "Creating admin user")
+
 	err := CreateUser(u)
+
+	if err != nil {
+		logger.Errorf("", "Could not create admin user: %s", err.Error())
+	}
 
 	return err
 }
@@ -365,6 +385,10 @@ func VerifyUser(username, password string) (bool, error) {
 	u, err := GetUserByUsername(username)
 	if err != nil {
 		return false, err
+	}
+
+	if u == nil {
+		return false, fmt.Errorf("no user found that matches credentials")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))

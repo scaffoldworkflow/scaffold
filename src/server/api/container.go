@@ -7,7 +7,8 @@ import (
 	"net/http"
 	"scaffold/server/auth"
 	"scaffold/server/container"
-	"scaffold/server/logger"
+
+	logger "github.com/jfcarter2358/go-logger"
 
 	"github.com/gin-gonic/gin"
 )

@@ -3,34 +3,40 @@ package manager
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"scaffold/server/auth"
+	"scaffold/server/bulwark"
 	"scaffold/server/cascade"
 	"scaffold/server/config"
 	"scaffold/server/constants"
+	scron "scaffold/server/cron"
 	"scaffold/server/filestore"
 	"scaffold/server/health"
-	"scaffold/server/logger"
 	"scaffold/server/mongodb"
+	"scaffold/server/msg"
 	"scaffold/server/proxy"
 	"scaffold/server/state"
+	"scaffold/server/task"
 	"scaffold/server/user"
 	"scaffold/server/utils"
-	"strings"
 	"time"
+
+	logger "github.com/jfcarter2358/go-logger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/mux"
 )
 
-var InProgress = map[string]map[string]string{}
-var ToCheck = map[string]map[string]string{}
+var toKill []string
 
 func Run() {
 	mongodb.InitCollections()
 	filestore.InitBucket()
+	bulwark.QueueCreate(config.Config.ManagerQueueName)
+	bulwark.QueueCreate(config.Config.WorkerQueueName)
+	bulwark.BufferCreate(config.Config.KillBufferName)
 
 	// r := http.NewServeMux()
 	r := mux.NewRouter()
@@ -62,349 +68,440 @@ func Run() {
 		}
 	}()
 
+	toKill = make([]string, 0)
+
 	health.IsHealthy = true
 
-	user.VerifyAdmin()
-	auth.Nodes = make([]auth.NodeObject, 0)
-	auth.UnknownNodes = make(map[string]auth.DegradedNodeObject)
-	auth.UnknownNodes = make(map[string]auth.DegradedNodeObject)
+	if err := user.VerifyAdmin(); err != nil {
+		logger.Fatalf("", "Unable to create admin user: %s", err.Error())
+	}
+	auth.Nodes = make(map[string]auth.NodeObject)
 
 	health.IsReady = true
 
-	InProgress = make(map[string]map[string]string)
-	ToCheck = make(map[string]map[string]string)
+	go healthCheck()
 
+	go bulwark.RunManager(QueueDataReceive)
+	go bulwark.RunWorker(nil)
+	go bulwark.RunBuffer(BufferDataReceive)
+
+	go scron.Start()
+
+	queueCheck()
+}
+
+func QueueDataReceive(endpoint, data string) error {
+	if len(data) == 0 {
+		return nil
+	}
+	var m msg.RunMsg
+	// bytes, err := json.Marshal([]byte(data))
+	// if err != nil {
+	// 	logger.Errorf("", "Error processing queue message: %s", err.Error())
+	// 	return err
+	// }
+	if err := json.Unmarshal([]byte(data), &m); err != nil {
+		logger.Errorf("", "Error processing queue message: %s", err.Error())
+		return err
+	}
+	switch m.Status {
+	case constants.STATE_STATUS_SUCCESS:
+		logger.Debugf("", "Task %s has completed with status success", m.Task)
+		stateChange(m.Cascade, m.Task, constants.STATE_STATUS_SUCCESS)
+		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_SUCCESS)
+		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS)
+	case constants.STATE_STATUS_ERROR:
+		logger.Debugf("", "Task %s has completed with status error", m.Task)
+		stateChange(m.Cascade, m.Task, constants.STATE_STATUS_ERROR)
+		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ERROR)
+		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS)
+	case constants.STATE_STATUS_KILLED:
+		logger.Debugf("", "Task %s has completed with status killed", m.Task)
+		id := fmt.Sprintf("%s-%s", m.Cascade, m.Task)
+		toKill = utils.Remove(toKill, id)
+		if err := bulwark.BufferSet(bulwark.BufferClient, toKill); err != nil {
+			logger.Errorf("", "Encountered error while updating buffer: %s", err.Error())
+			return err
+		}
+	}
+	return nil
+}
+
+func BufferDataReceive(endpoint, data string) error {
+	// if len(data) == 0 {
+	// 	return nil
+	// }
+	// var m msg.RunMsg
+	// if err := json.Unmarshal([]byte(data), &m); err != nil {
+	// 	logger.Errorf("", "Error processing buffer message: %s", err.Error())
+	// 	return err
+	// }
+
+	// if m.Status == constants.STATE_STATUS_SUCCESS {
+	// 	logger.Debugf("", "Task %s has completed with success", m.Task)
+	// 	stateChange(m.Cascade, m.Task, constants.STATUS_TRIGGER_SUCCESS)
+	// 	stateChange(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS)
+	// } else if m.Status == constants.STATE_STATUS_ERROR {
+	// 	logger.Debugf("", "Task %s has completed with error", m.Task)
+	// 	stateChange(m.Cascade, m.Task, constants.STATUS_TRIGGER_ERROR)
+	// 	stateChange(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS)
+	// }
+	return nil
+}
+
+func queueCheck() {
 	for {
-		newNodes := []auth.NodeObject{}
-		for _, n := range auth.Nodes {
-			queryURL := fmt.Sprintf("%s://%s:%d/health/healthy", n.Protocol, n.Host, n.Port)
-			logger.Debugf("", "Querying %s", queryURL)
-			resp, err := http.Get(queryURL)
-			if err != nil {
-				auth.UnknownNodes[n.Host] = auth.DegradedNodeObject{
-					Node:  n,
-					Count: 1,
+		logger.Tracef("", "Sleeping...")
+		time.Sleep(time.Duration(config.Config.BulwarkCheckInterval) * time.Millisecond)
+		logger.Debugf("", "Worker manager queue")
+		bulwark.QueuePop(bulwark.ManagerClient)
+		// for _, id := range buffers {
+		// 	bulwark.BufferClient.Endpoint = fmt.Sprintf("%s/%s", bconst.ENDPOINT_TYPE_BUFFER, id)
+		// 	bulwark.BufferGet(bulwark.BufferClient)
+		// }
+	}
+}
+
+func healthCheck() {
+	for {
+		for key, n := range auth.Nodes {
+			if n.Ping > config.Config.HeartbeatBackoff {
+				ss, err := state.GetStatesByWorker(n.Name)
+				if err != nil {
+					logger.Errorf("", "Unable to get states by worker: %s", n.Name)
 				}
-				continue
-			}
-			logger.Debugf("", "Got response code %d", resp.StatusCode)
-			if resp.StatusCode >= 400 {
-				auth.UnhealthyNodes[n.Host] = auth.DegradedNodeObject{
-					Node:  n,
-					Count: 1,
-				}
-				continue
-			}
-			newNodes = append(newNodes, n)
-		}
-		// Check unhealthy nodes for status change
-		toDelete := []string{}
-		for _, n := range auth.UnhealthyNodes {
-			queryURL := fmt.Sprintf("%s://%s:%d/health/healthy", n.Node.Protocol, n.Node.Host, n.Node.Port)
-			logger.Debugf("", "Querying %s", queryURL)
-			resp, err := http.Get(queryURL)
-			logger.Debugf("", "Got response code %d", resp.StatusCode)
-			if err != nil {
-				auth.UnknownNodes[n.Node.Host] = auth.DegradedNodeObject{
-					Node:  n.Node,
-					Count: 1,
-				}
-				toDelete = append(toDelete, n.Node.Host)
-				continue
-			}
-			if resp.StatusCode >= 400 {
-				continue
-			}
-			newNodes = append(newNodes, n.Node)
-			toDelete = append(toDelete, n.Node.Host)
-		}
-
-		for _, key := range toDelete {
-			delete(auth.UnhealthyNodes, key)
-		}
-
-		// Check unknown nodes for status change
-		toDelete = []string{}
-		for _, n := range auth.UnknownNodes {
-			queryURL := fmt.Sprintf("%s://%s:%d/health/healthy", n.Node.Protocol, n.Node.Host, n.Node.Port)
-			logger.Debugf("", "Querying %s", queryURL)
-			resp, err := http.Get(queryURL)
-			logger.Debugf("", "Got response code %d", resp.StatusCode)
-			if err != nil {
-				val := auth.UnknownNodes[n.Node.Host]
-				val.Count += 1
-				if val.Count >= config.Config.HealthCheckLimit {
-					toDelete = append(toDelete, n.Node.Host)
-				}
-				auth.UnknownNodes[n.Node.Host] = val
-				continue
-			}
-			if resp.StatusCode >= 400 {
-				auth.UnhealthyNodes[n.Node.Host] = auth.DegradedNodeObject{
-					Node:  n.Node,
-					Count: 1,
-				}
-				toDelete = append(toDelete, n.Node.Host)
-				continue
-			}
-			newNodes = append(newNodes, n.Node)
-			toDelete = append(toDelete, n.Node.Host)
-		}
-
-		for _, key := range toDelete {
-			delete(auth.UnknownNodes, key)
-		}
-
-		auth.Nodes = newNodes
-
-		cascades, err := cascade.GetAllCascades()
-		if err == nil {
-			for _, c := range cascades {
-				taskMap := map[string]string{}
-				if _, ok := ToCheck[c.Name]; ok {
-					taskMap = ToCheck[c.Name]
-				}
-				for _, t := range c.Tasks {
-					for key := range taskMap {
-						if strings.HasPrefix(key, t.Name) {
-							parts := strings.Split(key, ".")
-							hostPort := taskMap[key]
-							httpClient := http.Client{}
-							requestURL := fmt.Sprintf("%s/api/v1/state/%s/%s/%s", hostPort, c.Name, t.Name, parts[1])
-							req, _ := http.NewRequest("GET", requestURL, nil)
-							req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
-							req.Header.Set("Content-Type", "application/json")
-							resp, err := httpClient.Do(req)
-
-							if err != nil {
-								logger.Errorf("", "Error getting run state %s.%s: %s", c.Name, t.Name, err.Error())
-								continue
-							}
-							if resp.StatusCode == http.StatusOK {
-								//Read the response body
-								body, err := ioutil.ReadAll(resp.Body)
-								if err != nil {
-									logger.Errorf("", "Error reading body: %s", err.Error())
-									continue
-								}
-								var s state.State
-								var temp map[string]interface{}
-								json.Unmarshal(body, &temp)
-
-								tempBytes, _ := json.Marshal(temp)
-								json.Unmarshal(tempBytes, &s)
-
-								state.UpdateStateByNames(c.Name, t.Name, &s)
-
-								logger.Tracef("", "Got state %s", s.Status)
-
-								if s.Status == constants.STATE_STATUS_SUCCESS {
-									logger.Debugf("", "Task %s has completed with success, removing from InProgress", key)
-									triggerDepends(c, t.Name, constants.STATUS_TRIGGER_SUCCESS)
-									triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ALWAYS)
-									delete(InProgress[c.Name], key)
-									delete(ToCheck[c.Name], key)
-								} else if s.Status == constants.STATE_STATUS_ERROR {
-									logger.Debugf("", "Task %s has completed with error, removing from InProgress", key)
-									triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ERROR)
-									triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ALWAYS)
-									delete(ToCheck[c.Name], key)
-								}
-
-								resp.Body.Close()
-							}
-						}
-					}
-					checkStateName := fmt.Sprintf("SCAFFOLD_CHECK-%s", t.Name)
-					for key := range taskMap {
-						if strings.HasPrefix(key, checkStateName) {
-							parts := strings.Split(key, ".")
-							hostPort := taskMap[key]
-							httpClient := http.Client{}
-							requestURL := fmt.Sprintf("%s/api/v1/state/%s/%s/%s", hostPort, c.Name, checkStateName, parts[1])
-							req, _ := http.NewRequest("GET", requestURL, nil)
-							req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
-							req.Header.Set("Content-Type", "application/json")
-							resp, err := httpClient.Do(req)
-
-							if err != nil {
-								logger.Errorf("", "Error getting run state %s.%s: %s", c.Name, checkStateName, err.Error())
-								continue
-							}
-							if resp.StatusCode == http.StatusOK {
-								//Read the response body
-								body, err := ioutil.ReadAll(resp.Body)
-								if err != nil {
-									logger.Errorf("", "Error reading body: %s", err.Error())
-									continue
-								}
-								var s state.State
-								var temp map[string]interface{}
-								json.Unmarshal(body, &temp)
-
-								logger.Debugf("", "Raw worker state: %v", temp)
-
-								tempBytes, _ := json.Marshal(temp)
-								json.Unmarshal(tempBytes, &s)
-
-								logger.Debugf("", "Got state from worker: %v", &s)
-
-								state.UpdateStateByNames(c.Name, checkStateName, &s)
-
-								if s.Status == constants.STATE_STATUS_SUCCESS {
-									logger.Debugf("", "Removing state %s from InProgress", checkStateName)
-									delete(InProgress[c.Name], key)
-									delete(ToCheck[c.Name], key)
-								}
-								if s.Status == constants.STATE_STATUS_ERROR {
-									ss, err := state.GetStateByNames(c.Name, t.Name)
-									if err != nil {
-										logger.Errorf("", "Issue getting state %s %s: %s", c.Name, t.Name, err.Error())
-										continue
-									}
-									ss.Status = constants.STATE_STATUS_ERROR
-									state.UpdateStateByNames(c.Name, t.Name, ss)
-									triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ERROR)
-									triggerDepends(c, t.Name, constants.STATUS_TRIGGER_ALWAYS)
-									delete(InProgress[c.Name], key)
-									delete(ToCheck[c.Name], key)
-								}
-
-								resp.Body.Close()
-							}
-						}
-					}
-					if t.Check.Interval > 0 {
-						s, err := state.GetStateByNames(c.Name, t.Name)
-						if err != nil {
-							logger.Errorf("", "Issue getting state %s %s: %s", c.Name, t.Name, err.Error())
-							continue
-						}
-
-						if s.Status != constants.STATE_STATUS_SUCCESS {
-							continue
-						}
-
-						if s.Finished == "" {
-							continue
-						}
-						currentTime := time.Now().UTC()
-						logger.Debugf("", "State finished: %s", s.Finished)
-						lastRun, _ := time.Parse("2006-01-02T15:04:05Z MST", fmt.Sprintf("%s UTC", s.Finished))
-
-						cs, err := state.GetStateByNames(c.Name, checkStateName)
-						if err == nil {
-							logger.Debugf("", "Found state for %s", checkStateName)
-							if cs.Finished != "" {
-								lastRun, _ = time.Parse("2006-01-02T15:04:05Z MST", fmt.Sprintf("%s UTC", cs.Finished))
-								logger.Debugf("", "Check state finished: %s", cs.Finished)
-								logger.Debugf("", "Check run is of status %s", cs.Status)
-							}
-							if cs.Status == constants.STATE_STATUS_RUNNING || cs.Status == constants.STATE_STATUS_WAITING {
-								logger.Debugf("", "Check run is of status %s", cs.Status)
-								continue
-							}
-						} else {
-							logger.Warnf("", "No state found for %s", checkStateName)
-						}
-
-						diff := int(currentTime.Sub(lastRun).Seconds())
-
-						if diff < t.Check.Interval {
-							continue
-						}
-
-						logger.Debugf("", "Triggering check run for %s %s", c.Name, t.Name)
-						httpClient := http.Client{}
-						requestURL := fmt.Sprintf("%s://localhost:%d/api/v1/run/%s/%s/check", config.Config.Protocol, config.Config.Port, c.Name, t.Name)
-						req, _ := http.NewRequest("POST", requestURL, nil)
-						req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
-						req.Header.Set("Content-Type", "application/json")
-						resp, err := httpClient.Do(req)
-						if err != nil {
-							logger.Error("", err.Error())
-							continue
-						}
-						if resp.StatusCode >= 400 {
-							logger.Errorf("", "Received trigger status code %d", resp.StatusCode)
-						}
+				for _, s := range ss {
+					switch s.Status {
+					case constants.STATE_STATUS_RUNNING:
+						DoKill(s.Cascade, s.Task)
+					case constants.STATE_STATUS_WAITING:
+						DoKill(s.Cascade, s.Task)
 					}
 				}
 			}
+			n.Ping += 1
+			auth.NodeLock.Lock()
+			auth.Nodes[key] = n
+			auth.NodeLock.Unlock()
 		}
 		time.Sleep(time.Duration(config.Config.HeartbeatInterval) * time.Millisecond)
 	}
 }
 
-func triggerDepends(c *cascade.Cascade, tn, status string) {
+func stateChange(cn, tn, status string) error {
+	ts, err := task.GetTasksByCascade(cn)
+	if err != nil {
+		logger.Errorf("", "Cannot change state for %s", cn)
+		return err
+	}
+	switch status {
+	case constants.STATE_STATUS_SUCCESS:
+		for _, t := range ts {
+			shouldExecute := false
+			for _, n := range t.DependsOn.Always {
+				if n == tn && t.AutoExecute {
+					shouldExecute = true
+					continue
+				}
+				s, err := state.GetStateByNames(cn, n)
+				if err != nil {
+					return err
+				}
+				if s.Status != constants.STATE_STATUS_ERROR && s.Status != constants.STATE_STATUS_SUCCESS {
+					return nil
+				}
+			}
+			for _, n := range t.DependsOn.Success {
+				if n == tn && t.AutoExecute {
+					shouldExecute = true
+					continue
+				}
+				s, err := state.GetStateByNames(cn, n)
+				if err != nil {
+					return err
+				}
+				if s.Status != constants.STATE_STATUS_SUCCESS {
+					return nil
+				}
+			}
+			if shouldExecute {
+				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
+					return err
+				}
+			}
+		}
+	case constants.STATE_STATUS_ERROR:
+		for _, t := range ts {
+			shouldExecute := false
+			for _, n := range t.DependsOn.Always {
+				if n == tn && t.AutoExecute {
+					shouldExecute = true
+					continue
+				}
+				s, err := state.GetStateByNames(cn, n)
+				if err != nil {
+					return err
+				}
+				if s.Status != constants.STATE_STATUS_ERROR && s.Status != constants.STATE_STATUS_SUCCESS {
+					return nil
+				}
+			}
+			for _, n := range t.DependsOn.Error {
+				if n == tn && t.AutoExecute {
+					shouldExecute = true
+					continue
+				}
+				s, err := state.GetStateByNames(cn, n)
+				if err != nil {
+					return err
+				}
+				if s.Status != constants.STATE_STATUS_ERROR {
+					return nil
+				}
+			}
+			if shouldExecute {
+				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
+					return err
+				}
+			}
+		}
+	case constants.STATE_STATUS_NOT_STARTED:
+		for _, t := range ts {
+			for _, n := range t.DependsOn.Always {
+				if n == tn {
+					s, err := state.GetStateByNames(cn, t.Name)
+					if err != nil {
+						return err
+					}
+					s.Status = constants.STATE_STATUS_NOT_STARTED
+					if err := state.UpdateStateByNames(cn, t.Name, s); err != nil {
+						return err
+					}
+					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
+						return err
+					}
+				}
+			}
+			for _, n := range t.DependsOn.Error {
+				if n == tn {
+					s, err := state.GetStateByNames(cn, t.Name)
+					if err != nil {
+						return err
+					}
+					s.Status = constants.STATE_STATUS_NOT_STARTED
+					if err := state.UpdateStateByNames(cn, t.Name, s); err != nil {
+						return err
+					}
+					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
+						return err
+					}
+				}
+			}
+			for _, n := range t.DependsOn.Success {
+				if n == tn {
+					s, err := state.GetStateByNames(cn, t.Name)
+					if err != nil {
+						return err
+					}
+					s.Status = constants.STATE_STATUS_NOT_STARTED
+					if err := state.UpdateStateByNames(cn, t.Name, s); err != nil {
+						return err
+					}
+					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func checkDeps(cn string, t *task.Task) (bool, error) {
+	for _, n := range t.DependsOn.Success {
+		s, err := state.GetStateByNames(cn, n)
+		if err != nil {
+			return false, err
+		}
+		if s.Status != constants.STATE_STATUS_SUCCESS {
+			return false, nil
+		}
+	}
+	for _, n := range t.DependsOn.Error {
+		s, err := state.GetStateByNames(cn, n)
+		if err != nil {
+			return false, err
+		}
+		if s.Status != constants.STATE_STATUS_ERROR {
+			return false, nil
+		}
+	}
+	for _, n := range t.DependsOn.Always {
+		s, err := state.GetStateByNames(cn, n)
+		if err != nil {
+			return false, err
+		}
+		if s.Status != constants.STATE_STATUS_SUCCESS && s.Status != constants.STATE_STATUS_ERROR {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func autoTrigger(cn, tn, status string) error {
+	logger.Debugf("", "Doing auto trigger for %s %s with status %s", cn, tn, status)
+	ts, err := task.GetTasksByCascade(cn)
+	if err != nil {
+		logger.Errorf("", "Cannot perform auto trigger for %s", cn)
+		return err
+	}
 	toTrigger := []string{}
-	states, _ := state.GetStatesByCascade(c.Name)
+
 	switch status {
 	case constants.STATUS_TRIGGER_SUCCESS:
-		for _, s := range states {
-			if s.Status == constants.STATE_STATUS_SUCCESS {
-				toTrigger = append(toTrigger, s.Task)
+		for _, t := range ts {
+			if utils.Contains(t.DependsOn.Success, tn) && t.AutoExecute {
+				trigger, err := checkDeps(cn, t)
+				if err != nil {
+					logger.Errorf("", "Error checking dependency states: %s", err.Error())
+					return err
+				}
+				if trigger {
+					toTrigger = append(toTrigger, t.Name)
+				}
 			}
 		}
 	case constants.STATUS_TRIGGER_ERROR:
-		for _, s := range states {
-			if s.Status == constants.STATE_STATUS_ERROR {
-				toTrigger = append(toTrigger, s.Task)
+		for _, t := range ts {
+			if utils.Contains(t.DependsOn.Error, tn) && t.AutoExecute {
+				trigger, err := checkDeps(cn, t)
+				if err != nil {
+					logger.Errorf("", "Error checking dependency states: %s", err.Error())
+					return err
+				}
+				if trigger {
+					toTrigger = append(toTrigger, t.Name)
+				}
 			}
 		}
 	case constants.STATUS_TRIGGER_ALWAYS:
-		for _, s := range states {
-			if s.Status == constants.STATE_STATUS_ERROR || s.Status == constants.STATE_STATUS_SUCCESS {
-				toTrigger = append(toTrigger, s.Task)
-			}
-		}
-	}
-	for _, t := range c.Tasks {
-		dependsOn := make([]string, 0)
-		switch status {
-		case constants.STATUS_TRIGGER_SUCCESS:
-			if t.DependsOn.Success == nil {
-				continue
-			}
-			dependsOn = append(dependsOn, t.DependsOn.Success...)
-		case constants.STATUS_TRIGGER_ERROR:
-			if t.DependsOn.Error == nil {
-				continue
-			}
-			dependsOn = append(dependsOn, t.DependsOn.Error...)
-		case constants.STATUS_TRIGGER_ALWAYS:
-			if t.DependsOn.Always == nil {
-				continue
-			}
-			dependsOn = append(dependsOn, t.DependsOn.Always...)
-		}
-		if utils.Contains(dependsOn, tn) {
-			shouldTrigger := true
-			for _, n := range dependsOn {
-				if !utils.Contains(toTrigger, n) {
-					shouldTrigger = false
-					break
+		for _, t := range ts {
+			if utils.Contains(t.DependsOn.Always, tn) && t.AutoExecute {
+				trigger, err := checkDeps(cn, t)
+				if err != nil {
+					logger.Errorf("", "Error checking dependency states: %s", err.Error())
+					return err
+				}
+				if trigger {
+					toTrigger = append(toTrigger, t.Name)
 				}
 			}
-			if !shouldTrigger || !t.AutoExecute {
-				continue
-			}
-			httpClient := http.Client{}
-			requestURL := fmt.Sprintf("%s://localhost:%d/api/v1/run/%s/%s", config.Config.Protocol, config.Config.Port, c.Name, t.Name)
-			req, _ := http.NewRequest("POST", requestURL, nil)
-			req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
-			req.Header.Set("Content-Type", "application/json")
-			resp, err := httpClient.Do(req)
-			if err != nil {
-				logger.Errorf("", "Depends run trigger error: %s", err.Error())
-				continue
-			}
-			if resp.StatusCode >= 400 {
-				logger.Errorf("", "Received trigger status code %d", resp.StatusCode)
-				panic(fmt.Sprintf("Received trigger status code %d", resp.StatusCode))
-			}
 		}
 	}
+	for _, t := range toTrigger {
+		if err := DoTrigger(cn, t); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func DoTrigger(cn, tn string) error {
+	c, err := cascade.GetCascadeByName(cn)
+	if err != nil {
+		return err
+	}
+
+	t, err := task.GetTaskByNames(cn, tn)
+	if err != nil {
+		return err
+	}
+
+	if t.Disabled {
+		return nil
+	}
+
+	for _, s := range t.DependsOn.Success {
+		ss, err := state.GetStateByNames(cn, s)
+		if err != nil {
+			return err
+		}
+		if ss.Status != constants.STATE_STATUS_SUCCESS {
+			return nil
+		}
+	}
+	for _, s := range t.DependsOn.Error {
+		ss, err := state.GetStateByNames(cn, s)
+		if err != nil {
+			return err
+		}
+		if ss.Status != constants.STATE_STATUS_SUCCESS {
+			return nil
+		}
+	}
+	for _, s := range t.DependsOn.Success {
+		ss, err := state.GetStateByNames(cn, s)
+		if err != nil {
+			return err
+		}
+		if ss.Status == constants.STATE_STATUS_NOT_STARTED {
+			return nil
+		}
+	}
+
+	s, err := state.GetStateByNames(cn, tn)
+	if err != nil {
+		return err
+	}
+	s.Status = constants.STATE_STATUS_WAITING
+	if err := state.UpdateStateByNames(cn, tn, s); err != nil {
+		return err
+	}
+
+	if err := DoKill(cn, tn); err != nil {
+		return err
+	}
+
+	m := msg.TriggerMsg{
+		Task:    tn,
+		Cascade: cn,
+		Action:  constants.ACTION_TRIGGER,
+		Groups:  c.Groups,
+		Number:  t.RunNumber + 1,
+	}
+
+	logger.Infof("", "Triggering run with message %v", m)
+	return bulwark.QueuePush(bulwark.WorkerClient, m)
+}
+
+func DoKill(cn, tn string) error {
+	// id := fmt.Sprintf("%s-%s", cn, tn)
+	// toKill = append(toKill, id)
+	// toKill = utils.RemoveDuplicateValues(toKill)
+	// return bulwark.BufferSet(bulwark.BufferClient, toKill)
+	logger.Tracef("", "Killing run %s.%s", cn, tn)
+	// return stateChange(cn, tn, constants.STATE_STATUS_KILLED)
+	// return state.UpdateStateKilledByNames(cn, tn, true)
+
+	for _, node := range auth.Nodes {
+		uri := fmt.Sprintf("%s://%s:%d", node.Protocol, node.Host, node.Port)
+		httpClient := &http.Client{}
+		requestURL := fmt.Sprintf("%s/api/v1/run/%s/%s", uri, cn, tn)
+		req, _ := http.NewRequest("DELETE", requestURL, nil)
+		req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			logger.Errorf("", "Encountered error killing run: %v", err)
+			return err
+		}
+		if resp.StatusCode >= 400 {
+			logger.Debugf("", "Got status code %d when trying to kill run", resp.StatusCode)
+			return fmt.Errorf("got status code %d when trying to kill run", resp.StatusCode)
+		}
+		logger.Debugf("", "Run kill successfully triggered at %s", uri)
+	}
+	return nil
 }
 
 func InputChangeStateChange(name string, changed []string) error {
@@ -412,75 +509,17 @@ func InputChangeStateChange(name string, changed []string) error {
 	if err != nil {
 		return err
 	}
-	for _, i := range changed {
-		for _, t := range c.Tasks {
-			ss, err := state.GetStateByNames(c.Name, t.Name)
-			if err == nil {
-				previousName := fmt.Sprintf("SCAFFOLD_PREVIOUS-%s", t.Name)
-				ss.Task = previousName
-				state.UpdateStateByNames(c.Name, previousName, ss)
-			}
-			s := &state.State{
-				Task:     t.Name,
-				Cascade:  c.Name,
-				Status:   constants.STATE_STATUS_NOT_STARTED,
-				Started:  "",
-				Finished: "",
-				Output:   "",
-				Number:   t.RunNumber,
-				Display:  make([]map[string]interface{}, 0),
-			}
-			if err := state.UpdateStateByNames(c.Name, s.Task, s); err != nil {
-				logger.Errorf("", "Cannot update state %s %s: %s", c.Name, t.Name, err.Error())
-				continue
-			}
+	for _, t := range c.Tasks {
+		for _, i := range changed {
 			if utils.Contains(utils.Keys(t.Inputs), i) {
-				SetDependsState(c, t.Name)
+				stateChange(name, t.Name, constants.STATE_STATUS_NOT_STARTED)
+				// state.CopyStatesByNames(name, t.Name, fmt.Sprintf("SCAFFOLD_PREVIOUS-%s", t.Name))
+				state.ClearStateByNames(name, t.Name, t.RunNumber)
+				break
 			}
 		}
 	}
 	return nil
-}
-
-func SetDependsState(c *cascade.Cascade, tn string) {
-	for _, t := range c.Tasks {
-		dependsOn := make([]string, 0)
-		if t.DependsOn.Success != nil {
-			dependsOn = append(dependsOn, t.DependsOn.Success...)
-		}
-		if t.DependsOn.Error != nil {
-			dependsOn = append(dependsOn, t.DependsOn.Error...)
-		}
-		if t.DependsOn.Always != nil {
-			dependsOn = append(dependsOn, t.DependsOn.Always...)
-		}
-		if utils.Contains(dependsOn, tn) {
-			if !utils.Contains(dependsOn, tn) {
-				continue
-			}
-			ss, err := state.GetStateByNames(c.Name, t.Name)
-			if err == nil {
-				previousName := fmt.Sprintf("SCAFFOLD_PREVIOUS-%s", t.Name)
-				ss.Task = previousName
-				state.UpdateStateByNames(c.Name, previousName, ss)
-			}
-			s := &state.State{
-				Task:     t.Name,
-				Cascade:  c.Name,
-				Status:   constants.STATE_STATUS_NOT_STARTED,
-				Started:  "",
-				Finished: "",
-				Output:   "",
-				Number:   t.RunNumber,
-				Display:  make([]map[string]interface{}, 0),
-			}
-			if err := state.UpdateStateByNames(c.Name, s.Task, s); err != nil {
-				logger.Errorf("", "Cannot update state %s %s: %s", c.Name, s.Task, err.Error())
-				continue
-			}
-			SetDependsState(c, s.Task)
-		}
-	}
 }
 
 //
@@ -493,20 +532,30 @@ func SetDependsState(c *cascade.Cascade, tn string) {
 //	@Success		200	{object}	object
 //	@Router			/health/status [get]
 func GetStatus(ctx *gin.Context) {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+	localAddress := conn.LocalAddr().(*net.UDPAddr)
+	ip := localAddress.IP.String()
+
 	nodes := make([]map[string]string, 0)
 	managerStatus := "healthy"
 	if !health.IsHealthy {
 		managerStatus = "degraded"
 	}
-	nodes = append(nodes, map[string]string{"name": config.Config.Host, "status": managerStatus, "version": constants.VERSION})
+	nodes = append(nodes, map[string]string{"name": config.Config.Host, "ip": ip, "status": managerStatus, "version": constants.VERSION})
 	for _, node := range auth.Nodes {
-		nodes = append(nodes, map[string]string{"name": node.Host, "status": "healthy", "version": node.Version})
-	}
-	for key, node := range auth.UnknownNodes {
-		nodes = append(nodes, map[string]string{"name": key, "status": "unknown", "version": node.Node.Version})
-	}
-	for key, node := range auth.UnhealthyNodes {
-		nodes = append(nodes, map[string]string{"name": key, "status": "degraded", "version": node.Node.Version})
+		if node.Ping < config.Config.PingHealthyThreshold {
+			nodes = append(nodes, map[string]string{"name": node.Name, "ip": node.Host, "status": "healthy", "version": node.Version})
+			continue
+		}
+		if node.Ping < config.Config.PingUnknownThreshold {
+			nodes = append(nodes, map[string]string{"name": node.Name, "ip": node.Host, "status": "unknown", "version": node.Version})
+			continue
+		}
+		nodes = append(nodes, map[string]string{"name": node.Name, "ip": node.Host, "status": "unhealthy", "version": node.Version})
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"nodes": nodes})

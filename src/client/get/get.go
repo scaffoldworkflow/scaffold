@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 	"scaffold/client/auth"
+	"scaffold/client/constants"
 	"scaffold/client/logger"
-	"scaffold/client/objects"
 	"scaffold/client/utils"
 	"strings"
 	"text/tabwriter"
@@ -20,12 +20,12 @@ func DoGet(profile, object, context string) {
 	uri := fmt.Sprintf("%s://%s:%s", p.Protocol, p.Host, p.Port)
 
 	logger.Debugf("", "Checking if object is valid")
-	objects := []string{"cascade", "datastore", "state", "task"}
+	objects := []string{"cascade", "datastore", "state", "task", "file", "user", "input"}
 
 	parts := strings.Split(object, "/")
 
 	if !utils.Contains(objects, parts[0]) {
-		logger.Fatalf("Invalid object type passed: '%s'. Valid object types are 'cascade', 'datastore', 'state', 'task'", object)
+		logger.Fatalf("", "Invalid object type passed: '%s'. Valid object types are %v", object, objects)
 	}
 
 	logger.Debugf("", "Getting context")
@@ -33,7 +33,7 @@ func DoGet(profile, object, context string) {
 		context = p.Cascade
 	}
 	if len(parts) == 2 {
-		if parts[0] != "cascade" && parts[0] != "datastore" {
+		if parts[0] != "cascade" && parts[0] != "datastore" && parts[0] != "user" {
 			object = fmt.Sprintf("%s/%s/%s", parts[0], context, parts[1])
 		}
 	}
@@ -54,6 +54,12 @@ func DoGet(profile, object, context string) {
 		listTasks(data, context)
 	case "datastore":
 		listDataStores(data)
+	case "file":
+		listFiles(data, context)
+	case "user":
+		listUsers(data)
+	case "input":
+		listInputs(data, context)
 	}
 }
 
@@ -81,7 +87,7 @@ func getJSON(p auth.ProfileObj, uri, object string) []byte {
 }
 
 func listCascades(data []byte) {
-	var cascades []objects.Cascade
+	var cascades []map[string]interface{}
 
 	err := json.Unmarshal(data, &cascades)
 	if err != nil {
@@ -91,13 +97,22 @@ func listCascades(data []byte) {
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
 	fmt.Fprintln(w, "NAME \tVERSION \tGROUPS \tCREATED \tUPDATED \t")
 	for _, c := range cascades {
-		fmt.Fprintln(w, fmt.Sprintf("%s  \t%s \t%s \t%s \t%s ", c.Name, c.Version, strings.Join(c.Groups, ","), c.Created, c.Updated))
+		name := c["name"].(string)
+		version := c["version"].(string)
+		groupList := c["groups"].([]interface{})
+		groups := []string{}
+		for _, g := range groupList {
+			groups = append(groups, g.(string))
+		}
+		created := c["created"].(string)
+		updated := c["updated"].(string)
+		fmt.Fprintf(w, "%s \t%s \t%s \t%s \t%s \n", name, version, groups, created, updated)
 	}
 	w.Flush()
 }
 
 func listDataStores(data []byte) {
-	var datastores []objects.DataStore
+	var datastores []map[string]interface{}
 
 	err := json.Unmarshal(data, &datastores)
 	if err != nil {
@@ -105,15 +120,18 @@ func listDataStores(data []byte) {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
-	fmt.Fprintln(w, "NAME \tCREATED \tUPDATED ")
+	fmt.Fprintln(w, "NAME \tCREATED \tUPDATED \t")
 	for _, d := range datastores {
-		fmt.Fprintln(w, fmt.Sprintf("%s \t%s \t%s ", d.Name, d.Created, d.Updated))
+		name := d["name"].(string)
+		created := d["created"].(string)
+		updated := d["updated"].(string)
+		fmt.Fprintf(w, "%s \t%s \t%s \n", name, created, updated)
 	}
 	w.Flush()
 }
 
 func listStates(data []byte, context string) {
-	var states []objects.State
+	var states []map[string]interface{}
 
 	err := json.Unmarshal(data, &states)
 	if err != nil {
@@ -123,15 +141,20 @@ func listStates(data []byte, context string) {
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
 	fmt.Fprintln(w, "TASK \tCASCADE \tSTATUS \tSTARTED \tFINISHED \t")
 	for _, s := range states {
-		if s.Cascade == context {
-			fmt.Fprintln(w, fmt.Sprintf("%s \t%s \t%s \t%s \t%s ", s.Task, s.Cascade, s.Status, s.Started, s.Finished))
+		cascade := s["cascade"].(string)
+		status := s["status"].(string)
+		task := s["task"].(string)
+		started := s["started"].(string)
+		finished := s["finished"].(string)
+		if cascade == context || context == constants.ALL_CONTEXTS {
+			fmt.Fprintf(w, "%s \t%s \t%s \t%s \t%s \n", task, cascade, status, started, finished)
 		}
 	}
 	w.Flush()
 }
 
 func listTasks(data []byte, context string) {
-	var tasks []objects.Task
+	var tasks []map[string]interface{}
 
 	err := json.Unmarshal(data, &tasks)
 	if err != nil {
@@ -144,8 +167,88 @@ func listTasks(data []byte, context string) {
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
 	fmt.Fprintln(w, "NAME \tCASCADE \tIMAGE \tRUN NUMBER \tUPDATED \t")
 	for _, t := range tasks {
-		if t.Cascade == context {
-			fmt.Fprintln(w, fmt.Sprintf("%s \t%s \t%s \t%d \t%s ", t.Name, t.Cascade, t.Image, t.RunNumber, t.Updated))
+		cascade := t["cascade"].(string)
+		name := t["name"].(string)
+		image := t["image"].(string)
+		runNumber := int(t["run_number"].(float64))
+		updated := t["updated"].(string)
+		if cascade == context || context == constants.ALL_CONTEXTS {
+			fmt.Fprintf(w, "%s \t%s \t%s \t%d \t%s \n", name, cascade, image, runNumber, updated)
+		}
+	}
+	w.Flush()
+}
+
+func listFiles(data []byte, context string) {
+	var files []map[string]interface{}
+
+	err := json.Unmarshal(data, &files)
+	if err != nil {
+		logger.Fatalf("", "Unable to marshal file JSON: %s", err.Error())
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
+	fmt.Fprintln(w, "NAME \tCASCADE \tUPDATED \t")
+	for _, f := range files {
+		cascade := f["cascade"].(string)
+		name := f["name"].(string)
+		updated := f["modified"].(string)
+		if cascade == context || context == constants.ALL_CONTEXTS {
+			fmt.Fprintf(w, "%s \t%s \t%s \n", name, cascade, updated)
+		}
+	}
+	w.Flush()
+}
+
+func listUsers(data []byte) {
+	var users []map[string]interface{}
+
+	err := json.Unmarshal(data, &users)
+	if err != nil {
+		logger.Fatalf("", "Unable to marshal users JSON: %s", err.Error())
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
+	fmt.Fprintln(w, "USERNAME \tGIVEN NAME \tFAMILY NAME \tEMAIL \tGROUPS \tROLES \tCREATED \tUPDATED \t")
+	for _, u := range users {
+		username := u["username"].(string)
+		givenName := u["given_name"].(string)
+		familyName := u["family_name"].(string)
+		groupList := u["groups"].([]interface{})
+		groups := []string{}
+		for _, g := range groupList {
+			groups = append(groups, g.(string))
+		}
+		roleList := u["roles"].([]interface{})
+		roles := []string{}
+		for _, r := range roleList {
+			roles = append(roles, r.(string))
+		}
+		created := u["created"].(string)
+		updated := u["updated"].(string)
+		email := u["email"].(string)
+		fmt.Fprintf(w, "%s \t%s \t%s \t%s \t%s \t%s \t%s \t%s \n", username, givenName, familyName, email, groups, roles, created, updated)
+	}
+	w.Flush()
+}
+
+func listInputs(data []byte, context string) {
+	var inputs []map[string]interface{}
+
+	err := json.Unmarshal(data, &inputs)
+	if err != nil {
+		logger.Fatalf("", "Unable to marshal input JSON: %s", err.Error())
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
+	fmt.Fprintln(w, "NAME \tCASCADE \tTYPE \tType \tDEFAULT \t")
+	for _, i := range inputs {
+		cascade := i["cascade"].(string)
+		name := i["name"].(string)
+		inputType := i["type"].(string)
+		inputDefault := i["default"].(string)
+		if cascade == context || context == constants.ALL_CONTEXTS {
+			fmt.Fprintf(w, "%s \t%s \t%s \t%s \n", name, cascade, inputType, inputDefault)
 		}
 	}
 	w.Flush()

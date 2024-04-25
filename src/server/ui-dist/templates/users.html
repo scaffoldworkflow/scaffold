@@ -1,0 +1,273 @@
+<!doctype html>
+<html style="height:100%;min-height:100%;">
+  <head>
+    <title>Scaffold</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <!-- add the icon -->
+    <link rel="icon" href="/static/img/favicon.png">
+    <!-- add w3 css -->
+    <link rel="stylesheet" type="text/css" href="https://www.w3schools.com/w3css/4/w3.css">
+    <!-- add jquery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- add fontawesome -->
+    <script src="https://kit.fontawesome.com/239a824854.js" crossorigin="anonymous"></script>
+    
+    <!-- Add tagify -->
+    <script src="https://unpkg.com/@yaireo/tagify"></script>
+    <script src="https://unpkg.com/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
+    <link href="https://unpkg.com/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
+    <!-- add custom css -->
+    <link rel="stylesheet" type="text/css" href="{{ .base_path }}/static/css/users.css">
+    <!-- add jquery form -->
+    <script src="https://malsup.github.io/jquery.form.js"></script> 
+    <!-- add custom js -->
+    <script src="{{ .base_path }}/static/js/users.js"></script>
+  </head>
+  <body class="light theme-base">
+    <div id="status-modal" class="w3-modal" style="z-index:999;">
+        <div class="w3-modal-content w3-animate-top w3-card-4 w3-round light theme-light w3-border theme-border-light w3-round">
+            <header class="w3-container scaffold-green">
+                <span onclick="closeModal('status-modal')" class="w3-button w3-display-topright">&times;</span>
+                <h4>System Status</h4>
+            </header>
+            <div class="w3-container">
+                <br>
+                <table class="w3-table light w3-border theme-border-light theme-table-striped" id="status-table">
+                </table>
+                <br>
+                <br>
+            </div>
+        </div>
+    </div>
+    
+    <div id="users-add-modal" class="w3-modal">
+        <div class="w3-modal-content w3-animate-top w3-card-4 w3-round light theme-light w3-border theme-border-light w3-round">
+            <header class="w3-container scaffold-green">
+                <span onclick="closeModal('users-add-modal')" class="w3-button w3-display-topright">&times;</span>
+                <h4>Add User</h4>
+            </header>
+            <div class="w3-container">
+                <br>
+                <label>Username</label>
+                <input class="w3-input w3-round light theme-light" type="text" id="users-add-username">
+                <label>Password</label>
+                <input class="w3-input w3-round light theme-light" type="password" id="users-add-password">
+                <label>Given Name</label>
+                <input class="w3-input w3-round light theme-light" type="text" id="users-add-given-name">
+                <label>Family Name</label>
+                <input class="w3-input w3-round light theme-light" type="text" id="users-add-family-name">
+                <label>Email</label>
+                <input class="w3-input w3-round light theme-light" type="text" id="users-add-email">
+                <label>Groups</label>
+                <div class="groups-card w3-round" id="tags">
+                    <input id="group-tags" value='[]' class="scaffoldTag" style="width:100%">
+                </div>
+                <label>Roles</label>
+                <!--
+                <input class="w3-input" type="text" id="role-to-add">
+                <br>
+                <div class="w3-button scaffold-green w3-round" onclick="addRole()">Add Role</div>
+                <br>
+                <br>
+                -->
+                <!--<div class="w3-card w3-container tag-container" id="role-card">-->
+                    <div class="roles-card w3-round" id="tags">
+                        <input id="role-tags" value='[{"value":"read"}]' class="scaffoldTag" style="width:100%">
+                    </div>
+                    <!--
+                    <div ondblclick="removeRole('read')" class="w3-tag w3-round scaffold-green user-role tag" style="padding:3px" id="role-read">
+                        read&nbsp;
+                    </div>
+                    -->
+                <!--</div>-->
+                <br>
+                <br>
+                <br>
+                <button class="w3-button scaffold-green w3-round w3-right" onclick="addUser()">Add User</button>
+                <button class="w3-button scaffold-red w3-round w3-right" style="margin-right:8px;" onclick="closeModal('users-add-modal')">Cancel</button>
+                <br>
+                <br>
+            </div>
+        </div>
+    </div>
+    
+    <div id="users-delete-modal" class="w3-modal">
+        <div class="w3-modal-content w3-animate-top w3-card-4 w3-round light theme-light w3-border theme-border-light w3-round">
+            <header class="w3-container scaffold-green">
+                <span onclick="closeModal('users-delete-modal')" class="w3-button w3-display-topright">&times;</span>
+                <h4>Delete User</h4>
+            </header>
+            <div class="w3-container">
+                <br>
+                <h4>Are you sure you want to delete the user "<span id="user-delete-username"></span>"?</h4>
+                <br>
+                <br>
+                <button class="w3-button scaffold-green w3-round w3-right" onclick="deleteUser()">Delete User</button>
+                <button class="w3-button scaffold-red w3-round w3-right" style="margin-right:8px;" onclick="closeModal('users-delete-modal')">Cancel</button>
+                <br>
+                <br>
+            </div>
+        </div>
+    </div>
+    
+    <div id="error-modal" class="w3-modal" style="z-index:1000;">
+        <div class="w3-modal-content w3-animate-top w3-card-4 w3-round light theme-light w3-border theme-border-light">
+            <header class="w3-container scaffold-red">
+                <span onclick="closeModal('error-modal')"
+                    class="w3-button w3-display-topright">&times;</span>
+                <h4>ERROR</h4>
+            </header>
+            <div class="w3-container">
+                <br>
+                <pre style="width:100%;height:400px;overflow-y:auto;" id="error-container">
+                </pre>
+                <br>
+                <br>
+                <button class="w3-button scaffold-green w3-round w3-right" onclick="closeModal('error-modal')">Okay</button>
+                <br>
+                <br>
+            </div>
+        </div>
+    </div>
+    
+    <div class="w3-sidebar w3-bar-block w3-card w3-border light theme-border-light theme-light sidebar" id="sidebar" style="z-index:996;left:-300px;">
+        <div class="w3-container w3-border-bottom scaffold-green w3-container sidebar-header">
+            <div class="w3-large w3-container w3-cell w3-cell-middle w3-left-align default-cursor sidebar-item">
+                <i class="fa-solid fa-bars w3-large" onclick="toggleSidebar()"></i>
+            </div>
+            <div class="w3-large w3-container w3-cell w3-cell-middle w3-left-align sidebar-item">
+                <h3>Scaffold</h3>
+            </div>
+        </div>
+        <a href="/ui/cascades" class="w3-bar-item w3-button light scaffold-hover-green w3-border-bottom theme-border-light">
+            <i class="fa-solid fa-code"></i> Cascades
+        </a>
+        <a href="/ui/files" class="w3-bar-item w3-button light scaffold-hover-green w3-border-bottom theme-border-light">
+            <i class="fa-solid fa-file"></i> Files
+        </a>
+        <a href="/ui/users" class="w3-bar-item w3-button light scaffold-hover-green w3-border-bottom theme-border-light">
+            <i class="fa-solid fa-users"></i> Users
+        </a>
+        {{ if .cascade.Links }}
+        <div class="w3-container w3-border-bottom scaffold-green w3-container sidebar-header">
+            <div class="w3-large w3-container w3-cell w3-cell-middle w3-left-align sidebar-item">
+                <h5>Cascade Links</h5>
+            </div>
+        </div>
+        {{ end }}
+        {{ range $key, $value := .cascade.Links }}
+            <a href="{{ $value }}" class="w3-bar-item w3-button light scaffold-hover-green w3-border-bottom theme-border-light">
+                <i class="fa-solid fa-link"></i> {{ $key }}
+            </a>
+        {{ end }}
+        <div class="w3-border-top theme-border-light w3-container sidebar-copyright" style="position:absolute;bottom:0px;">
+            &copy; 2024 John Carter v{{ .version }}
+            <i class="fa-solid fa-palette w3-right sidebar-theme scaffold-text-green" onclick="toggleTheme()" id="theme-button"></i>
+            <i class="fa-solid fa-circle-question w3-right sidebar-theme scaffold-text-green" onclick="showStatus()" id="status-icon" style="margin-right:8px;"></i>
+            <a class="fa-solid fa-book w3-right sidebar-theme scaffold-text-green" href="/swagger/index.html" id="docs-icon" style="margin-right:8px;"></a>
+        </div>
+    </div>
+    
+    <div class="main">
+      <div class="w3-bar light theme-light w3-card-4 w3-border theme-border-light w3-padding">
+          <div class="w3-large light theme-light w3-container w3-cell w3-cell-middle w3-left-align default-cursor breadcrumb" style="display:inline-block;margin-top:10px;">
+              <i class="fa-solid fa-bars w3-large" onclick="toggleSidebar()"></i>
+          </div>
+          <div class="w3-large light theme-light w3-container w3-cell w3-cell-middle w3-right-align breadcrumb" style="display:inline-block;margin-top:10px;">
+              <a href="/ui/users" class="light theme-text">Users</a>
+          </div>
+          <div class="w3-dropdown-click light theme-light w3-container" style="float:right;margin-right:8px;margin-top:2px;">
+              <i class="fa-solid fa-circle-user pointer-cursor w3-xxxlarge light theme-light" onclick="toggleMenu()"></i>
+              <div class="w3-dropdown-content w3-bar-block w3-round" style="position:absolute;right:40px;top:56px;background-color: transparent;" id="user-menu">
+                  <div class="light theme-light w3-border">
+                      <a href="/auth/logout" class="w3-bar-item w3-button light theme-light scaffold-hover-green" style="position:relative;z-index:100">Logout</a>
+                  </div>
+              </div>
+          </div>
+          <div class="w3-large light theme-light w3-container w3-cell breadcrumb" style="float:right;margin-top:10px;">
+              <span class="light theme-text">{{ .family_name }}, {{ .given_name }}</span>
+          </div>
+      </div>
+      
+      <div class="contents w3-container">
+        <br>
+        <div class="card-container w3-container">
+            <div class="w3-card-4 w3-round light theme-light w3-border theme-border-light">
+                <div class="w3-container scaffold-green w3-round user-title">
+                    <h4>Users</h4>
+                    <input id="search" class="w3-input w3-round search-bar light theme-light" type="text" name="search" placeholder="Search Users" oninput="render()">
+                </div>
+                <table class="w3-table light w3-border theme-border-light theme-table-striped" id="users-table">
+                    <tr>
+                        <th class="table-title w3-medium scaffold-text-green">
+                            <span class="table-title-text">Username</span>
+                        </th>
+                        <th class="table-title w3-medium scaffold-text-green">
+                            <span class="table-title-text">Email</span>
+                        </th>
+                        <th class="table-title w3-medium scaffold-text-green">
+                            <span class="table-title-text">Given Name</span>
+                        </th>
+                        <th class="table-title w3-medium scaffold-text-green">
+                            <span class="table-title-text">Family Name</span>
+                        </th>
+                        <th class="table-title w3-medium scaffold-text-green">
+                            <span class="table-title-text">Roles</span>
+                        </th>
+                        <th class="table-title w3-medium scaffold-text-green">
+                            <span class="table-title-text">Groups</span>
+                        </th>
+                        <th>
+                            {{ if .is_admin }}
+                            <div class="w3-round w3-button scaffold-green" onclick="openModal('users-add-modal')">Create New</div>
+                            {{ end }}
+                        </th>
+                    </tr>
+                    {{ range .users }}
+                        <tr id="users-row-{{ .Username }}" class="table-show">
+                            <td>{{ .Username }}</td>
+                            <td>{{ .Email }}</td>
+                            <td>{{ .GivenName }}</td>
+                            <td>{{ .FamilyName }}</td>
+                            <td>
+                                {{ range .Roles }}
+                                    <div class="w3-tag w3-round scaffold-green" style="padding:3px">
+                                    {{ . }}
+                                    </div>
+                                {{ end }}
+                            </td>
+                            <td>
+                                {{ range .Groups }}
+                                    <div class="w3-tag w3-round scaffold-green" style="padding:3px">
+                                    {{ . }}
+                                    </div>
+                                {{ end }}
+                            </td>
+                            <td class="table-link-cell">
+                                <div id="user-edit-button" class="card-button light" style="margin-right:4px;">
+                                    <a href="/ui/user/{{ .Username }}" class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;">
+                                        <i class="fa-solid fa-pencil"></i>
+                                    </a>
+                                </div>
+                                {{ if $.is_admin }}
+                                {{ if not (eq .Username $.admin_username)}}
+                                <div id="user-delete-button" class="card-button light" style="margin-right:4px;">
+                                    <i class="fa-solid fa-tras" onclick="openDeleteModal('{{ .Username }}')"></i>
+                                </div>
+                                {{ end }}
+                                {{ end }}
+                            </td>
+                        </tr>
+                    {{ end }}
+                </table>
+            </div>
+            
+        </div>
+        <br>
+      </div>
+    </div>
+    <div class="full-page darken" id="page-darken" style="opacity:0;"></div>
+    <div id="spinner"></div>
+  </body>
+</html>

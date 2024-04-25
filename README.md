@@ -228,7 +228,7 @@ Infrastructure management is an interesting problem to tackle. Many organization
 
     - __Miscellaneous__
 
-        - [ ] Log level configuration
+        - [x] Log level configuration
         - [x] CLI version command
         - [x] CLI get Scaffold version
 
@@ -355,7 +355,7 @@ Infrastructure management is an interesting problem to tackle. Many organization
 
     - __Logging__
         
-        - [ ] Configure log format
+        - [x] Configure log format
 
 ### v0.2.0
 
@@ -368,7 +368,11 @@ Infrastructure management is an interesting problem to tackle. Many organization
 
         - [ ] Move task status to right slide in
         - [ ] Change auto-execute from cascade page
-
-    -  __Worker Improvements__
-
-        - [ ] Check task kill ability
+        - [ ] Upload cascade from cascades page
+            - [ ] Create new on non-existing
+            - [ ] Upgrade on existing
+        - [ ] Delete cascade from cascades page
+    
+    - __Cascade Improvements__
+        
+        - [ ] Inputs should update when cascades are updated

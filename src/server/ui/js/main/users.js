@@ -62,6 +62,12 @@ function getUsers() {
         type: "GET",
         success: function (result) {
             users = result
+        },
+        error: function(result) {
+            console.log(result)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
         }
     });
 }
@@ -156,6 +162,9 @@ function addUser() {
         error: function(response) {
             closeModal('users-delete-modal');
             console.log(response)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
             $("#page-darken").css("opacity", "0")
@@ -189,6 +198,9 @@ function deleteUser() {
         error: function(response) {
             closeModal('users-delete-modal');
             console.log(response)
+            if (result.status == 401) {
+                window.location.href = "/ui/login";
+            }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
             $("#page-darken").css("opacity", "0")

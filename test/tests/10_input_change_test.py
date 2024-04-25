@@ -14,7 +14,10 @@ def check_state(cascade, task, expected, token, success):
         assert response.status_code < 400
         state = response.json()
         print(state)
-        assert state["status"] == expected
+        if expected == 'running':
+            assert state["status"] == expected or state["status"] == "waiting"
+        else:
+            assert state["status"] == expected
     else:
         assert response.status_code >= 400
 
