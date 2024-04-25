@@ -71,6 +71,10 @@ github.com/jfcarter2358/bulwarkmp v0.0.0-20231219154552-c77212055dee h1:+WtGeyR3
 github.com/jfcarter2358/bulwarkmp v0.0.0-20231219154552-c77212055dee/go.mod h1:zuSuKclc28cGOzVJGeGTU83oi2QBrcUnjXNLldDcfzY=
 github.com/jfcarter2358/bulwarkmp v0.0.0-20231219171728-1621a60fb5c6 h1:4q+n4+Vf2ZiGcxldROpz5VZoHSCAZcVLXQg5t4uKGxs=
 github.com/jfcarter2358/bulwarkmp v0.0.0-20231219171728-1621a60fb5c6/go.mod h1:zuSuKclc28cGOzVJGeGTU83oi2QBrcUnjXNLldDcfzY=
+github.com/jfcarter2358/bulwarkmp v0.0.0-20240411185518-9599df157b2f h1:IuPtgKc/x1fpuXwdZ2tQvtIzDode8cErQesuHteO3Fw=
+github.com/jfcarter2358/bulwarkmp v0.0.0-20240411185518-9599df157b2f/go.mod h1:zuSuKclc28cGOzVJGeGTU83oi2QBrcUnjXNLldDcfzY=
+github.com/jfcarter2358/bulwarkmp v0.0.0-20240411190056-31fe4a71cdb4 h1:Y+v/7Es+KVzp8As8XE1YV7SErYdRWJgRqFsP20nEDSc=
+github.com/jfcarter2358/bulwarkmp v0.0.0-20240411190056-31fe4a71cdb4/go.mod h1:zuSuKclc28cGOzVJGeGTU83oi2QBrcUnjXNLldDcfzY=
 github.com/jfcarter2358/go-logger v0.0.0-20231208162231-b1afadc15efd h1:JT+PUm6rB1CbHHSuo/h2daEDObODtYc02I11RFnpOe8=
 github.com/jfcarter2358/go-logger v0.0.0-20231208162231-b1afadc15efd/go.mod h1:Q7xEO64oLiEI6MZy+NxO//voPPnHiFRtY11Xtg8df5g=
 github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9YPoQUg=
@@ -116,10 +120,14 @@ github.com/pelletier/go-toml/v2 v2.0.9/go.mod h1:tJU2Z3ZkXwnxa4DPO899bsyIoywizdU
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/rabbitmq/amqp091-go v1.9.0 h1:qrQtyzB4H8BQgEuJwhmVQqVHB9O4+MNDJCCAcpc3Aoo=
+github.com/rabbitmq/amqp091-go v1.9.0/go.mod h1:+jPrT9iY2eLjRaMSRHUhc3z14E/l85kv/f+6luSD3pc=
 github.com/robfig/cron v1.2.0 h1:ZjScXvvxeQ63Dbyxy76Fj3AT3Ut0aKsyd2/tl3DTMuQ=
 github.com/robfig/cron v1.2.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
 github.com/rogpeppe/go-internal v1.11.0 h1:cWPaGQEPrBb5/AsnsZesgZZ9yb1OQ+GOISoDNXVBh4M=
 github.com/rogpeppe/go-internal v1.11.0/go.mod h1:ddIwULY96R17DhadqLgMfk9H9tvdUzkipdSkR5nkCZA=
+github.com/streadway/amqp v1.1.0 h1:py12iX8XSyI7aN/3dUT8DFIDJazNJsVJdxNVEpnQTZM=
+github.com/streadway/amqp v1.1.0/go.mod h1:WYSrTEYHOXHd0nwFeUXAe2G2hRnQT+deZJJf88uS9Bg=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=
@@ -153,6 +161,7 @@ github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d/go.mod h1:rHwXgn7Jul
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 go.mongodb.org/mongo-driver v1.12.0 h1:aPx33jmn/rQuJXPQLZQ8NtfPQG8CaqgLThFtqRb0PiE=
 go.mongodb.org/mongo-driver v1.12.0/go.mod h1:AZkxhPnFJUoH7kZlFkVKucV20K387miPfm7oimrSmK0=
+go.uber.org/goleak v1.2.1/go.mod h1:qlT2yGI9QafXHhZZLxlSuNsMw3FFLxBr+tBRlmO1xH4=
 golang.org/x/arch v0.0.0-20210923205945-b76863e36670/go.mod h1:5om86z9Hs0C8fWVUuoMHwpExlXzs5Tkyp9hOrfG7pp8=
 golang.org/x/arch v0.4.0 h1:A8WCeEWhLwPBKNbFi5Wv5UTCBx5zzubnXDlMOFAzFMc=
 golang.org/x/arch v0.4.0/go.mod h1:5om86z9Hs0C8fWVUuoMHwpExlXzs5Tkyp9hOrfG7pp8=

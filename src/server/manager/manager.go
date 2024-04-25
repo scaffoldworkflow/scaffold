@@ -180,12 +180,9 @@ func healthCheck() {
 				}
 			}
 			n.Ping += 1
-			for auth.NodeLock {
-				time.Sleep(250 * time.Millisecond)
-			}
-			auth.NodeLock = true
+			auth.NodeLock.Lock()
 			auth.Nodes[key] = n
-			auth.NodeLock = false
+			auth.NodeLock.Unlock()
 		}
 		time.Sleep(time.Duration(config.Config.HeartbeatInterval) * time.Millisecond)
 	}
@@ -495,7 +492,7 @@ func DoKill(cn, tn string) error {
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := httpClient.Do(req)
 		if err != nil {
-			logger.Fatalf("", "Encountered error killing run: %v", err)
+			logger.Errorf("", "Encountered error killing run: %v", err)
 			return err
 		}
 		if resp.StatusCode >= 400 {

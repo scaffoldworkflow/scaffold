@@ -215,7 +215,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 		}
 	}
 
-	podmanCommand := fmt.Sprintf("podman run --privileged -d %s --device /dev/net/tun:/dev/net/tun ", config.Config.PodmanOpts)
+	podmanCommand := fmt.Sprintf("podman run --rm --privileged -d %s --device /dev/net/tun:/dev/net/tun ", config.Config.PodmanOpts)
 
 	podmanCommand += fmt.Sprintf("--name %s ", containerName)
 	podmanCommand += fmt.Sprintf("--mount type=bind,src=%s,dst=/tmp/run ", runDir)
@@ -517,6 +517,15 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 	}
 
 	runDir := fmt.Sprintf("/tmp/run/%s/%s/%d", cName, tName, r.Number)
+
+	if _, err := os.Stat(runDir); err != nil {
+		if os.IsNotExist(err) {
+			// file does not exist
+		} else {
+			os.RemoveAll(runDir)
+		}
+	}
+
 	err = os.MkdirAll(runDir, 0755)
 	if err != nil {
 		logger.Errorf("", "Error creating run directory %s", err.Error())

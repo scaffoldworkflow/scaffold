@@ -17,14 +17,18 @@ var BufferClient *client.Client
 
 func RunManager(queueFunc func(string, string) error) {
 	ManagerClient = &client.Client{}
-	ManagerClient.New(fmt.Sprintf("%s/%s", bconst.VERSION_1, bconst.PROTOCOL_PLAIN), fmt.Sprintf("%s/%s", bconst.ENDPOINT_TYPE_QUEUE, config.Config.ManagerQueueName), nil, queueFunc)
-	ManagerClient.Start(config.Config.LogLevel, config.Config.LogFormat, config.Config.BulwarkConnectionString)
+	for {
+		ManagerClient.New(fmt.Sprintf("%s/%s", bconst.VERSION_1, bconst.PROTOCOL_PLAIN), fmt.Sprintf("%s/%s", bconst.ENDPOINT_TYPE_QUEUE, config.Config.ManagerQueueName), nil, queueFunc)
+		ManagerClient.Start(config.Config.LogLevel, config.Config.LogFormat, config.Config.BulwarkConnectionString)
+	}
 }
 
 func RunWorker(queueFunc func(string, string) error) {
 	WorkerClient = &client.Client{}
-	WorkerClient.New(fmt.Sprintf("%s/%s", bconst.VERSION_1, bconst.PROTOCOL_PLAIN), fmt.Sprintf("%s/%s", bconst.ENDPOINT_TYPE_QUEUE, config.Config.WorkerQueueName), nil, queueFunc)
-	WorkerClient.Start(config.Config.LogLevel, config.Config.LogFormat, config.Config.BulwarkConnectionString)
+	for {
+		WorkerClient.New(fmt.Sprintf("%s/%s", bconst.VERSION_1, bconst.PROTOCOL_PLAIN), fmt.Sprintf("%s/%s", bconst.ENDPOINT_TYPE_QUEUE, config.Config.WorkerQueueName), nil, queueFunc)
+		WorkerClient.Start(config.Config.LogLevel, config.Config.LogFormat, config.Config.BulwarkConnectionString)
+	}
 }
 
 func RunBuffer(bufferFunc func(string, string) error) {

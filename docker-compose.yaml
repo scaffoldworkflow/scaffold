@@ -104,6 +104,49 @@ services:
       - seccomp:unconfined
     privileged: true
     tty: true
+  scaffold-worker-2:
+    image: "scaffold"
+    ports:
+      - "127.0.0.1:2999:2999"
+      - "127.0.0.1:8082:8082"
+    environment:
+      SCAFFOLD_BASE_URL: http://scaffold-worker-2:2999
+      SCAFFOLD_WS_PORT: "8082"
+      SCAFFOLD_LOG_LEVEL: "TRACE"
+      SCAFFOLD_LOG_FORMAT: "console"
+      SCAFFOLD_ADMIN: |
+        {
+          "username": "admin",
+          "password": "admin"
+        }
+      SCAFFOLD_SLEEP: "20"
+      SCAFFOLD_DB_CONNECTION_STRING: "mongodb://MyCoolMongoDBUsername:MyCoolMongoDBPassword@mongodb:27017/scaffold"
+      SCAFFOLD_NODE: |
+        {
+          "type": "worker",
+          "manager_host": "scaffold-manager",
+          "manager_port": 2997,
+          "join_key": "MyCoolJoinKey12345",
+          "primary_key": "MyCoolPrimaryKey12345",
+          "manager_protocol": "http"
+        }
+      SCAFFOLD_FILESTORE: |
+        {
+          "access_key": "MyCoolMinIOAccessKey",
+          "secret_key": "MyCoolMinIOSecretKey",
+          "host": "minio",
+          "port": 9090,
+          "bucket": "scaffold",
+          "region": "default-region",
+          "protocol": "http",
+          "type": "s3"
+        }
+    depends_on:
+      - "scaffold-manager"
+    security_opt:
+      - seccomp:unconfined
+    privileged: true
+    tty: true
   mongodb:
     image: centos/mongodb-36-centos7:1
     ports:

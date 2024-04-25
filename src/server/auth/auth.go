@@ -8,6 +8,7 @@ import (
 	"scaffold/server/user"
 	"scaffold/server/utils"
 	"strings"
+	"sync"
 	"time"
 
 	logger "github.com/jfcarter2358/go-logger"
@@ -49,7 +50,7 @@ type NodeObject struct {
 
 var Nodes = make(map[string]NodeObject)
 var LastScheduledIdx = 0
-var NodeLock = false
+var NodeLock = &sync.RWMutex{}
 
 func PerformLogin(c *gin.Context) {
 	username := c.PostForm("username")

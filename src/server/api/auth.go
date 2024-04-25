@@ -5,7 +5,6 @@ import (
 	"scaffold/server/auth"
 	"scaffold/server/user"
 	"scaffold/server/utils"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -64,15 +63,12 @@ func RevokeAPIToken(ctx *gin.Context) {
 
 func Ping(c *gin.Context) {
 	name := c.Param("name")
-	for auth.NodeLock {
-		time.Sleep(250 * time.Millisecond)
-	}
-	auth.NodeLock = true
+	auth.NodeLock.Lock()
 	if n, ok := auth.Nodes[name]; ok {
 		n.Ping = 0
 		auth.Nodes[name] = n
 	}
-	auth.NodeLock = false
+	auth.NodeLock.Unlock()
 
 	c.Status(http.StatusOK)
 }
