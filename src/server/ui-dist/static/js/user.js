@@ -146,7 +146,7 @@ function updateStatuses() {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             tableElements = $('.status-table-icon')
             for (let i = 0; i < tableElements.length; i++) {
@@ -321,7 +321,7 @@ function saveUser() {
         error: function(response) {
             console.log(response)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
@@ -360,7 +360,7 @@ function generateAPIToken() {
         error: function(response) {
             console.log(response)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
@@ -389,7 +389,7 @@ function revokeAPIToken(name) {
         error: function(response) {
             console.log(response)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")

@@ -108,7 +108,7 @@ function saveUser() {
         error: function(response) {
             console.log(response)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
@@ -147,7 +147,7 @@ function generateAPIToken() {
         error: function(response) {
             console.log(response)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
@@ -176,7 +176,7 @@ function revokeAPIToken(name) {
         error: function(response) {
             console.log(response)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")

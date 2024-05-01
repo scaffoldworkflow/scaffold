@@ -19,7 +19,7 @@ function deleteCascade(cascadeName) {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     })
@@ -37,7 +37,7 @@ function getCascades() {
         error: function(result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     });

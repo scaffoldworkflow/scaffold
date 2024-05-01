@@ -258,7 +258,7 @@ function getDatastore() {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     });
@@ -310,7 +310,7 @@ function toggleCheckbox(taskName) {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     })
@@ -402,7 +402,7 @@ function getTasks() {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     });
@@ -430,7 +430,7 @@ function getStates(shouldInit) {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     });
@@ -462,7 +462,7 @@ function triggerRun() {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     });

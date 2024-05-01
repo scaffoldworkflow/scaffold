@@ -244,7 +244,7 @@ function killRun() {
         error: function (response) {
             console.log(response)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
@@ -275,7 +275,7 @@ function toggleDisable() {
         error: function (response) {
             console.log(response)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             $("#error-container").text(response.responseJSON['error'])
             openModal('error-modal')

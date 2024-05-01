@@ -66,7 +66,7 @@ function getUsers() {
         error: function(result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     });
@@ -163,7 +163,7 @@ function addUser() {
             closeModal('users-delete-modal');
             console.log(response)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
@@ -199,7 +199,7 @@ function deleteUser() {
             closeModal('users-delete-modal');
             console.log(response)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
