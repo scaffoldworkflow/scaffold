@@ -132,6 +132,15 @@ func initializeRoutes() {
 					runRoutes.GET("/containers", middleware.EnsureLoggedIn(), api.GetAllContainers)
 					runRoutes.DELETE("/:cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureCascadeGroup("cascade"), api.ManagerKillRun)
 				}
+				webhookRoutes := v1Routes.Group("/webhook")
+				{
+					webhookRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin"}), api.GetAllWebhooks)
+					webhookRoutes.GET("/:id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin"}), api.GetWebhookByID)
+					webhookRoutes.DELETE("/:id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin"}), api.DeleteWebhookByID)
+					webhookRoutes.POST("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin"}), api.CreateWebhook)
+					webhookRoutes.PUT("/:id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin"}), api.UpdateWebhooksByID)
+					webhookRoutes.POST("/:cascade/:id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.TriggerWebhookByID)
+				}
 			}
 		}
 
@@ -150,6 +159,8 @@ func initializeRoutes() {
 
 			uiRoutes.GET("/users", middleware.EnsureLoggedIn(), page.ShowUsersPage)
 			uiRoutes.GET("/user/:username", middleware.EnsureLoggedIn(), page.ShowUserPage)
+
+			uiRoutes.GET("/webhooks", middleware.EnsureLoggedIn(), page.ShowWebhooksPage)
 		}
 	}
 	if config.Config.Node.Type == constants.NODE_TYPE_WORKER {

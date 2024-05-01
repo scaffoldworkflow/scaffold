@@ -1,0 +1,39 @@
+<div class="w3-card-4 w3-round light theme-light w3-border theme-border-light">
+    <div class="w3-container scaffold-green w3-round webhook-title">
+        <h4>Webhooks</h4>
+        <input id="search" class="w3-input w3-round search-bar light theme-light" type="text" name="search" placeholder="Search Webhooks" oninput="render()">
+    </div>
+    <table class="w3-table light w3-border theme-border-light theme-table-striped" id="webhooks-table">
+        <tr>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">ID</span>
+            </th>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Cascade</span>
+            </th>
+            <th class="table-title w3-medium scaffold-text-green">
+                <span class="table-title-text">Entrypoint</span>
+            </th>
+            <th>
+                <div class="w3-round w3-button scaffold-green" onclick="openModal('webhooks-add-modal')" style="float:right;margin-right:16px;">Create New</div>
+            </th>
+        </tr>
+        {{ range .webhooks }}
+            <tr id="webhooks-row-{{ .ID }}" class="table-show">
+                <td>{{ .ID }}</td>
+                <td>{{ .Cascade }}</td>
+                <td>{{ .Entrypoint }}</td>
+                <td class="table-link-cell">
+                    <div id="webhook-edit-button" class="card-button light" style="margin-right:4px;">
+                        <a href="/ui/webhook/{{ .ID }}" class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;">
+                            <i class="fa-solid fa-pencil"></i>
+                        </a>
+                    </div>
+                    <div id="webhook-delete-button" class="card-button light" style="margin-right:8px;">
+                        <i class="fa-solid fa-trash" onclick="openDeleteModal('{{ .ID }}')"></i>
+                    </div>
+                </td>
+            </tr>
+        {{ end }}
+    </table>
+</div>
