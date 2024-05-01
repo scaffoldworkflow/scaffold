@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"scaffold/server/auth"
-	"scaffold/server/container"
 
 	logger "github.com/jfcarter2358/go-logger"
 
@@ -24,19 +23,31 @@ import (
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/available [get]
-func GetAvailableContainers(ctx *gin.Context) {
-	output := []string{}
+//	@router						/health/available [get]
+// func GetAvailableContainers(ctx *gin.Context) {
+// 	output := []string{}
 
-	for idx, groups := range container.LastGroups {
-		if validateUserGroup(ctx, groups) {
-			output = append(output, container.LastRun[idx])
-		}
-	}
+// 	for idx, groups := range container.LastGroups {
+// 		if validateUserGroup(ctx, groups) {
+// 			output = append(output, container.LastRun[idx])
+// 		}
+// 	}
 
-	ctx.JSON(http.StatusOK, container.LastRun)
-}
+// 	ctx.JSON(http.StatusOK, container.LastRun)
+// }
 
+//	@summary					Get all containers
+//	@description				List all containers
+//	@tags						worker
+//	@produce					json
+//	@success					200	{array}		string
+//	@failure					500	{object}	object
+//	@failure					401	{object}	object
+//	@securityDefinitions.apiKey	token
+//	@in							header
+//	@name						Authorization
+//	@security					X-Scaffold-API
+//	@router						/api/v1/run/containers [get]
 func GetAllContainers(ctx *gin.Context) {
 	available := map[string][]string{}
 	for _, n := range auth.Nodes {

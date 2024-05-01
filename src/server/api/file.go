@@ -19,7 +19,7 @@ import (
 //	@description				Download a file from a cascade
 //	@tags						manager
 //	@tags						file
-//	@produce					application/text/plain
+//	@produce					application/text
 //	@success					200
 //	@failure					500
 //	@failure					401
@@ -28,7 +28,7 @@ import (
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/file/{cascade_name}/{file_name} [get]
+//	@router						/api/v1/file/{cascade_name}/{file_name}/download [get]
 func DownloadFile(ctx *gin.Context) {
 	name := ctx.Param("name")
 	fileName := ctx.Param("file")

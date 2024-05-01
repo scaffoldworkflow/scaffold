@@ -243,6 +243,18 @@ func UpdateTaskByNames(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
 }
 
+//	@summary					Update a task
+//	@description				Update a task from a JSON object
+//	@tags						manager
+//	@tags						task
+//	@success					201		{object}	object
+//	@failure					500		{object}	object
+//	@failure					401		{object}	object
+//	@securityDefinitions.apiKey	token
+//	@in							header
+//	@name						Authorization
+//	@security					X-Scaffold-API
+//	@router						/api/v1/task/{cascade_name}/{task_name}/enabled [put]
 func ToggleTaskEnabled(ctx *gin.Context) {
 	cn := ctx.Param("cascade")
 	tn := ctx.Param("task")
