@@ -376,3 +376,23 @@ Infrastructure management is an interesting problem to tackle. Many organization
     - __Cascade Improvements__
         
         - [ ] Inputs should update when cascades are updated
+
+### v0.2.1
+
+- **Server**
+    - __Testing__
+
+        - [ ] 75% test coverage
+
+    -  __UI Improvements__
+
+        - [ ] Move task status to right slide in
+        - [ ] Change auto-execute from cascade page
+        - [ ] Upload cascade from cascades page
+            - [ ] Create new on non-existing
+            - [ ] Upgrade on existing
+        - [ ] Delete cascade from cascades page
+    
+    - __Cascade Improvements__
+        
+        - [ ] Inputs should update when cascades are updated

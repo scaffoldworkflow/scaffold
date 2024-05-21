@@ -89,7 +89,8 @@ func UpdateWebhooksByID(id string, w *Webhook) error {
 	}
 
 	if result.ModifiedCount != 1 {
-		return fmt.Errorf("no webhook found with id %s", id)
+		return CreateWebhook(w)
+		// return fmt.Errorf("no webhook found with id %s", id)
 	}
 
 	return nil

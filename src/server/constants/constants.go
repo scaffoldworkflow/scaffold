@@ -1,6 +1,6 @@
 package constants
 
-const VERSION = "0.1.0"
+const VERSION = "0.2.1"
 
 const STATE_STATUS_ERROR = "error"
 const STATE_STATUS_SUCCESS = "success"

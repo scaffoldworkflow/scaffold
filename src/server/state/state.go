@@ -179,7 +179,8 @@ func UpdateStateByNames(cascade, task string, s *State) error {
 	}
 
 	if result.ModifiedCount != 1 {
-		return fmt.Errorf("no state found with names %s, %s", cascade, task)
+		return CreateState(s)
+		// return fmt.Errorf("no state found with names %s, %s", cascade, task)
 	}
 
 	return nil
@@ -210,31 +211,48 @@ func UpdateStateKilledByNames(cascade, task string, killed bool) error {
 }
 
 func UpdateStateRunByNames(cascade, task string, s State) error {
-	filter := bson.M{"cascade": cascade, "task": task}
 
-	collection := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME]
-	ctx := mongodb.Ctx
-
-	update := bson.D{
-		{"$set", bson.D{{"status", s.Status}}},
-		{"$set", bson.D{{"started", s.Started}}},
-		{"$set", bson.D{{"finished", s.Finished}}},
-		{"$set", bson.D{{"output", s.Output}}},
-		{"$set", bson.D{{"display", s.Display}}},
-	}
-
-	result, err := collection.UpdateOne(ctx, filter, update)
-
+	ss, err := GetStateByNames(cascade, task)
 	if err != nil {
 		return err
 	}
 
-	if result.ModifiedCount != 1 {
-		// return fmt.Errorf("no state found with names %s, %s", cascade, task)
-		logger.Tracef("", "no state found with names %s, %s", cascade, task)
-	}
+	ss.Status = s.Status
+	ss.Started = s.Started
+	ss.Finished = s.Finished
+	ss.Output = s.Output
+	ss.Display = s.Display
+	ss.PID = s.PID
 
-	return nil
+	return UpdateStateByNames(cascade, task, ss)
+	// filter := bson.M{"cascade": cascade, "task": task}
+
+	// collection := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME]
+	// ctx := mongodb.Ctx
+
+	// update := bson.D{
+	// 	{"$set", bson.D{{"status", s.Status}}},
+	// 	{"$set", bson.D{{"started", s.Started}}},
+	// 	{"$set", bson.D{{"finished", s.Finished}}},
+	// 	{"$set", bson.D{{"output", s.Output}}},
+	// 	{"$set", bson.D{{"display", s.Display}}},
+	// 	{"$set", bson.D{{"pid", s.PID}}},
+	// }
+
+	// result, err := collection.UpdateOne(ctx, filter, update)
+
+	// if err != nil {
+	// 	return err
+	// }
+
+	// if result.ModifiedCount != 1 {
+	// 	logger.Tracef("", "update state run by names %s/%s returned %d modified count", cascade, task, result.ModifiedCount)
+	// 	return CreateState(&s)
+	// 	// return fmt.Errorf("no state found with names %s, %s", cascade, task)
+	// 	// logger.Tracef("", "no state found with names %s, %s for update state run by names", cascade, task)
+	// }
+
+	// return nil
 }
 
 func ClearStateByNames(cascade, task string, runNumber int) error {

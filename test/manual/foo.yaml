@@ -9,7 +9,7 @@ inputs:
     type: text
 tasks:
 - name: get_latest_build
-  image: ubuntu:20.04
+  # image: ubuntu:20.04
   run: |
     echo "a"
     export foo="a"
@@ -22,9 +22,10 @@ tasks:
     file:
       - foo.yaml
 - name: setup_kubeconfig
-  image: ubuntu:20.04
-  kind: container
+  # image: ubuntu:20.04
+  # kind: container
   run: |
+    sleep 20
     echo "b"
 - name: update_values_file
   image: ubuntu:20.04

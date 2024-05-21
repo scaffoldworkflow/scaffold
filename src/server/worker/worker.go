@@ -195,7 +195,18 @@ func QueueDataReceive(endpoint, data string) error {
 		currentCascade = m.Cascade
 
 		if t.Kind == constants.TASK_KIND_CONTAINER {
-			run.ContainerKill(m.Cascade, m.Task)
+			// run.ContainerKill(m.Cascade, m.Task)
+
+			for {
+				s, err := state.GetStateByNames(m.Cascade, m.Task)
+				if err != nil {
+					return err
+				}
+				if s.Status != constants.STATE_STATUS_RUNNING {
+					break
+				}
+				time.Sleep(time.Duration(config.Config.BulwarkCheckInterval) * time.Millisecond)
+			}
 
 			shouldRestart, _ := run.StartContainerRun(bulwark.ManagerClient, &r)
 			for shouldRestart {
@@ -203,7 +214,18 @@ func QueueDataReceive(endpoint, data string) error {
 			}
 		}
 		if t.Kind == constants.TASK_KIND_LOCAL {
-			run.LocalKill(m.Cascade, m.Task)
+			// run.LocalKill(m.Cascade, m.Task)
+
+			for {
+				s, err := state.GetStateByNames(m.Cascade, m.Task)
+				if err != nil {
+					return err
+				}
+				if s.Status != constants.STATE_STATUS_RUNNING {
+					break
+				}
+				time.Sleep(time.Duration(config.Config.BulwarkCheckInterval) * time.Millisecond)
+			}
 
 			shouldRestart, _ := run.StartLocalRun(bulwark.ManagerClient, &r)
 			for shouldRestart {

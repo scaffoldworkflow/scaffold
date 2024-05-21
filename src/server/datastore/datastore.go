@@ -139,7 +139,8 @@ func UpdateDataStoreByCascade(name string, d *DataStore, is []input.Input) error
 	}
 
 	if result.ModifiedCount != 1 {
-		return fmt.Errorf("no datastore found with name %s", name)
+		return CreateDataStore(d)
+		// return fmt.Errorf("no datastore found with name %s", name)
 	}
 
 	return nil

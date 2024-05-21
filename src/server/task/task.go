@@ -259,7 +259,8 @@ func UpdateTaskByNames(cascade, task string, t *Task) error {
 	}
 
 	if result.ModifiedCount != 1 {
-		return fmt.Errorf("no task found with names %s, %s", cascade, task)
+		return CreateTask(t)
+		// return fmt.Errorf("no task found with names %s, %s", cascade, task)
 	}
 
 	logger.Debugf("", "Update result: %v", result)
