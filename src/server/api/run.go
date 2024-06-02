@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"scaffold/server/bulwark"
 	"scaffold/server/cascade"
 	"scaffold/server/constants"
 	"scaffold/server/manager"
 	"scaffold/server/msg"
+	"scaffold/server/rabbitmq"
 	"scaffold/server/run"
 	"scaffold/server/task"
 	"scaffold/server/utils"
@@ -156,7 +156,8 @@ func CreateRun(ctx *gin.Context) {
 	}
 
 	logger.Infof("", "Creating run with message %v", m)
-	bulwark.QueuePush(bulwark.WorkerClient, m)
+	// bulwark.QueuePush(bulwark.WorkerClient, m)
+	rabbitmq.ManagerPublish(m)
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
 }

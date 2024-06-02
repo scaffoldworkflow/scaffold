@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"scaffold/server/auth"
-	"scaffold/server/bulwark"
-	"scaffold/server/cmd"
 	"scaffold/server/config"
 	"scaffold/server/constants"
 	"scaffold/server/container"
@@ -39,20 +37,14 @@ func Run() {
 	mongodb.InitCollections()
 	filestore.InitBucket()
 	container.CompletedRuns = make(map[string]run.Run)
-	StartWebsocketServer()
+	// StartWebsocketServer()
 
 	go EnsureManagerConnection()
 
 	health.IsHealthy = true
 
-	go container.PruneContainers()
+	container.PruneContainers()
 
-	go bulwark.RunManager(nil)
-	go bulwark.RunWorker(QueueDataReceive)
-	// go bulwark.RunBuffer(BufferDataReceive)
-
-	go bufferCheck()
-	queueCheck()
 }
 
 func JoinManager() error {
@@ -140,22 +132,15 @@ func EnsureManagerConnection() {
 	}
 }
 
-func QueueDataReceive(endpoint, data string) error {
-	isRunning = true
-	logger.Debugf("", "Got queue pop data: %s", data)
-
+func QueueDataReceive(data []byte) error {
 	if len(data) == 0 {
-		isRunning = false
 		return nil
 	}
+	isRunning = true
 
 	var m msg.TriggerMsg
-	// bytes, err := json.Marshal([]byte(data))
-	// if err != nil {
-	// 	logger.Errorf("", "Error processing queue message: %s", err.Error())
-	// 	return err
-	// }
-	if err := json.Unmarshal([]byte(data), &m); err != nil {
+
+	if err := json.Unmarshal(data, &m); err != nil {
 		logger.Errorf("", "Error processing queue message: %s", err.Error())
 		isRunning = false
 		return err
@@ -205,12 +190,12 @@ func QueueDataReceive(endpoint, data string) error {
 				if s.Status != constants.STATE_STATUS_RUNNING {
 					break
 				}
-				time.Sleep(time.Duration(config.Config.BulwarkCheckInterval) * time.Millisecond)
+				time.Sleep(time.Duration(config.Config.CheckInterval) * time.Millisecond)
 			}
 
-			shouldRestart, _ := run.StartContainerRun(bulwark.ManagerClient, &r)
+			shouldRestart, _ := run.StartContainerRun(&r)
 			for shouldRestart {
-				shouldRestart, _ = run.StartContainerRun(bulwark.ManagerClient, &r)
+				shouldRestart, _ = run.StartContainerRun(&r)
 			}
 		}
 		if t.Kind == constants.TASK_KIND_LOCAL {
@@ -224,12 +209,12 @@ func QueueDataReceive(endpoint, data string) error {
 				if s.Status != constants.STATE_STATUS_RUNNING {
 					break
 				}
-				time.Sleep(time.Duration(config.Config.BulwarkCheckInterval) * time.Millisecond)
+				time.Sleep(time.Duration(config.Config.CheckInterval) * time.Millisecond)
 			}
 
-			shouldRestart, _ := run.StartLocalRun(bulwark.ManagerClient, &r)
+			shouldRestart, _ := run.StartLocalRun(&r)
 			for shouldRestart {
-				shouldRestart, _ = run.StartLocalRun(bulwark.ManagerClient, &r)
+				shouldRestart, _ = run.StartLocalRun(&r)
 			}
 		}
 
@@ -246,66 +231,9 @@ func QueueDataReceive(endpoint, data string) error {
 	return nil
 }
 
-func queueCheck() {
-	for {
-		time.Sleep(time.Duration(config.Config.BulwarkCheckInterval) * time.Millisecond)
-		if health.IsReady {
-			logger.Tracef("", "Sleeping...")
-			time.Sleep(time.Duration(config.Config.BulwarkCheckInterval) * time.Millisecond)
-			if !isRunning {
-				logger.Debugf("", "Worker checking queue")
-				bulwark.QueuePop(bulwark.WorkerClient)
-			}
-		}
-	}
-}
-
-// func BufferDataReceive(endpoint, data string) error {
-// 	if len(data) == 0 {
-// 		return nil
-// 	}
-// 	logger.Debugf("", "Got buffer data %s", data)
-// 	var runNames []string
-// 	if err := json.Unmarshal([]byte(data), &runNames); err != nil {
-// 		logger.Errorf("", "Unable to marshal JSON: %s", err.Error())
-// 		return err
-// 	}
-
-// 	if err := run.Kill(bulwark.ManagerClient, runNames); err != nil {
-// 		logger.Errorf("", "Encountered error trying to kill runs: %s", err.Error())
-// 	}
-// 	return nil
+// func StartWebsocketServer() {
+// 	logger.Info("", "Starting websocket application")
+// 	//Open a goroutine execution start program
+// 	// go socket.Manager.Start()
+// 	go cmd.StartWSServer()
 // }
-
-func bufferCheck() {
-	for {
-		time.Sleep(time.Duration(config.Config.BulwarkCheckInterval) * time.Millisecond)
-		if health.IsReady {
-			logger.Tracef("", "Sleeping...")
-			time.Sleep(time.Duration(config.Config.BulwarkCheckInterval) * time.Millisecond)
-			logger.Debugf("", "Worker checking buffer")
-			// bulwark.BufferGet(bulwark.BufferClient)
-			logger.Debugf("", "Current run: %s.%s", currentCascade, currentTask)
-			if currentTask != "" && currentCascade != "" {
-				s, err := state.GetStateByNames(currentCascade, currentTask)
-				if err != nil {
-					logger.Errorf("", "Error getting run state: %s", err.Error())
-					continue
-				}
-				logger.Debugf("", "Current run state: %s, %v", s.Status, s.Killed)
-				// if s.Killed {
-				// 	if err := run.Kill(bulwark.ManagerClient, []string{fmt.Sprintf("%s-%s", currentCascade, currentTask)}); err != nil {
-				// 		logger.Errorf("", "Error killing run: %s", err.Error())
-				// 	}
-				// }
-			}
-		}
-	}
-}
-
-func StartWebsocketServer() {
-	logger.Info("", "Starting websocket application")
-	//Open a goroutine execution start program
-	// go socket.Manager.Start()
-	go cmd.StartWSServer()
-}

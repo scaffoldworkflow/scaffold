@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"scaffold/server/auth"
-	"scaffold/server/bulwark"
 	"scaffold/server/cascade"
 	"scaffold/server/config"
 	"scaffold/server/constants"
@@ -17,6 +16,7 @@ import (
 	"scaffold/server/mongodb"
 	"scaffold/server/msg"
 	"scaffold/server/proxy"
+	"scaffold/server/rabbitmq"
 	"scaffold/server/state"
 	"scaffold/server/task"
 	"scaffold/server/user"
@@ -34,9 +34,6 @@ var toKill []string
 func Run() {
 	mongodb.InitCollections()
 	filestore.InitBucket()
-	bulwark.QueueCreate(config.Config.ManagerQueueName)
-	bulwark.QueueCreate(config.Config.WorkerQueueName)
-	bulwark.BufferCreate(config.Config.KillBufferName)
 
 	// r := http.NewServeMux()
 	r := mux.NewRouter()
@@ -81,25 +78,14 @@ func Run() {
 
 	go healthCheck()
 
-	go bulwark.RunManager(QueueDataReceive)
-	go bulwark.RunWorker(nil)
-	go bulwark.RunBuffer(BufferDataReceive)
-
-	go scron.Start()
-
-	queueCheck()
+	scron.Start()
 }
 
-func QueueDataReceive(endpoint, data string) error {
+func QueueDataReceive(data []byte) error {
 	if len(data) == 0 {
 		return nil
 	}
 	var m msg.RunMsg
-	// bytes, err := json.Marshal([]byte(data))
-	// if err != nil {
-	// 	logger.Errorf("", "Error processing queue message: %s", err.Error())
-	// 	return err
-	// }
 	if err := json.Unmarshal([]byte(data), &m); err != nil {
 		logger.Errorf("", "Error processing queue message: %s", err.Error())
 		return err
@@ -119,10 +105,14 @@ func QueueDataReceive(endpoint, data string) error {
 		logger.Debugf("", "Task %s has completed with status killed", m.Task)
 		id := fmt.Sprintf("%s-%s", m.Cascade, m.Task)
 		toKill = utils.Remove(toKill, id)
-		if err := bulwark.BufferSet(bulwark.BufferClient, toKill); err != nil {
-			logger.Errorf("", "Encountered error while updating buffer: %s", err.Error())
+		if err := rabbitmq.KillPublish(map[string]string{"id": id}); err != nil {
+			logger.Errorf("", "Error publishing kill id: %s", err.Error())
 			return err
 		}
+		// if err := bulwark.BufferSet(bulwark.BufferClient, toKill); err != nil {
+		// 	logger.Errorf("", "Encountered error while updating buffer: %s", err.Error())
+		// 	return err
+		// }
 	}
 	return nil
 }
@@ -147,19 +137,6 @@ func BufferDataReceive(endpoint, data string) error {
 	// 	stateChange(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS)
 	// }
 	return nil
-}
-
-func queueCheck() {
-	for {
-		logger.Tracef("", "Sleeping...")
-		time.Sleep(time.Duration(config.Config.BulwarkCheckInterval) * time.Millisecond)
-		logger.Debugf("", "Worker manager queue")
-		bulwark.QueuePop(bulwark.ManagerClient)
-		// for _, id := range buffers {
-		// 	bulwark.BufferClient.Endpoint = fmt.Sprintf("%s/%s", bconst.ENDPOINT_TYPE_BUFFER, id)
-		// 	bulwark.BufferGet(bulwark.BufferClient)
-		// }
-	}
 }
 
 func healthCheck() {
@@ -471,7 +448,8 @@ func DoTrigger(cn, tn string) error {
 	}
 
 	logger.Infof("", "Triggering run with message %v", m)
-	return bulwark.QueuePush(bulwark.WorkerClient, m)
+	return rabbitmq.ManagerPublish(m)
+	// return bulwark.QueuePush(bulwark.WorkerClient, m)
 }
 
 func DoKill(cn, tn string) error {
