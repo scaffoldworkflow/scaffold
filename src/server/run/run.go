@@ -252,7 +252,21 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 		}
 		setErrorStatus(r, string(output))
 		if err := updateRunState(c, r, true); err != nil {
+			if _, err := os.Stat(runDir); err != nil {
+				if os.IsNotExist(err) {
+					// file does not exist
+				} else {
+					os.RemoveAll(runDir)
+				}
+			}
 			return false, err
+		}
+		if _, err := os.Stat(runDir); err != nil {
+			if os.IsNotExist(err) {
+				// file does not exist
+			} else {
+				os.RemoveAll(runDir)
+			}
 		}
 		return shouldRestart, err
 	}
@@ -268,6 +282,13 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 				logger.Errorf("", "Error running pod %s\n", runError.Error())
 				setErrorStatus(r, fmt.Sprintf("%s :: %s", podmanOutput, string(runError.Error())))
 				if err := updateRunState(c, r, true); err != nil {
+					if _, err := os.Stat(runDir); err != nil {
+						if os.IsNotExist(err) {
+							// file does not exist
+						} else {
+							os.RemoveAll(runDir)
+						}
+					}
 					return false, err
 				}
 				erroredOut = true
@@ -293,6 +314,13 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 				logger.Errorf("", "stat error: %s", err.Error())
 			}
 			if err := updateRunState(c, r, false); err != nil {
+				if _, err := os.Stat(runDir); err != nil {
+					if os.IsNotExist(err) {
+						// file does not exist
+					} else {
+						os.RemoveAll(runDir)
+					}
+				}
 				return false, err
 			}
 		} else {
@@ -322,6 +350,13 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 				logger.Tracef("", "Display stat error: %s", err.Error())
 			}
 			if err := updateRunState(c, r, false); err != nil {
+				if _, err := os.Stat(runDir); err != nil {
+					if os.IsNotExist(err) {
+						// file does not exist
+					} else {
+						os.RemoveAll(runDir)
+					}
+				}
 				return false, err
 			}
 		}
@@ -374,6 +409,13 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 		}
 
 		if err := updateRunState(c, r, false); err != nil {
+			if _, err := os.Stat(runDir); err != nil {
+				if os.IsNotExist(err) {
+					// file does not exist
+				} else {
+					os.RemoveAll(runDir)
+				}
+			}
 			return false, err
 		}
 
@@ -385,6 +427,13 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 				logger.Errorf("", "Error reading file %s\n", err.Error())
 				setErrorStatus(r, err.Error())
 				if err := updateRunState(c, r, true); err != nil {
+					if _, err := os.Stat(runDir); err != nil {
+						if os.IsNotExist(err) {
+							// file does not exist
+						} else {
+							os.RemoveAll(runDir)
+						}
+					}
 					return false, err
 				}
 			}
@@ -406,6 +455,13 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 		if err := datastore.UpdateDataStoreByCascade(cName, ds, inputs); err != nil {
 			logger.Errorf("", "Error updating datastore %s\n", err.Error())
 			if err := updateRunState(c, r, true); err != nil {
+				if _, err := os.Stat(runDir); err != nil {
+					if os.IsNotExist(err) {
+						// file does not exist
+					} else {
+						os.RemoveAll(runDir)
+					}
+				}
 				return false, err
 			}
 			setErrorStatus(r, err.Error())
@@ -431,7 +487,21 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 		}
 	}
 	if err := updateRunState(c, r, true); err != nil {
+		if _, err := os.Stat(runDir); err != nil {
+			if os.IsNotExist(err) {
+				// file does not exist
+			} else {
+				os.RemoveAll(runDir)
+			}
+		}
 		return false, err
+	}
+	if _, err := os.Stat(runDir); err != nil {
+		if os.IsNotExist(err) {
+			// file does not exist
+		} else {
+			os.RemoveAll(runDir)
+		}
 	}
 	return false, err
 }
@@ -631,6 +701,9 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 		return false, runError
 	}
 	r.PID = cmd.Process.Pid
+	if err := updateRunState(c, r, true); err != nil {
+		return false, err
+	}
 
 	killed = false
 
@@ -768,9 +841,7 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 
 	r.PID = 0
 
-	if err := updateRunState(c, r, true); err != nil {
-		return false, err
-	}
+	err = updateRunState(c, r, true)
 	return false, err
 }
 
@@ -779,9 +850,23 @@ func LocalKill(cn, tn string) error {
 	if err != nil {
 		return err
 	}
+	logger.Infof("", "Killing run %s/%s with PID %d", cn, tn, s.PID)
 	if s.PID > 0 {
-		if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill %d", s.PID)).Run(); err != nil {
+		if out, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("sudo kill %d", s.PID)).CombinedOutput(); err != nil {
 			logger.Errorf("", "Cannot kill existing run: %s\n", err.Error())
+			if out != nil {
+				logger.Tracef("", "Kill output: %s", string(out))
+			}
+			s.Status = constants.STATE_STATUS_KILLED
+			if err := state.UpdateStateByNames(cn, tn, s); err != nil {
+				logger.Errorf("", "Unable to update state %s.%s: %s", cn, tn, err.Error())
+				return err
+			}
+			return err
+		}
+		s.Status = constants.STATE_STATUS_KILLED
+		if err := state.UpdateStateByNames(cn, tn, s); err != nil {
+			logger.Errorf("", "Unable to update state %s.%s: %s", cn, tn, err.Error())
 			return err
 		}
 	}

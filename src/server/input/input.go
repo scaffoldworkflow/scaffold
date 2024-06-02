@@ -126,7 +126,8 @@ func UpdateInputByNames(cascade, name string, i *Input) error {
 	}
 
 	if result.ModifiedCount != 1 {
-		return fmt.Errorf("no input found with names %s, %s", cascade, name)
+		return CreateInput(i)
+		// return fmt.Errorf("no input found with names %s, %s", cascade, name)
 	}
 
 	return nil

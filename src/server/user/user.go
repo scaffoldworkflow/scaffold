@@ -301,7 +301,8 @@ func UpdateUserByUsername(username string, u *User) error {
 	}
 
 	if result.ModifiedCount != 1 {
-		return fmt.Errorf("no user found with username %s", username)
+		return CreateUser(u)
+		// return fmt.Errorf("no user found with username %s", username)
 	}
 
 	return nil
