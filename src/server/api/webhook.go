@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"scaffold/server/cascade"
 	"scaffold/server/constants"
-	"scaffold/server/datastore"
-	"scaffold/server/input"
 	"scaffold/server/msg"
 	"scaffold/server/rabbitmq"
 	"scaffold/server/task"
@@ -193,30 +191,6 @@ func TriggerWebhookByID(ctx *gin.Context) {
 	var data map[string]string
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		logger.Warnf("", "No input data found for trigger on webhook %s", id)
-
-	} else {
-
-		d, err := datastore.GetDataStoreByCascade(w.Cascade)
-		if err != nil {
-			utils.Error(err, ctx, http.StatusInternalServerError)
-			return
-		}
-
-		for name, datum := range data {
-			for envName := range d.Env {
-				if envName != name {
-					continue
-				}
-				d.Env[name] = datum
-			}
-		}
-
-		inputs := []input.Input{}
-		err = datastore.UpdateDataStoreByCascade(w.Cascade, d, inputs)
-		if err != nil {
-			utils.Error(err, ctx, http.StatusInternalServerError)
-			return
-		}
 	}
 
 	c, err := cascade.GetCascadeByName(w.Cascade)
@@ -242,6 +216,7 @@ func TriggerWebhookByID(ctx *gin.Context) {
 		Action:  constants.ACTION_TRIGGER,
 		Groups:  c.Groups,
 		Number:  t.RunNumber + 1,
+		Context: data,
 	}
 
 	logger.Infof("", "Creating run with message %v", m)

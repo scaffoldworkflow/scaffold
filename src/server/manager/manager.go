@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"scaffold/server/auth"
-	"scaffold/server/bulwark"
 	"scaffold/server/cascade"
 	"scaffold/server/config"
 	"scaffold/server/constants"
@@ -35,9 +34,6 @@ var toKill []string
 func Run() {
 	mongodb.InitCollections()
 	filestore.InitBucket()
-	bulwark.QueueCreate(config.Config.ManagerQueueName)
-	bulwark.QueueCreate(config.Config.WorkerQueueName)
-	bulwark.BufferCreate(config.Config.KillBufferName)
 
 	// r := http.NewServeMux()
 	r := mux.NewRouter()
@@ -56,8 +52,6 @@ func Run() {
 	}
 
 	go func() {
-		log.Printf("Running reverse proxy at %s://0.0.0.0:%d\n", config.Config.Protocol, config.Config.WSPort)
-
 		if config.Config.TLSEnabled {
 			if serverErr := server.ListenAndServeTLS(config.Config.TLSCrtPath, config.Config.TLSKeyPath); serverErr != nil {
 				logger.Fatalf("", "Error running websocket server: %s", serverErr)
@@ -98,13 +92,13 @@ func QueueDataReceive(data []byte) error {
 	case constants.STATE_STATUS_SUCCESS:
 		logger.Debugf("", "Task %s has completed with status success", m.Task)
 		stateChange(m.Cascade, m.Task, constants.STATE_STATUS_SUCCESS)
-		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_SUCCESS)
-		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS)
+		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_SUCCESS, m.Context)
+		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS, m.Context)
 	case constants.STATE_STATUS_ERROR:
 		logger.Debugf("", "Task %s has completed with status error", m.Task)
 		stateChange(m.Cascade, m.Task, constants.STATE_STATUS_ERROR)
-		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ERROR)
-		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS)
+		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ERROR, m.Context)
+		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS, m.Context)
 	case constants.STATE_STATUS_KILLED:
 		logger.Debugf("", "Task %s has completed with status killed", m.Task)
 		id := fmt.Sprintf("%s-%s", m.Cascade, m.Task)
@@ -329,7 +323,7 @@ func checkDeps(cn string, t *task.Task) (bool, error) {
 	return true, nil
 }
 
-func autoTrigger(cn, tn, status string) error {
+func autoTrigger(cn, tn, status string, context map[string]string) error {
 	logger.Debugf("", "Doing auto trigger for %s %s with status %s", cn, tn, status)
 	ts, err := task.GetTasksByCascade(cn)
 	if err != nil {
@@ -380,14 +374,14 @@ func autoTrigger(cn, tn, status string) error {
 		}
 	}
 	for _, t := range toTrigger {
-		if err := DoTrigger(cn, t); err != nil {
+		if err := DoTrigger(cn, t, context); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func DoTrigger(cn, tn string) error {
+func DoTrigger(cn, tn string, context map[string]string) error {
 	c, err := cascade.GetCascadeByName(cn)
 	if err != nil {
 		return err
@@ -449,6 +443,7 @@ func DoTrigger(cn, tn string) error {
 		Action:  constants.ACTION_TRIGGER,
 		Groups:  c.Groups,
 		Number:  t.RunNumber + 1,
+		Context: context,
 	}
 
 	logger.Infof("", "Triggering run with message %v", m)

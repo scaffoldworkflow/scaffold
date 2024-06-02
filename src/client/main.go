@@ -11,7 +11,6 @@ import (
 	"scaffold/client/context"
 	"scaffold/client/delete"
 	"scaffold/client/describe"
-	"scaffold/client/exec"
 	"scaffold/client/file"
 	"scaffold/client/get"
 	"scaffold/client/logger"
@@ -39,10 +38,6 @@ func main() {
 	deleteContext := deleteCommand.String("c", "context", &argparse.Options{Help: "Cascade context to use. If not set the value in your config file will be pulled", Default: ""})
 	deleteProfile := deleteCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
 	deleteLogLevel := deleteCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
-
-	execCommand := parser.NewCommand("exec", "Exec into a scaffold container")
-	execProfile := execCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
-	execLogLevel := execCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
 	getCommand := parser.NewCommand("get", "Get Scaffold objects")
 	getObject := getCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object to get. Can be of format '<object type>', or '<object type>/<object name>'. Valid object types are 'cascade', 'datastore', 'task', 'state', 'file', and 'user"})
@@ -114,12 +109,6 @@ func main() {
 	if deleteCommand.Happened() {
 		logger.SetLevel(*deleteLogLevel)
 		delete.DoDelete(*deleteProfile, *deleteObject, *deleteContext)
-		os.Exit(0)
-	}
-
-	if execCommand.Happened() {
-		logger.SetLevel(*execLogLevel)
-		exec.DoExec(*execProfile)
 		os.Exit(0)
 	}
 
