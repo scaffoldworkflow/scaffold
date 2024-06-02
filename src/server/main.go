@@ -11,6 +11,7 @@ import (
 	"scaffold/server/config"
 	"scaffold/server/constants"
 	"scaffold/server/manager"
+	"scaffold/server/rabbitmq"
 	"scaffold/server/worker"
 	"time"
 
@@ -43,29 +44,34 @@ func run(ctx context.Context, channel chan struct{}) {
 	rand.Seed(time.Now().UnixNano())
 
 	if config.Config.Node.Type == constants.NODE_TYPE_MANAGER {
+		rabbitmq.RunManagerProducer()
 		go manager.Run()
+		go rabbitmq.RunConsumer(manager.QueueDataReceive, config.Config.ManagerQueueName)
 	} else {
+		rabbitmq.RunWorkerProducer()
 		go worker.Run()
+		go rabbitmq.RunConsumer(worker.QueueDataReceive, config.Config.WorkerQueueName)
+		// go rabbitmq.RunConsumer(worker.)
 	}
 
 	routerPort := fmt.Sprintf(":%d", config.Config.Port)
 	if config.Config.TLSEnabled {
 		logger.Infof("", "Running with TLS loaded from %s and %s", config.Config.TLSCrtPath, config.Config.TLSKeyPath)
-		go router.RunTLS(routerPort, config.Config.TLSCrtPath, config.Config.TLSKeyPath)
+		router.RunTLS(routerPort, config.Config.TLSCrtPath, config.Config.TLSKeyPath)
 	} else {
-		go router.Run(routerPort)
+		router.Run(routerPort)
 	}
-	for {
-		select {
-		case <-ctx.Done(): // if cancel() execute
-			channel <- struct{}{}
-			return
-		default:
-			// foobar
-		}
+	// for {
+	// 	select {
+	// 	case <-ctx.Done(): // if cancel() execute
+	// 		channel <- struct{}{}
+	// 		return
+	// 	default:
+	// 		// foobar
+	// 	}
 
-		time.Sleep(1 * time.Second)
-	}
+	// 	time.Sleep(1 * time.Second)
+	// }
 }
 
 //	@title			Scaffold Swagger API

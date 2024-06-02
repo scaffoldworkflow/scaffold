@@ -1,10 +1,11 @@
 package scron
 
 import (
-	"scaffold/server/bulwark"
+	// "scaffold/server/bulwark"
 	"scaffold/server/cascade"
 	"scaffold/server/constants"
 	"scaffold/server/msg"
+	"scaffold/server/rabbitmq"
 	"scaffold/server/state"
 	"scaffold/server/task"
 	"scaffold/server/utils"
@@ -140,7 +141,7 @@ func checkCron(currentTime time.Time, crontab, name string, runNumber int, c *ca
 			Number:  runNumber + 1,
 		}
 		logger.Infof("", "Triggering run with message %v", m)
-		if err := bulwark.QueuePush(bulwark.WorkerClient, m); err != nil {
+		if err := rabbitmq.ManagerPublish(m); err != nil {
 			logger.Errorf("", "Error triggering cron run: %s", err.Error())
 		}
 	}

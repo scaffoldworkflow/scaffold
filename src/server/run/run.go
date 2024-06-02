@@ -8,20 +8,19 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"scaffold/server/bulwark"
 	"scaffold/server/config"
 	"scaffold/server/constants"
 	"scaffold/server/datastore"
 	"scaffold/server/filestore"
 	"scaffold/server/input"
 	"scaffold/server/msg"
+	"scaffold/server/rabbitmq"
 	"scaffold/server/state"
 	"scaffold/server/task"
 	"scaffold/server/utils"
 	"strings"
 	"time"
 
-	"github.com/jfcarter2358/bulwarkmp/client"
 	logger "github.com/jfcarter2358/go-logger"
 )
 
@@ -58,7 +57,7 @@ func runCmd(cmd *exec.Cmd) {
 	runError = cmd.Run()
 }
 
-func updateRunState(c *client.Client, r *Run, send bool) error {
+func updateRunState(r *Run, send bool) error {
 	r.State.PID = r.PID
 	m := msg.RunMsg{
 		Task:    r.Task.Name,
@@ -71,12 +70,12 @@ func updateRunState(c *client.Client, r *Run, send bool) error {
 		return err
 	}
 	if send {
-		return bulwark.QueuePush(c, m)
+		return rabbitmq.WorkerPublish(m)
 	}
 	return nil
 }
 
-func StartContainerRun(c *client.Client, r *Run) (bool, error) {
+func StartContainerRun(r *Run) (bool, error) {
 	r.State.Status = constants.STATE_STATUS_RUNNING
 	currentTime := time.Now().UTC()
 	r.State.Started = currentTime.Format("2006-01-02T15:04:05Z")
@@ -84,7 +83,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 		logger.Infof("", "Cannot update state killed: %s %s %s", r.Task.Cascade, r.Task.Name, err.Error())
 		return false, err
 	}
-	if err := updateRunState(c, r, false); err != nil {
+	if err := updateRunState(r, false); err != nil {
 		return false, err
 	}
 
@@ -96,7 +95,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 	if err != nil {
 		logger.Errorf("", "Cannot get datastore %s", cName)
 		setErrorStatus(r, err.Error())
-		if err := updateRunState(c, r, true); err != nil {
+		if err := updateRunState(r, true); err != nil {
 			return false, err
 		}
 		return false, err
@@ -119,7 +118,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 	if err != nil {
 		logger.Errorf("", "Error creating run directory %s", err.Error())
 		setErrorStatus(r, err.Error())
-		if err := updateRunState(c, r, true); err != nil {
+		if err := updateRunState(r, true); err != nil {
 			return false, err
 		}
 		return false, err
@@ -170,7 +169,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 	if err != nil {
 		logger.Errorf("", "Error writing run file %s", err.Error())
 		setErrorStatus(r, err.Error())
-		if err := updateRunState(c, r, true); err != nil {
+		if err := updateRunState(r, true); err != nil {
 			return false, err
 		}
 		return false, err
@@ -182,7 +181,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 	if err != nil {
 		logger.Errorf("", "Error writing envin file %s", err.Error())
 		setErrorStatus(r, err.Error())
-		if err := updateRunState(c, r, true); err != nil {
+		if err := updateRunState(r, true); err != nil {
 			return false, err
 		}
 		return false, err
@@ -193,7 +192,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 		if err != nil {
 			logger.Errorf("", "Error getting file %s", err.Error())
 			setErrorStatus(r, err.Error())
-			if err := updateRunState(c, r, true); err != nil {
+			if err := updateRunState(r, true); err != nil {
 				return false, err
 			}
 			return false, err
@@ -251,7 +250,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 			logger.Debugf("", "Prune output: %s", logs)
 		}
 		setErrorStatus(r, string(output))
-		if err := updateRunState(c, r, true); err != nil {
+		if err := updateRunState(r, true); err != nil {
 			if _, err := os.Stat(runDir); err != nil {
 				if os.IsNotExist(err) {
 					// file does not exist
@@ -281,7 +280,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 			if runError != nil {
 				logger.Errorf("", "Error running pod %s\n", runError.Error())
 				setErrorStatus(r, fmt.Sprintf("%s :: %s", podmanOutput, string(runError.Error())))
-				if err := updateRunState(c, r, true); err != nil {
+				if err := updateRunState(r, true); err != nil {
 					if _, err := os.Stat(runDir); err != nil {
 						if os.IsNotExist(err) {
 							// file does not exist
@@ -313,7 +312,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 			} else {
 				logger.Errorf("", "stat error: %s", err.Error())
 			}
-			if err := updateRunState(c, r, false); err != nil {
+			if err := updateRunState(r, false); err != nil {
 				if _, err := os.Stat(runDir); err != nil {
 					if os.IsNotExist(err) {
 						// file does not exist
@@ -349,7 +348,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 			} else {
 				logger.Tracef("", "Display stat error: %s", err.Error())
 			}
-			if err := updateRunState(c, r, false); err != nil {
+			if err := updateRunState(r, false); err != nil {
 				if _, err := os.Stat(runDir); err != nil {
 					if os.IsNotExist(err) {
 						// file does not exist
@@ -408,7 +407,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 			logger.Tracef("", "stat error: %s", err.Error())
 		}
 
-		if err := updateRunState(c, r, false); err != nil {
+		if err := updateRunState(r, false); err != nil {
 			if _, err := os.Stat(runDir); err != nil {
 				if os.IsNotExist(err) {
 					// file does not exist
@@ -426,7 +425,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 			if err != nil {
 				logger.Errorf("", "Error reading file %s\n", err.Error())
 				setErrorStatus(r, err.Error())
-				if err := updateRunState(c, r, true); err != nil {
+				if err := updateRunState(r, true); err != nil {
 					if _, err := os.Stat(runDir); err != nil {
 						if os.IsNotExist(err) {
 							// file does not exist
@@ -454,7 +453,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 		inputs := []input.Input{}
 		if err := datastore.UpdateDataStoreByCascade(cName, ds, inputs); err != nil {
 			logger.Errorf("", "Error updating datastore %s\n", err.Error())
-			if err := updateRunState(c, r, true); err != nil {
+			if err := updateRunState(r, true); err != nil {
 				if _, err := os.Stat(runDir); err != nil {
 					if os.IsNotExist(err) {
 						// file does not exist
@@ -486,7 +485,7 @@ func StartContainerRun(c *client.Client, r *Run) (bool, error) {
 			}
 		}
 	}
-	if err := updateRunState(c, r, true); err != nil {
+	if err := updateRunState(r, true); err != nil {
 		if _, err := os.Stat(runDir); err != nil {
 			if os.IsNotExist(err) {
 				// file does not exist
@@ -560,7 +559,7 @@ func ExitCode(err error) int {
 	return 0
 }
 
-func StartLocalRun(c *client.Client, r *Run) (bool, error) {
+func StartLocalRun(r *Run) (bool, error) {
 	r.State.Status = constants.STATE_STATUS_RUNNING
 	currentTime := time.Now().UTC()
 	r.State.Started = currentTime.Format("2006-01-02T15:04:05Z")
@@ -568,7 +567,7 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 		logger.Infof("", "Cannot update state killed: %s %s %s", r.Task.Cascade, r.Task.Name, err.Error())
 		return false, err
 	}
-	if err := updateRunState(c, r, false); err != nil {
+	if err := updateRunState(r, false); err != nil {
 		return false, err
 	}
 
@@ -580,7 +579,7 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 	if err != nil {
 		logger.Errorf("", "Cannot get datastore %s", cName)
 		setErrorStatus(r, err.Error())
-		if err := updateRunState(c, r, true); err != nil {
+		if err := updateRunState(r, true); err != nil {
 			return false, err
 		}
 		return false, err
@@ -600,7 +599,7 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 	if err != nil {
 		logger.Errorf("", "Error creating run directory %s", err.Error())
 		setErrorStatus(r, err.Error())
-		if err := updateRunState(c, r, true); err != nil {
+		if err := updateRunState(r, true); err != nil {
 			return false, err
 		}
 		return false, err
@@ -651,7 +650,7 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 	if err != nil {
 		logger.Errorf("", "Error writing run file %s", err.Error())
 		setErrorStatus(r, err.Error())
-		if err := updateRunState(c, r, true); err != nil {
+		if err := updateRunState(r, true); err != nil {
 			return false, err
 		}
 		return false, err
@@ -663,7 +662,7 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 	if err != nil {
 		logger.Errorf("", "Error writing envin file %s", err.Error())
 		setErrorStatus(r, err.Error())
-		if err := updateRunState(c, r, true); err != nil {
+		if err := updateRunState(r, true); err != nil {
 			return false, err
 		}
 		return false, err
@@ -674,7 +673,7 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 		if err != nil {
 			logger.Errorf("", "Error getting file %s", err.Error())
 			setErrorStatus(r, err.Error())
-			if err := updateRunState(c, r, true); err != nil {
+			if err := updateRunState(r, true); err != nil {
 				return false, err
 			}
 			return false, err
@@ -701,7 +700,7 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 		return false, runError
 	}
 	r.PID = cmd.Process.Pid
-	if err := updateRunState(c, r, true); err != nil {
+	if err := updateRunState(r, true); err != nil {
 		return false, err
 	}
 
@@ -716,7 +715,7 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 		if runError != nil {
 			logger.Errorf("", "Error running pod %s\n", runError.Error())
 			setErrorStatus(r, fmt.Sprintf("Error running pod %s\n", runError.Error()))
-			if err := updateRunState(c, r, true); err != nil {
+			if err := updateRunState(r, true); err != nil {
 				return false, err
 			}
 		}
@@ -742,8 +741,8 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 		} else {
 			logger.Tracef("", "Display stat error: %s", err.Error())
 		}
-		if err := updateRunState(c, r, false); err != nil {
-			logger.Errorf("", "Error updating run %v: %s", c, err.Error())
+		if err := updateRunState(r, false); err != nil {
+			logger.Errorf("", "Error updating run: %s", err.Error())
 			return false, err
 		}
 		time.Sleep(500 * time.Millisecond)
@@ -753,8 +752,8 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 	logger.Tracef("", "setting output 2 %s", output)
 	r.State.Output = output
 
-	if err := updateRunState(c, r, false); err != nil {
-		logger.Errorf("", "Error updating run %v: %s", c, err.Error())
+	if err := updateRunState(r, false); err != nil {
+		logger.Errorf("", "Error updating run: %s", err.Error())
 		return false, err
 	}
 
@@ -793,7 +792,7 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 		logger.Tracef("", "stat error: %s", err.Error())
 	}
 
-	if err := updateRunState(c, r, false); err != nil {
+	if err := updateRunState(r, false); err != nil {
 		return false, err
 	}
 
@@ -804,7 +803,7 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 		if err != nil {
 			logger.Errorf("", "Error reading file %s\n", err.Error())
 			setErrorStatus(r, err.Error())
-			if err := updateRunState(c, r, true); err != nil {
+			if err := updateRunState(r, true); err != nil {
 				return false, err
 			}
 		}
@@ -825,7 +824,7 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 	inputs := []input.Input{}
 	if err := datastore.UpdateDataStoreByCascade(cName, ds, inputs); err != nil {
 		logger.Errorf("", "Error updating datastore %s\n", err.Error())
-		if err := updateRunState(c, r, true); err != nil {
+		if err := updateRunState(r, true); err != nil {
 			return false, err
 		}
 		setErrorStatus(r, err.Error())
@@ -841,7 +840,7 @@ func StartLocalRun(c *client.Client, r *Run) (bool, error) {
 
 	r.PID = 0
 
-	err = updateRunState(c, r, true)
+	err = updateRunState(r, true)
 	return false, err
 }
 
