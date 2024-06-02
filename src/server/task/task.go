@@ -40,25 +40,25 @@ type TaskCheck struct {
 }
 
 type Task struct {
-	Name                  string            `json:"name" bson:"name" yaml:"name"`
-	Kind                  string            `json:"kind" bson:"kind" yaml:"kind"`
-	Cron                  string            `json:"cron" bson:"cron" yaml:"cron"`
-	Cascade               string            `json:"cascade" bson:"cascade" yaml:"cascade"`
-	Verb                  string            `json:"verb" bson:"verb" yaml:"verb"`
-	DependsOn             TaskDependsOn     `json:"depends_on" bson:"depends_on" yaml:"depends_on"`
-	Image                 string            `json:"image" bson:"image" yaml:"image"`
-	Run                   string            `json:"run" bson:"run" yaml:"run"`
-	Store                 TaskLoadStore     `json:"store" bson:"store" yaml:"store"`
-	Load                  TaskLoadStore     `json:"load" bson:"load" yaml:"load"`
-	Env                   map[string]string `json:"env" bson:"env" yaml:"env"`
-	Inputs                map[string]string `json:"inputs" bson:"inputs" yaml:"inputs"`
-	Updated               string            `json:"updated" bson:"updated" yaml:"updated"`
-	RunNumber             int               `json:"run_number" bson:"run_number" yaml:"run_number"`
-	ShouldRM              bool              `json:"should_rm" bson:"should_rm" yaml:"should_rm"`
-	AutoExecute           bool              `json:"auto_execute" bson:"auto_execute" yaml:"auto_execute"`
-	Disabled              bool              `json:"disabled" bson:"disabled" yaml:"disabled"`
-	Check                 TaskCheck         `json:"check" bson:"check" yaml:"check"`
-	ContainerLoginCommand string            `json:"container_login_command" bson:"container_login_command" yaml:"container_login_command"`
+	Name        string            `json:"name" bson:"name" yaml:"name"`
+	Kind        string            `json:"kind" bson:"kind" yaml:"kind"`
+	Cron        string            `json:"cron" bson:"cron" yaml:"cron"`
+	Cascade     string            `json:"cascade" bson:"cascade" yaml:"cascade"`
+	Verb        string            `json:"verb" bson:"verb" yaml:"verb"`
+	DependsOn   TaskDependsOn     `json:"depends_on" bson:"depends_on" yaml:"depends_on"`
+	Image       string            `json:"image" bson:"image" yaml:"image"`
+	Run         string            `json:"run" bson:"run" yaml:"run"`
+	Store       TaskLoadStore     `json:"store" bson:"store" yaml:"store"`
+	Load        TaskLoadStore     `json:"load" bson:"load" yaml:"load"`
+	Env         map[string]string `json:"env" bson:"env" yaml:"env"`
+	Inputs      map[string]string `json:"inputs" bson:"inputs" yaml:"inputs"`
+	Updated     string            `json:"updated" bson:"updated" yaml:"updated"`
+	RunNumber   int               `json:"run_number" bson:"run_number" yaml:"run_number"`
+	ShouldRM    bool              `json:"should_rm" bson:"should_rm" yaml:"should_rm"`
+	AutoExecute bool              `json:"auto_execute" bson:"auto_execute" yaml:"auto_execute"`
+	Disabled    bool              `json:"disabled" bson:"disabled" yaml:"disabled"`
+	// Check                 TaskCheck         `json:"check" bson:"check" yaml:"check"`
+	ContainerLoginCommand string `json:"container_login_command" bson:"container_login_command" yaml:"container_login_command"`
 }
 
 func CreateTask(t *Task) error {
@@ -84,6 +84,7 @@ func CreateTask(t *Task) error {
 		Number:   t.RunNumber,
 		Display:  make([]map[string]interface{}, 0),
 		Killed:   false,
+		History:  make([]string, 0),
 	}
 	if err := state.CreateState(&s); err != nil {
 		return err

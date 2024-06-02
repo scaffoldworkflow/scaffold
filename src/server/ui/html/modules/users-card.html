@@ -58,7 +58,7 @@
                     {{ if $.is_admin }}
                     {{ if not (eq .Username $.admin_username)}}
                     <div id="user-delete-button" class="card-button light" style="margin-right:4px;">
-                        <i class="fa-solid fa-tras" onclick="openDeleteModal('{{ .Username }}')"></i>
+                        <i class="fa-solid fa-trash" onclick="openDeleteModal('{{ .Username }}')"></i>
                     </div>
                     {{ end }}
                     {{ end }}

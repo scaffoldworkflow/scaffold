@@ -652,7 +652,7 @@ function updateStatuses() {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             tableElements = $('.status-table-icon')
             for (let i = 0; i < tableElements.length; i++) {
@@ -970,7 +970,7 @@ function killRun() {
         error: function (response) {
             console.log(response)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
@@ -1001,7 +1001,7 @@ function toggleDisable() {
         error: function (response) {
             console.log(response)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             $("#error-container").text(response.responseJSON['error'])
             openModal('error-modal')
@@ -1058,7 +1058,7 @@ function getDataStore() {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     });
@@ -1080,7 +1080,7 @@ function getInputs(trigger) {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     });
@@ -1151,7 +1151,7 @@ function saveInputs() {
         error: function(response) {
             console.log(response)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
             $("#error-container").text(response.responseJSON['error'])
             $("#spinner").css("display", "none")
@@ -1431,7 +1431,7 @@ function getDatastore() {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     });
@@ -1483,7 +1483,7 @@ function toggleCheckbox(taskName) {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     })
@@ -1575,7 +1575,7 @@ function getTasks() {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     });
@@ -1603,7 +1603,7 @@ function getStates(shouldInit) {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     });
@@ -1635,7 +1635,7 @@ function triggerRun() {
         error: function (result) {
             console.log(result)
             if (result.status == 401) {
-                window.location.href = "/ui/login";
+                window.location.assign("/ui/login");
             }
         }
     });

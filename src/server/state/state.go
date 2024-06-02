@@ -25,6 +25,7 @@ type State struct {
 	Disabled bool                     `json:"disabled" bson:"disabled" yaml:"disabled"`
 	Killed   bool                     `json:"killed" bson:"killed" yaml:"killed"`
 	PID      int                      `json:"pid" bson:"pid" yaml:"pid"`
+	History  []string                 `json:"history" bson:"history" yaml:"history"`
 }
 
 func CreateState(s *State) error {

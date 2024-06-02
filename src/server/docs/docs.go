@@ -331,7 +331,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/datastore/{datastore_name}": {
+        "/api/v1/datastore/{cascade_name}": {
             "get": {
                 "security": [
                     {
@@ -451,6 +451,196 @@ const docTemplate = `{
                         "schema": {
                             "type": "object"
                         }
+                    }
+                }
+            }
+        },
+        "/api/v1/file": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get all files",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "file"
+                ],
+                "summary": "Get all files",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/filestore.ObjectMetadata"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/file/{cascade_name}": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get files by cascade",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "file"
+                ],
+                "summary": "Get files",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/filestore.ObjectMetadata"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/file/{cascade_name}/{file_name}": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get file by cascade and name",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "file"
+                ],
+                "summary": "Get file",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/filestore.ObjectMetadata"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/file/{cascade_name}/{file_name}/download": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Download a file from a cascade",
+                "produces": [
+                    "application/text"
+                ],
+                "tags": [
+                    "manager",
+                    "file"
+                ],
+                "summary": "Download a file",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/file/{datastore_name}": {
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Upload a file to a cascade",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "file"
+                ],
+                "summary": "Upload a file",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             }
@@ -623,6 +813,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/input/{cascade_name}/update": {
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Trigger updates of states for dependent tasks",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "input"
+                ],
+                "summary": "Trigger update to dependent tasks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/input/{cascade_name}/{input_name}": {
             "get": {
                 "security": [
@@ -727,6 +955,145 @@ const docTemplate = `{
                     "input"
                 ],
                 "summary": "Delete a input",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/kill/{cascade_name}/{task_name}": {
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Kill a run on a worker",
+                "tags": [
+                    "worker",
+                    "run"
+                ],
+                "summary": "Kill a run",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/run/containers": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "List all containers",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "worker"
+                ],
+                "summary": "Get all containers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/run/{cascade_name}/{task_name}": {
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Create a run from a cascade and task",
+                "tags": [
+                    "manager",
+                    "run"
+                ],
+                "summary": "Create a run",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/run/{cascade_name}/{task_name}/{task_number}": {
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Instruct a manager to kill a run",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "run"
+                ],
+                "summary": "Kill a run",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1297,6 +1664,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/task/{cascade_name}/{task_name}/enabled": {
+            "put": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Update a task from a JSON object",
+                "tags": [
+                    "manager",
+                    "task"
+                ],
+                "summary": "Update a task",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/task/{task_name}": {
             "delete": {
                 "security": [
@@ -1555,6 +1957,273 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/webhook": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get all webhooks",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "webhook"
+                ],
+                "summary": "Get all webhooks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/state.State"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Create a webhook from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "webhook"
+                ],
+                "summary": "Create a webhook",
+                "parameters": [
+                    {
+                        "description": "Webhook Data",
+                        "name": "webhook",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/webhook.Webhook"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/webhook/{cascade_name}/{webhook_id}": {
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Trigger a webhook with optional input data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "webhook"
+                ],
+                "summary": "Trigger a webhook",
+                "parameters": [
+                    {
+                        "description": "Webhook input Data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/webhook/{webhook_id}": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get a webhook by its ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "webhook"
+                ],
+                "summary": "Get a webhook",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/webhook.Webhook"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Update a webhook from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "webhook"
+                ],
+                "summary": "Update a webhook",
+                "parameters": [
+                    {
+                        "description": "State Data",
+                        "name": "state",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/state.State"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Delete a webhook by its ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "webhook"
+                ],
+                "summary": "Delete a webhook",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/token/{username}/{token_name}": {
             "post": {
                 "security": [
@@ -1784,6 +2453,20 @@ const docTemplate = `{
                 }
             }
         },
+        "filestore.ObjectMetadata": {
+            "type": "object",
+            "properties": {
+                "cascade": {
+                    "type": "string"
+                },
+                "modified": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "input.Input": {
             "type": "object",
             "properties": {
@@ -1810,6 +2493,9 @@ const docTemplate = `{
                 "cascade": {
                     "type": "string"
                 },
+                "disabled": {
+                    "type": "boolean"
+                },
                 "display": {
                     "type": "array",
                     "items": {
@@ -1820,11 +2506,23 @@ const docTemplate = `{
                 "finished": {
                     "type": "string"
                 },
+                "history": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "killed": {
+                    "type": "boolean"
+                },
                 "number": {
                     "type": "integer"
                 },
                 "output": {
                     "type": "string"
+                },
+                "pid": {
+                    "type": "integer"
                 },
                 "started": {
                     "type": "string"
@@ -1833,6 +2531,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "task": {
+                    "type": "string"
+                },
+                "worker": {
                     "type": "string"
                 }
             }
@@ -1846,11 +2547,18 @@ const docTemplate = `{
                 "cascade": {
                     "type": "string"
                 },
-                "check": {
-                    "$ref": "#/definitions/task.TaskCheck"
+                "container_login_command": {
+                    "description": "Check                 TaskCheck         ` + "`" + `json:\"check\" bson:\"check\" yaml:\"check\"` + "`" + `",
+                    "type": "string"
+                },
+                "cron": {
+                    "type": "string"
                 },
                 "depends_on": {
                     "$ref": "#/definitions/task.TaskDependsOn"
+                },
+                "disabled": {
+                    "type": "boolean"
                 },
                 "env": {
                     "type": "object",
@@ -1866,6 +2574,9 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "string"
                     }
+                },
+                "kind": {
+                    "type": "string"
                 },
                 "load": {
                     "$ref": "#/definitions/task.TaskLoadStore"
@@ -1889,44 +2600,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "verb": {
-                    "type": "string"
-                }
-            }
-        },
-        "task.TaskCheck": {
-            "type": "object",
-            "properties": {
-                "env": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "image": {
-                    "type": "string"
-                },
-                "inputs": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "interval": {
-                    "type": "integer"
-                },
-                "load": {
-                    "$ref": "#/definitions/task.TaskLoadStore"
-                },
-                "run": {
-                    "type": "string"
-                },
-                "run_number": {
-                    "type": "integer"
-                },
-                "store": {
-                    "$ref": "#/definitions/task.TaskLoadStore"
-                },
-                "updated": {
                     "type": "string"
                 }
             }
@@ -1963,7 +2636,19 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "env_passthrough": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "file": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "mounts": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -2034,6 +2719,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "webhook.Webhook": {
+            "type": "object",
+            "properties": {
+                "cascade": {
+                    "type": "string"
+                },
+                "entrypoint": {
+                    "type": "string"
+                },
+                "id": {
                     "type": "string"
                 }
             }

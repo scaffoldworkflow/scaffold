@@ -12,6 +12,7 @@ import (
 	"scaffold/server/filestore"
 	"scaffold/server/user"
 	"scaffold/server/utils"
+	"scaffold/server/webhook"
 	"time"
 
 	logger "github.com/jfcarter2358/go-logger"
@@ -241,6 +242,35 @@ func ShowUsersPage(c *gin.Context) {
 	}
 
 	showPage(c, "users.html", gin.H{"users": users, "is_admin": isAdmin, "admin_username": config.Config.Admin.Username, "groups": groups, "roles": roles})
+}
+
+func ShowWebhooksPage(c *gin.Context) {
+	token, _ := c.Cookie("scaffold_token")
+	u, _ := user.GetUserByLoginToken(token)
+
+	if u == nil {
+		c.Redirect(http.StatusTemporaryRedirect, "401.html")
+		return
+	}
+
+	isAdmin := false
+	if utils.Contains(u.Groups, "admin") || utils.Contains(u.Roles, "admin") {
+		isAdmin = true
+	}
+
+	if !isAdmin {
+		c.Redirect(http.StatusTemporaryRedirect, "403.html")
+		return
+	}
+
+	var webhooks []webhook.Webhook
+	webhookPointers, _ := webhook.GetAllWebhooks()
+	webhooks = make([]webhook.Webhook, len(webhookPointers))
+	for idx, obj := range webhookPointers {
+		webhooks[idx] = *obj
+	}
+
+	showPage(c, "webhooks.html", gin.H{"webhooks": webhooks})
 }
 
 func ShowUserPage(c *gin.Context) {

@@ -114,6 +114,18 @@ func KillRun(ctx *gin.Context) {
 	ctx.Status(http.StatusOK)
 }
 
+//	@summary					Create a run
+//	@description				Create a run from a cascade and task
+//	@tags						manager
+//	@tags						run
+//	@success					201			{object}	object
+//	@failure					500			{object}	object
+//	@failure					401			{object}	object
+//	@securityDefinitions.apiKey	token
+//	@in							header
+//	@name						Authorization
+//	@security					X-Scaffold-API
+//	@router						/api/v1/run/{cascade_name}/{task_name} [post]
 func CreateRun(ctx *gin.Context) {
 	cn := ctx.Param("cascade")
 	tn := ctx.Param("task")

@@ -219,145 +219,72 @@ var colors = {
 }
 
 
-var groupTagify
-var roleTagify
+var webhooks
 
-$(document).ready(
-    function() {
-        var groupInput = document.getElementById('group-tags'),
-        groupTagify = new Tagify(groupInput, {
-                id: 'group_tags',
-            }
-        )
-        var roleInput = document.getElementById('role-tags'),
-        roleTagify = new Tagify(roleInput, {
-                id: 'role_tags',
-            }
-        )
-    }
-)
-
-function addGroup() {
-    let groupName = $("#group-to-add").val()
-    groupName = groupName.trim()
-    if (groupName == "") {
-        return
-    }
-    html = `<div ondblclick="removeGroup('{{ . }}')" class="w3-tag w3-round scaffold-green user-group tag" style="padding:3px" id="group-${groupName}">${groupName}</div>`
-    $("#group-to-add").val("")
-    $("#group-card").append(html)
-}
-
-function removeGroup(name) {
-    $(`#group-${name}`).remove()
-}
-
-function addRole() {
-    let roleName = $("#role-to-add").val()
-    roleName = roleName.trim()
-    if (roleName == "") {
-        return
-    }
-    html = `<div ondblclick="removeRole('{{ . }}')" class="w3-tag w3-round scaffold-green user-role tag" style="padding:3px" id="role-${roleName}">${roleName}</div>`
-    $("#role-to-add").val("")
-    $("#role-card").append(html)
-}
-
-function removeRole(name) {
-    $(`#role-${name}`).remove()
-}
-
-function saveUser() {
+function getWebhooks() {
     parts = window.location.href.split('/')
-    username = parts[parts.length - 1]
+    $.ajax({
+        url: "/api/v1/webhook",
+        type: "GET",
+        success: function (result) {
+            webhooks = result
+        },
+        error: function(result) {
+            console.log(result)
+            if (result.status == 401) {
+                window.location.assign("/ui/login");
+            }
+        }
+    });
+}
 
-    groupData = []
-    if (document.getElementById('group-tags').value != "") {
-        groupData = JSON.parse(document.getElementById('group-tags').value)
-    }
-    groups = []
-    for (var i = 0; i < groupData.length; i++) {
-        groups.push(groupData[i]["value"])
+function render() {
+    var prefix = $("#search").val();
+    prefix = prefix.toLowerCase();
+
+    if (prefix == "") {
+        for (let idx = 0; idx < webhooks.length; idx++) {
+            let id = webhooks[idx].id
+            $(`#webhooks-row-${id}`).removeClass("table-hide")
+            $(`#webhooks-row-${id}`).addClass("table-show")
+        }
+        return
     }
 
-    roleData = []
-    if (document.getElementById('role-tags').value != "") {
-        roleData = JSON.parse(document.getElementById('role-tags').value)
-    }
-    roles = []
-    for (var i = 0; i < roleData.length; i++) {
-        roles.push(roleData[i]["value"])
-    }
+    for (let idx = 0; idx < webhooks.length; idx++) {
+        let id = webhooks[idx].id
+        if (id.toLowerCase().indexOf(prefix) == -1) {
+            $(`#webhooks-row-${id}`).removeClass("table-show")
+            $(`#webhooks-row-${id}`).addClass("table-hide")
+            continue
+        }
+        $(`#webhooks-row-${id}`).removeClass("table-hide")
+        $(`#webhooks-row-${id}`).addClass("table-show")
+    } 
+}
 
+function addUser() {
     data = {
-        "username": $("#user-add-username").val(),
-        "password": $("#user-add-password").val(),
-        "given_name": $("#user-add-given-name").val(),
-        "family_name": $("#user-add-family-name").val(),
-        "email": $("#user-add-email").val(),
-        "reset_token": "",
-        "reset_token_created": "",
-        "created": "",
-        "updated": "",
-        "login_token": "",
-        "api_tokens": [],
-        "groups": groups,
-        "roles": roles
+        "entrypoint": $("#webhooks-add-entrypoint").val(),
+        "cascade": $("#webhooks-add-cascade").val(),
     }
 
     $("#spinner").css("display", "block")
     $("#page-darken").css("opacity", "1")
 
     $.ajax({
-        url: "/api/v1/user/" + username,
-        type: "PUT",
+        url: "/api/v1/webhook",
+        type: "POST",
         contentType: 'application/json',
         data: JSON.stringify(data),
         success: function(response) {
             $("#spinner").css("display", "none")
             $("#page-darken").css("opacity", "0")
-            window.location.reload();
+            closeModal('webhooks-add-modal');
+            window.location.reload()
         },
         error: function(response) {
-            console.log(response)
-            if (result.status == 401) {
-                window.location.assign("/ui/login");
-            }
-            $("#error-container").text(response.responseJSON['error'])
-            $("#spinner").css("display", "none")
-            $("#page-darken").css("opacity", "0")
-            openModal('error-modal')
-
-        }
-    });
-}
-
-function generateAPIToken() {
-    parts = window.location.href.split('/')
-    username = parts[parts.length - 1]
-
-    tokenName = $("#user-generate-api-token-name").val()
-
-    $("#spinner").css("display", "block")
-    $("#page-darken").css("opacity", "1")
-
-    $.ajax({
-        url: `/auth/token/${username}/${tokenName}`,
-        type: "POST",
-        contentType: 'application/json',
-        success: function(response) {
-            $("#spinner").css("display", "none")
-            $("#page-darken").css("opacity", "0")
-            token = response.token
-            $("#api-token-field").text(token)
-            $("#api-token-card").css("display", "inline-block")
-            $("#api-token-generate-button").css("display", "none")
-            $("#api-token-cancel-button").css("display", "none")
-            $("#api-token-done-button").css("display", "block")
-            $("#api-token-copy-button").css("display", "inline-block")
-            
-        },
-        error: function(response) {
+            closeModal('webhooks-delete-modal');
             console.log(response)
             if (result.status == 401) {
                 window.location.assign("/ui/login");
@@ -370,23 +297,30 @@ function generateAPIToken() {
     });
 }
 
-function revokeAPIToken(name) {
+function openDeleteModal(id) {
+    $("#webhook-delete-id").text(id)
+    openModal("webhooks-delete-modal");
+}
+
+function deleteWebhook() {
     parts = window.location.href.split('/')
-    username = parts[parts.length - 1]
+
+    id = $("#webhook-delete-id").text()
 
     $("#spinner").css("display", "block")
     $("#page-darken").css("opacity", "1")
 
     $.ajax({
-        url: `/auth/token/${username}/${name}`,
+        url: "/api/v1/webhook/" + id,
         type: "DELETE",
-        contentType: 'application/json',
         success: function(response) {
             $("#spinner").css("display", "none")
             $("#page-darken").css("opacity", "0")
-            window.location.reload();
+            closeModal('webhooks-delete-modal');
+            window.location.reload()
         },
         error: function(response) {
+            closeModal('webhooks-delete-modal');
             console.log(response)
             if (result.status == 401) {
                 window.location.assign("/ui/login");
@@ -399,17 +333,8 @@ function revokeAPIToken(name) {
     });
 }
 
-function openAPITokenModal() {
-    $("#api-token-card").css("display", "none")
-    $("#api-token-generate-button").css("display", "block")
-    $("#api-token-cancel-button").css("display", "block")
-    $("#api-token-done-button").css("display", "none")
-    $("#api-token-copy-button").css("display", "none")
-    openModal("user-generate-api-token-modal")
-}
-
-function closeAPITokenModal() {
-    // navigator.clipboard.writeText($("#api-token-field").text());
-    closeModal("user-generate-api-token-modal")
-    window.location.reload();
-}
+$(document).ready(
+    function() {
+        getWebhooks()
+    }
+)

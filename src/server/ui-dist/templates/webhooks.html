@@ -14,9 +14,11 @@
     <script src="https://kit.fontawesome.com/239a824854.js" crossorigin="anonymous"></script>
     
     <!-- add custom css -->
-    <link rel="stylesheet" type="text/css" href="/static/css/files.css">
+    <link rel="stylesheet" type="text/css" href="{{ .base_path }}/static/css/webhooks.css">
+    <!-- add jquery form -->
+    <script src="https://malsup.github.io/jquery.form.js"></script> 
     <!-- add custom js -->
-    <script src="/static/js/files.js"></script>
+    <script src="{{ .base_path }}/static/js/webhooks.js"></script>
   </head>
   <body class="light theme-base">
     <div id="status-modal" class="w3-modal" style="z-index:999;">
@@ -29,6 +31,48 @@
                 <br>
                 <table class="w3-table light w3-border theme-border-light theme-table-striped" id="status-table">
                 </table>
+                <br>
+                <br>
+            </div>
+        </div>
+    </div>
+    
+    <div id="webhooks-add-modal" class="w3-modal">
+        <div class="w3-modal-content w3-animate-top w3-card-4 w3-round light theme-light w3-border theme-border-light w3-round">
+            <header class="w3-container scaffold-green">
+                <span onclick="closeModal('webhooks-add-modal')" class="w3-button w3-display-topright">&times;</span>
+                <h4>Add User</h4>
+            </header>
+            <div class="w3-container">
+                <br>
+                <label>Cascade</label>
+                <input class="w3-input w3-round light theme-light" type="text" id="webhooks-add-cascade">
+                <label>Entrypoint</label>
+                <input class="w3-input w3-round light theme-light" type="text" id="webhooks-add-entrypoint">
+                <br>
+                <br>
+                <br>
+                <button class="w3-button scaffold-green w3-round w3-right" onclick="addUser()">Add Webhook</button>
+                <button class="w3-button scaffold-red w3-round w3-right" style="margin-right:8px;" onclick="closeModal('webhooks-add-modal')">Cancel</button>
+                <br>
+                <br>
+            </div>
+        </div>
+    </div>
+    
+    <div id="webhooks-delete-modal" class="w3-modal">
+        <div class="w3-modal-content w3-animate-top w3-card-4 w3-round light theme-light w3-border theme-border-light w3-round">
+            <header class="w3-container scaffold-green">
+                <span onclick="closeModal('webhooks-delete-modal')" class="w3-button w3-display-topright">&times;</span>
+                <h4>Delete Webhook</h4>
+            </header>
+            <div class="w3-container">
+                <br>
+                <h4>Are you sure you want to delete the webhook "<span id="webhook-delete-id"></span>"?</h4>
+                <br>
+                <br>
+                <button class="w3-button scaffold-green w3-round w3-right" onclick="deleteWebhook()">Delete Webhook</button>
+                <button class="w3-button scaffold-red w3-round w3-right" style="margin-right:8px;" onclick="closeModal('webhooks-delete-modal')">Cancel</button>
                 <br>
                 <br>
             </div>
@@ -96,41 +140,13 @@
         </div>
     </div>
     
-    <div id="files-upload-file-modal" class="w3-modal" style="z-index:996">
-        <div class="w3-modal-content w3-animate-top w3-card-4 w3-round light theme-light w3-border theme-border-light w3-round">
-            <header class="w3-container scaffold-green" id="files-upload-file-header">
-                <div class="w3-display-topright">
-                    <span onclick="closeModal('files-upload-file-modal')" class="w3-button">&times;</span>
-                </div>
-                <h4>Upload a File</h4>
-            </header>
-            <br>
-            <div class="w3-container">
-                <br>
-                <br>
-                <form action="/api/v1/file/" method="post" enctype="multipart/form-data" id="files-upload-file-form">
-                    <label for="file" class="w3-medium scaffold-text-green">Select a File</label>
-                    <br>
-                    <input id="file" name="file" type="file" />
-                    <br>
-                    <br>
-                    <button class="w3-button scaffold-green w3-round w3-right" form="files-upload-file-form" type="submit">Upload File</button>
-                    <button class="w3-button scaffold-red w3-round w3-right" style="margin-right:8px;" onclick="closeModal('files-upload-file-modal')">Cancel</button>
-                </form>
-                <br>
-                <br>
-            </div>
-        </div>
-    </div>
-    
-    
     <div class="main">
       <div class="w3-bar light theme-light w3-card-4 w3-border theme-border-light w3-padding">
           <div class="w3-large light theme-light w3-container w3-cell w3-cell-middle w3-left-align default-cursor breadcrumb" style="display:inline-block;margin-top:10px;">
               <i class="fa-solid fa-bars w3-large" onclick="toggleSidebar()"></i>
           </div>
           <div class="w3-large light theme-light w3-container w3-cell w3-cell-middle w3-right-align breadcrumb" style="display:inline-block;margin-top:10px;">
-              <a href="/ui/cascades" class="light theme-text">Files</a>
+              <a href="/ui/webhooks" class="light theme-text">Webhooks</a>
           </div>
           <div class="w3-dropdown-click light theme-light w3-container" style="float:right;margin-right:8px;margin-top:2px;">
               <i class="fa-solid fa-circle-user pointer-cursor w3-xxxlarge light theme-light" onclick="toggleMenu()"></i>
@@ -149,66 +165,43 @@
         <br>
         <div class="card-container w3-container">
             <div class="w3-card-4 w3-round light theme-light w3-border theme-border-light">
-                <div class="w3-container scaffold-green w3-round cascade-title">
-                    <h4>Files</h4>
+                <div class="w3-container scaffold-green w3-round webhook-title">
+                    <h4>Webhooks</h4>
+                    <input id="search" class="w3-input w3-round search-bar light theme-light" type="text" name="search" placeholder="Search Webhooks" oninput="render()">
                 </div>
-                <br>
-                <div class="w3-container">
-                    {{ range .cascades }}
-                    {{ $c := . }}
-                        {{ if (index $.in_groups $c) }}
-                            <div class="w3-card light theme-light w3-border theme-border-light">
-                                <div class="w3-container scaffold-green w3-round cascade-title">
-                                    <div style="float:right;margin-top:4px;">
-                                        <span onclick="togglePane('table-{{ . }}')" class="w3-button"><i class="fa-solid fa-caret-down" id="table-{{ . }}-icon"></i></span>
-                                    </div>
-                                    <h4>{{ . }}</h4>
+                <table class="w3-table light w3-border theme-border-light theme-table-striped" id="webhooks-table">
+                    <tr>
+                        <th class="table-title w3-medium scaffold-text-green">
+                            <span class="table-title-text">ID</span>
+                        </th>
+                        <th class="table-title w3-medium scaffold-text-green">
+                            <span class="table-title-text">Cascade</span>
+                        </th>
+                        <th class="table-title w3-medium scaffold-text-green">
+                            <span class="table-title-text">Entrypoint</span>
+                        </th>
+                        <th>
+                            <div class="w3-round w3-button scaffold-green" onclick="openModal('webhooks-add-modal')" style="float:right;margin-right:16px;">Create New</div>
+                        </th>
+                    </tr>
+                    {{ range .webhooks }}
+                        <tr id="webhooks-row-{{ .ID }}" class="table-show">
+                            <td>{{ .ID }}</td>
+                            <td>{{ .Cascade }}</td>
+                            <td>{{ .Entrypoint }}</td>
+                            <td class="table-link-cell">
+                                <div id="webhook-edit-button" class="card-button light" style="margin-right:4px;">
+                                    <a href="/ui/webhook/{{ .ID }}" class="table-link-link w3-right-align light theme-text" style="float:right;margin-right:16px;">
+                                        <i class="fa-solid fa-pencil"></i>
+                                    </a>
                                 </div>
-                                <table class="w3-table light w3-hide w3-border theme-border-light theme-table-striped" id="table-{{ . }}">
-                                    <tbody style="display:table;width:100%;">
-                                        <tr>
-                                            <th class="table-title w3-medium scaffold-text-green">
-                                                <span class="table-title-text">Name</span>
-                                            </th>
-                                            <th class="table-title w3-medium scaffold-text-green">
-                                                <span class="table-title-text">Last Modified</span>   
-                                            </th>
-                                            <th class="table-title w3-medium scaffold-text-green">
-                                                <button class="w3-button scaffold-green w3-round" onclick="openFileUploadModal('{{ . }}')" style="float:right;">
-                                                    Upload File
-                                                </button>
-                                            </th>
-                                        </tr>
-                                        {{ range $.objects }}
-                                            {{ if eq .Cascade $c }}
-                                                <tr>
-                                                    <td>{{ .Name }}</td>
-                                                    <td>{{ .Modified }}</td>
-                                                    <td>
-                                                        <a class="w3-button scaffold-green w3-round" href="/api/v1/file/{{ .Cascade }}/{{ .Name }}/download" style="float:right;">
-                                                            Download
-                                                        </button>
-                                                        <!-- <a class="w3-button scaffold-green w3-round" href="/api/v1/file/{{ .Cascade }}/{{ .Name }}/view" style="float:right;">
-                                                            View
-                                                        </button> -->
-                                                    </td>
-                                                </tr>
-                                            {{ end }}
-                                        {{ end }}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {{ else }}
-                            <div class="w3-card light theme-light w3-border theme-border-light">
-                                <div class="w3-container scaffold-grey w3-round cascade-title">
-                                    <h4>{{ . }}</h4>
+                                <div id="webhook-delete-button" class="card-button light" style="margin-right:8px;">
+                                    <i class="fa-solid fa-trash" onclick="openDeleteModal('{{ .ID }}')"></i>
                                 </div>
-                            </div>
-                        {{ end }}
-                        <br>
+                            </td>
+                        </tr>
                     {{ end }}
-                </div>
-                <br>
+                </table>
             </div>
             
         </div>

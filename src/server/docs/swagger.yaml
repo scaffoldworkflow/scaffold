@@ -43,6 +43,15 @@ definitions:
       updated:
         type: string
     type: object
+  filestore.ObjectMetadata:
+    properties:
+      cascade:
+        type: string
+      modified:
+        type: string
+      name:
+        type: string
+    type: object
   input.Input:
     properties:
       cascade:
@@ -60,6 +69,8 @@ definitions:
     properties:
       cascade:
         type: string
+      disabled:
+        type: boolean
       display:
         items:
           additionalProperties: true
@@ -67,15 +78,25 @@ definitions:
         type: array
       finished:
         type: string
+      history:
+        items:
+          type: string
+        type: array
+      killed:
+        type: boolean
       number:
         type: integer
       output:
         type: string
+      pid:
+        type: integer
       started:
         type: string
       status:
         type: string
       task:
+        type: string
+      worker:
         type: string
     type: object
   task.Task:
@@ -84,10 +105,16 @@ definitions:
         type: boolean
       cascade:
         type: string
-      check:
-        $ref: '#/definitions/task.TaskCheck'
+      container_login_command:
+        description: Check                 TaskCheck         `json:"check" bson:"check"
+          yaml:"check"`
+        type: string
+      cron:
+        type: string
       depends_on:
         $ref: '#/definitions/task.TaskDependsOn'
+      disabled:
+        type: boolean
       env:
         additionalProperties:
           type: string
@@ -98,6 +125,8 @@ definitions:
         additionalProperties:
           type: string
         type: object
+      kind:
+        type: string
       load:
         $ref: '#/definitions/task.TaskLoadStore'
       name:
@@ -113,31 +142,6 @@ definitions:
       updated:
         type: string
       verb:
-        type: string
-    type: object
-  task.TaskCheck:
-    properties:
-      env:
-        additionalProperties:
-          type: string
-        type: object
-      image:
-        type: string
-      inputs:
-        additionalProperties:
-          type: string
-        type: object
-      interval:
-        type: integer
-      load:
-        $ref: '#/definitions/task.TaskLoadStore'
-      run:
-        type: string
-      run_number:
-        type: integer
-      store:
-        $ref: '#/definitions/task.TaskLoadStore'
-      updated:
         type: string
     type: object
   task.TaskDependsOn:
@@ -161,7 +165,15 @@ definitions:
         items:
           type: string
         type: array
+      env_passthrough:
+        items:
+          type: string
+        type: array
       file:
+        items:
+          type: string
+        type: array
+      mounts:
         items:
           type: string
         type: array
@@ -208,6 +220,15 @@ definitions:
       updated:
         type: string
       username:
+        type: string
+    type: object
+  webhook.Webhook:
+    properties:
+      cascade:
+        type: string
+      entrypoint:
+        type: string
+      id:
         type: string
     type: object
 info:
@@ -418,7 +439,7 @@ paths:
       tags:
       - manager
       - datastore
-  /api/v1/datastore/{datastore_name}:
+  /api/v1/datastore/{cascade_name}:
     delete:
       description: Delete a datastore by its name
       produces:
@@ -497,6 +518,126 @@ paths:
       tags:
       - manager
       - datastore
+  /api/v1/file:
+    get:
+      description: Get all files
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/filestore.ObjectMetadata'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Get all files
+      tags:
+      - manager
+      - file
+  /api/v1/file/{cascade_name}:
+    get:
+      description: Get files by cascade
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/filestore.ObjectMetadata'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Get files
+      tags:
+      - manager
+      - file
+  /api/v1/file/{cascade_name}/{file_name}:
+    get:
+      description: Get file by cascade and name
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/filestore.ObjectMetadata'
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Get file
+      tags:
+      - manager
+      - file
+  /api/v1/file/{cascade_name}/{file_name}/download:
+    get:
+      description: Download a file from a cascade
+      produces:
+      - application/text
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - X-Scaffold-API: []
+      summary: Download a file
+      tags:
+      - manager
+      - file
+  /api/v1/file/{datastore_name}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a file to a cascade
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - X-Scaffold-API: []
+      summary: Upload a file
+      tags:
+      - manager
+      - file
   /api/v1/input:
     get:
       description: Get all inputs
@@ -660,6 +801,30 @@ paths:
       tags:
       - manager
       - input
+  /api/v1/input/{cascade_name}/update:
+    post:
+      description: Trigger updates of states for dependent tasks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Trigger update to dependent tasks
+      tags:
+      - manager
+      - input
   /api/v1/input/{input_name}:
     delete:
       description: Delete a input by its name and its cascade
@@ -684,6 +849,93 @@ paths:
       tags:
       - manager
       - input
+  /api/v1/kill/{cascade_name}/{task_name}:
+    delete:
+      description: Kill a run on a worker
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      security:
+      - X-Scaffold-API: []
+      summary: Kill a run
+      tags:
+      - worker
+      - run
+  /api/v1/run/{cascade_name}/{task_name}:
+    post:
+      description: Create a run from a cascade and task
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Create a run
+      tags:
+      - manager
+      - run
+  /api/v1/run/{cascade_name}/{task_name}/{task_number}:
+    delete:
+      description: Instruct a manager to kill a run
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Kill a run
+      tags:
+      - manager
+      - run
+  /api/v1/run/containers:
+    get:
+      description: List all containers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Get all containers
+      tags:
+      - worker
   /api/v1/state:
     get:
       description: Get all states
@@ -1033,6 +1285,28 @@ paths:
       tags:
       - manager
       - task
+  /api/v1/task/{cascade_name}/{task_name}/enabled:
+    put:
+      description: Update a task from a JSON object
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Update a task
+      tags:
+      - manager
+      - task
   /api/v1/task/{task_name}:
     delete:
       description: Delete a task by its name and its cascade
@@ -1197,6 +1471,176 @@ paths:
       tags:
       - manager
       - user
+  /api/v1/webhook:
+    get:
+      description: Get all webhooks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/state.State'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Get all webhooks
+      tags:
+      - manager
+      - webhook
+    post:
+      consumes:
+      - application/json
+      description: Create a webhook from a JSON object
+      parameters:
+      - description: Webhook Data
+        in: body
+        name: webhook
+        required: true
+        schema:
+          $ref: '#/definitions/webhook.Webhook'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Create a webhook
+      tags:
+      - manager
+      - webhook
+  /api/v1/webhook/{cascade_name}/{webhook_id}:
+    post:
+      consumes:
+      - application/json
+      description: Trigger a webhook with optional input data
+      parameters:
+      - description: Webhook input Data
+        in: body
+        name: data
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Trigger a webhook
+      tags:
+      - manager
+      - webhook
+  /api/v1/webhook/{webhook_id}:
+    delete:
+      description: Delete a webhook by its ID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Delete a webhook
+      tags:
+      - manager
+      - webhook
+    get:
+      description: Get a webhook by its ID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/webhook.Webhook'
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Get a webhook
+      tags:
+      - manager
+      - webhook
+    put:
+      consumes:
+      - application/json
+      description: Update a webhook from a JSON object
+      parameters:
+      - description: State Data
+        in: body
+        name: state
+        required: true
+        schema:
+          $ref: '#/definitions/state.State'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Update a webhook
+      tags:
+      - manager
+      - webhook
   /auth/token/{username}/{token_name}:
     delete:
       description: Revoke an API token for a user

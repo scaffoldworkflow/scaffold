@@ -170,5 +170,7 @@ gen-certs:
 docs:
   help: Generate Scaffold documentation
   cmd: |
-    cd docs
+    cd src/server
+    swag init
+    cd ../../docs
     make html
