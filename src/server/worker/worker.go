@@ -41,6 +41,8 @@ func Run() {
 
 	go EnsureManagerConnection()
 
+	go EnsureManagerConnection()
+
 	health.IsHealthy = true
 
 	container.PruneContainers()

@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"scaffold/server/auth"
+	"scaffold/server/bulwark"
 	"scaffold/server/cascade"
 	"scaffold/server/config"
 	"scaffold/server/constants"
@@ -34,6 +35,9 @@ var toKill []string
 func Run() {
 	mongodb.InitCollections()
 	filestore.InitBucket()
+	bulwark.QueueCreate(config.Config.ManagerQueueName)
+	bulwark.QueueCreate(config.Config.WorkerQueueName)
+	bulwark.BufferCreate(config.Config.KillBufferName)
 
 	// r := http.NewServeMux()
 	r := mux.NewRouter()
