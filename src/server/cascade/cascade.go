@@ -164,7 +164,8 @@ func UpdateCascadeByName(name string, c *Cascade) error {
 	}
 
 	if result.ModifiedCount != 1 {
-		return fmt.Errorf("no cascade found with name %s", name)
+		return CreateCascade(c)
+		// return fmt.Errorf("no cascade found with name %s", name)
 	}
 
 	taskNames := make([]string, len(states))

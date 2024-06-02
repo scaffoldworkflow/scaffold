@@ -1,6 +1,6 @@
 package constants
 
-const VERSION = "0.1.0"
+const VERSION = "0.2.1"
 
 const COLOR_RED = "\033[0;31m"
 const COLOR_YELLOW = "\033[0;33m"
