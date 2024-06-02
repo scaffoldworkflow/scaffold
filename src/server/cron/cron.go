@@ -100,6 +100,7 @@ func checkCron(currentTime time.Time, crontab, name string, runNumber int, c *ca
 		if t.Disabled {
 			return
 		}
+
 		for _, tt := range t.DependsOn.Success {
 			s, err := state.GetStateByNames(c.Name, tt)
 			if err != nil {
@@ -133,12 +134,18 @@ func checkCron(currentTime time.Time, crontab, name string, runNumber int, c *ca
 				return
 			}
 		}
+		s, err := state.GetStateByNames(c.Name, name)
+		if err != nil {
+			logger.Errorf("", "Error getting cron run state: %s", err.Error())
+			return
+		}
 		m := msg.TriggerMsg{
 			Task:    name,
 			Cascade: c.Name,
 			Action:  constants.ACTION_TRIGGER,
 			Groups:  c.Groups,
 			Number:  runNumber + 1,
+			Context: s.Context,
 		}
 		logger.Infof("", "Triggering run with message %v", m)
 		if err := rabbitmq.ManagerPublish(m); err != nil {

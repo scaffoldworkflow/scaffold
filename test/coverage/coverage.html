@@ -1398,7 +1398,6 @@ func CreateCheckRun(ctx *gin.Context) <span class="cov0" title="0">{
                 Task: task.Task{
                         Name:        checkStateName,
                         Cascade:     t.Cascade,
-                        Verb:        "",
                         DependsOn:   task.TaskDependsOn{},
                         Image:       t.Check.Image,
                         Run:         t.Check.Run,
@@ -5564,9 +5563,6 @@ const docTemplate = `{
                 },
                 "updated": {
                     "type": "string"
-                },
-                "verb": {
-                    "type": "string"
                 }
             }
         },
@@ -8704,7 +8700,6 @@ type TaskCheck struct {
 type Task struct {
         Name        string            `json:"name" bson:"name"`
         Cascade     string            `json:"cascade" bson:"cascade"`
-        Verb        string            `json:"verb" bson:"verb"`
         DependsOn   TaskDependsOn     `json:"depends_on" bson:"depends_on"`
         Image       string            `json:"image" bson:"image"`
         Run         string            `json:"run" bson:"run"`
@@ -9491,7 +9486,6 @@ func PollQueue() <span class="cov1" title="1">{
                                         Task: task.Task{
                                                 Name:        t.Name,
                                                 Cascade:     t.Cascade,
-                                                Verb:        t.Verb,
                                                 DependsOn:   t.DependsOn,
                                                 Image:       t.Image,
                                                 Run:         t.Run,

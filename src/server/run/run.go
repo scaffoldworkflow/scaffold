@@ -12,7 +12,6 @@ import (
 	"scaffold/server/constants"
 	"scaffold/server/datastore"
 	"scaffold/server/filestore"
-	"scaffold/server/input"
 	"scaffold/server/msg"
 	"scaffold/server/rabbitmq"
 	"scaffold/server/state"
@@ -35,13 +34,14 @@ var killed = false
 // }
 
 type Run struct {
-	Name   string      `json:"name" yaml:"name"`
-	Task   task.Task   `json:"task" yaml:"task"`
-	State  state.State `json:"state" yaml:"state"`
-	Number int         `json:"number" yaml:"number"`
-	Groups []string    `json:"groups" yaml:"groups"`
-	Worker string      `json:"worker" yaml:"worker"`
-	PID    int         `json:"pid" yaml:"pid"`
+	Name    string            `json:"name" yaml:"name"`
+	Task    task.Task         `json:"task" yaml:"task"`
+	State   state.State       `json:"state" yaml:"state"`
+	Number  int               `json:"number" yaml:"number"`
+	Groups  []string          `json:"groups" yaml:"groups"`
+	Worker  string            `json:"worker" yaml:"worker"`
+	PID     int               `json:"pid" yaml:"pid"`
+	Context map[string]string `json:"context" yaml:"context"`
 }
 
 func setErrorStatus(r *Run, output string) {
@@ -63,6 +63,7 @@ func updateRunState(r *Run, send bool) error {
 		Task:    r.Task.Name,
 		Cascade: r.Task.Cascade,
 		Status:  r.State.Status,
+		Context: r.Context,
 	}
 	logger.Debugf("", "Updating run state for %v", m)
 	if err := state.UpdateStateRunByNames(r.State.Cascade, r.State.Task, r.State); err != nil {
@@ -130,11 +131,23 @@ func StartContainerRun(r *Run) (bool, error) {
 
 	envInput := ""
 	for key, val := range r.Task.Inputs {
-		encoded := base64.StdEncoding.EncodeToString([]byte(ds.Env[val]))
+		contextVal, ok := r.Context[val]
+		var encoded string
+		if ok {
+			encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
+		} else {
+			encoded = base64.StdEncoding.EncodeToString([]byte(ds.Env[val]))
+		}
 		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
 	}
 	for _, key := range r.Task.Load.Env {
-		encoded := base64.StdEncoding.EncodeToString([]byte(ds.Env[key]))
+		contextVal, ok := r.Context[key]
+		var encoded string
+		if ok {
+			encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
+		} else {
+			encoded = base64.StdEncoding.EncodeToString([]byte(ds.Env[key]))
+		}
 		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
 	}
 	for key, val := range r.Task.Env {
@@ -447,23 +460,7 @@ func StartContainerRun(r *Run) (bool, error) {
 		}
 
 		for _, name := range r.Task.Store.Env {
-			ds.Env[name] = envVarMap[name]
-		}
-
-		inputs := []input.Input{}
-		if err := datastore.UpdateDataStoreByCascade(cName, ds, inputs); err != nil {
-			logger.Errorf("", "Error updating datastore %s\n", err.Error())
-			if err := updateRunState(r, true); err != nil {
-				if _, err := os.Stat(runDir); err != nil {
-					if os.IsNotExist(err) {
-						// file does not exist
-					} else {
-						os.RemoveAll(runDir)
-					}
-				}
-				return false, err
-			}
-			setErrorStatus(r, err.Error())
+			r.Context[name] = envVarMap[name]
 		}
 
 		currentTime = time.Now().UTC()
@@ -611,11 +608,23 @@ func StartLocalRun(r *Run) (bool, error) {
 
 	envInput := ""
 	for key, val := range r.Task.Inputs {
-		encoded := base64.StdEncoding.EncodeToString([]byte(ds.Env[val]))
+		contextVal, ok := r.Context[val]
+		var encoded string
+		if ok {
+			encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
+		} else {
+			encoded = base64.StdEncoding.EncodeToString([]byte(ds.Env[val]))
+		}
 		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
 	}
 	for _, key := range r.Task.Load.Env {
-		encoded := base64.StdEncoding.EncodeToString([]byte(ds.Env[key]))
+		contextVal, ok := r.Context[key]
+		var encoded string
+		if ok {
+			encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
+		} else {
+			encoded = base64.StdEncoding.EncodeToString([]byte(ds.Env[key]))
+		}
 		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
 	}
 	for key, val := range r.Task.Env {
@@ -818,16 +827,7 @@ func StartLocalRun(r *Run) (bool, error) {
 	}
 
 	for _, name := range r.Task.Store.Env {
-		ds.Env[name] = envVarMap[name]
-	}
-
-	inputs := []input.Input{}
-	if err := datastore.UpdateDataStoreByCascade(cName, ds, inputs); err != nil {
-		logger.Errorf("", "Error updating datastore %s\n", err.Error())
-		if err := updateRunState(r, true); err != nil {
-			return false, err
-		}
-		setErrorStatus(r, err.Error())
+		r.Context[name] = envVarMap[name]
 	}
 
 	currentTime = time.Now().UTC()

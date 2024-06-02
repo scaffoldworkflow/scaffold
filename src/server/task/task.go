@@ -44,7 +44,6 @@ type Task struct {
 	Kind        string            `json:"kind" bson:"kind" yaml:"kind"`
 	Cron        string            `json:"cron" bson:"cron" yaml:"cron"`
 	Cascade     string            `json:"cascade" bson:"cascade" yaml:"cascade"`
-	Verb        string            `json:"verb" bson:"verb" yaml:"verb"`
 	DependsOn   TaskDependsOn     `json:"depends_on" bson:"depends_on" yaml:"depends_on"`
 	Image       string            `json:"image" bson:"image" yaml:"image"`
 	Run         string            `json:"run" bson:"run" yaml:"run"`
@@ -85,6 +84,7 @@ func CreateTask(t *Task) error {
 		Display:  make([]map[string]interface{}, 0),
 		Killed:   false,
 		History:  make([]string, 0),
+		Context:  map[string]string{},
 	}
 	if err := state.CreateState(&s); err != nil {
 		return err
@@ -215,35 +215,6 @@ func UpdateTaskByNames(cascade, task string, t *Task) error {
 	currentTime := time.Now().UTC()
 	t.Updated = currentTime.Format("2006-01-02T15:04:05Z")
 	t.Cascade = cascade
-
-	// tt, err := GetTaskByNames(cascade, task)
-	// if err != nil {
-	// 	return fmt.Errorf("task %s does not exist in cascade %s", task, cascade)
-	// }
-	// if t.Cron == "" {
-	// 	t.Cron = tt.Cron
-	// }
-	// if t.Verb == "" {
-	// 	t.Verb = tt.Verb
-	// }
-	// if t.Image == "" {
-	// 	t.Image = tt.Image
-	// }
-	// if t.Run == "" {
-	// 	t.Run = tt.Run
-	// }
-	// if t.Env == nil {
-	// 	t.Env = tt.Env
-	// }
-	// if t.Inputs == nil {
-	// 	t.Inputs = tt.Inputs
-	// }
-	// if t.RunNumber == 0 {
-	// 	t.RunNumber = tt.RunNumber
-	// }
-	// if t.ContainerLoginCommand == "" {
-	// 	t.ContainerLoginCommand = tt.ContainerLoginCommand
-	// }
 
 	logger.Debugf("", "Updating task %v", *t)
 

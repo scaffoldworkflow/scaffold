@@ -26,6 +26,7 @@ type State struct {
 	Killed   bool                     `json:"killed" bson:"killed" yaml:"killed"`
 	PID      int                      `json:"pid" bson:"pid" yaml:"pid"`
 	History  []string                 `json:"history" bson:"history" yaml:"history"`
+	Context  map[string]string        `json:"context" bson:"context" yaml:"context"`
 }
 
 func CreateState(s *State) error {

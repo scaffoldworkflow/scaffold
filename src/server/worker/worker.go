@@ -174,8 +174,10 @@ func QueueDataReceive(data []byte) error {
 				Number:   m.Number,
 				Worker:   ID,
 				Display:  make([]map[string]interface{}, 0),
+				Context:  m.Context,
 			},
-			Worker: ID,
+			Worker:  ID,
+			Context: m.Context,
 		}
 
 		currentTask = m.Task

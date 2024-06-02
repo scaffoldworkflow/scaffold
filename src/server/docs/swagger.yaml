@@ -141,8 +141,6 @@ definitions:
         $ref: '#/definitions/task.TaskLoadStore'
       updated:
         type: string
-      verb:
-        type: string
     type: object
   task.TaskDependsOn:
     properties:
