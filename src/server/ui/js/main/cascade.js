@@ -418,6 +418,7 @@ function getStates(shouldInit) {
         contentType: "application/json",
         success: function (result) {
             states = result 
+            console.log(states)
             updateNodes()
             if (shouldInit) {
                 workflow = new Workflow("cascade-canvas", "cascade-card", "", "", 995, "light theme-light", tasks, pin_colors)

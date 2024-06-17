@@ -42,6 +42,9 @@ function updateStateStatus() {
                 // console.log("building display!")
                 // console.log(state)
                 // console.log(state.display)
+                console.log(state.context)
+                $(`#state-context`).empty();
+                $(`#state-context`).append(buildContextTable(state.context, color, text_color))
                 buildDisplay(state.display, "current", color, text_color)
                 continue
             }
@@ -71,6 +74,57 @@ function updateStateStatus() {
             // }
         }
     }
+}
+
+function buildContextTable(context, color, text_color) {
+    theme = localStorage.getItem('scaffold-theme');
+    // create the card
+    let output = `<div class="w3-border w3-card ${theme} theme-light theme-border-light w3-round">`
+    output += `
+        <header class="w3-container ${color}">
+            <h4>Context Values</h4>
+        </header>
+    `
+
+    // create the table
+    output += `<table class="w3-table light w3-border theme-border-light theme-table-striped">`
+    
+    // header
+    output += `<tr>`
+    output += `
+        <th class="table-title w3-medium ${text_color}">
+            <span class="table-title-text">Name</span>
+        </th>
+        <th class="table-title w3-medium ${text_color}">
+            <span class="table-title-text">Value</span>
+        </th>
+    `
+    output += `</tr>`
+
+    // add table data
+    for (let key in context) {
+        output += `<tr>`
+        output += `
+            <td>
+                ${key}
+            </td>
+            <td>
+                ${context[key]}
+            </td>
+        `
+        output += `</tr>`
+    }
+    
+    // close out the table
+    output += `</table>`
+
+    // close out the card
+    output += `
+        </div>
+        <br>
+    `
+
+    return output
 }
 
 function buildDisplayTable(cd, color, text_color) {
