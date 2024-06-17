@@ -2598,9 +2598,6 @@ const docTemplate = `{
                 },
                 "updated": {
                     "type": "string"
-                },
-                "verb": {
-                    "type": "string"
                 }
             }
         },

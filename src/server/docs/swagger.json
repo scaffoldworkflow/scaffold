@@ -2589,9 +2589,6 @@
                 },
                 "updated": {
                     "type": "string"
-                },
-                "verb": {
-                    "type": "string"
                 }
             }
         },

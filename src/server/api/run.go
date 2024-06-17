@@ -10,6 +10,7 @@ import (
 	"scaffold/server/msg"
 	"scaffold/server/rabbitmq"
 	"scaffold/server/run"
+	"scaffold/server/state"
 	"scaffold/server/task"
 	"scaffold/server/utils"
 
@@ -142,6 +143,12 @@ func CreateRun(ctx *gin.Context) {
 		return
 	}
 
+	s, err := state.GetStateByNames(cn, tn)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
 	if t.Disabled {
 		utils.Error(fmt.Errorf("task %s is disabled", tn), ctx, http.StatusServiceUnavailable)
 		return
@@ -153,6 +160,7 @@ func CreateRun(ctx *gin.Context) {
 		Action:  constants.ACTION_TRIGGER,
 		Groups:  c.Groups,
 		Number:  t.RunNumber + 1,
+		Context: s.Context,
 	}
 
 	logger.Infof("", "Creating run with message %v", m)

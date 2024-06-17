@@ -226,6 +226,7 @@ func JoinNode(ctx *gin.Context) {
 			return
 		}
 
+		NodeLock.Lock()
 		Nodes[n.Name] = NodeObject{
 			Name:     n.Name,
 			Host:     ipAddr,
@@ -236,6 +237,7 @@ func JoinNode(ctx *gin.Context) {
 			Protocol: n.Protocol,
 			Ping:     0,
 		}
+		NodeLock.Unlock()
 		ctx.Status(http.StatusOK)
 		return
 	}
