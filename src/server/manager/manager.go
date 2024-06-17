@@ -91,12 +91,12 @@ func QueueDataReceive(data []byte) error {
 	switch m.Status {
 	case constants.STATE_STATUS_SUCCESS:
 		logger.Debugf("", "Task %s has completed with status success", m.Task)
-		stateChange(m.Cascade, m.Task, constants.STATE_STATUS_SUCCESS)
+		stateChange(m.Cascade, m.Task, constants.STATE_STATUS_SUCCESS, m.Context)
 		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_SUCCESS, m.Context)
 		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS, m.Context)
 	case constants.STATE_STATUS_ERROR:
 		logger.Debugf("", "Task %s has completed with status error", m.Task)
-		stateChange(m.Cascade, m.Task, constants.STATE_STATUS_ERROR)
+		stateChange(m.Cascade, m.Task, constants.STATE_STATUS_ERROR, m.Context)
 		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ERROR, m.Context)
 		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS, m.Context)
 	case constants.STATE_STATUS_KILLED:
@@ -163,7 +163,16 @@ func healthCheck() {
 	}
 }
 
-func stateChange(cn, tn, status string) error {
+func stateChange(cn, tn, status string, context map[string]string) error {
+	ss, err := state.GetStateByNames(cn, tn)
+	if err != nil {
+		logger.Errorf("", "Cannot get state for %s", cn)
+		return err
+	}
+	ss.Context = utils.MergeDict(ss.Context, context)
+	if err := state.UpdateStateByNames(cn, tn, ss); err != nil {
+		return err
+	}
 	ts, err := task.GetTasksByCascade(cn)
 	if err != nil {
 		logger.Errorf("", "Cannot change state for %s", cn)
@@ -173,10 +182,21 @@ func stateChange(cn, tn, status string) error {
 	case constants.STATE_STATUS_SUCCESS:
 		for _, t := range ts {
 			shouldExecute := false
+			sss, err := state.GetStateByNames(cn, t.Name)
+			if err != nil {
+				return err
+			}
 			for _, n := range t.DependsOn.Always {
-				if n == tn && t.AutoExecute {
-					shouldExecute = true
-					continue
+
+				if n == tn {
+					sss.Context = utils.MergeDict(sss.Context, context)
+					if err := state.UpdateStateByNames(cn, t.Name, sss); err != nil {
+						return err
+					}
+					if t.AutoExecute {
+						shouldExecute = true
+						continue
+					}
 				}
 				s, err := state.GetStateByNames(cn, n)
 				if err != nil {
@@ -187,9 +207,15 @@ func stateChange(cn, tn, status string) error {
 				}
 			}
 			for _, n := range t.DependsOn.Success {
-				if n == tn && t.AutoExecute {
-					shouldExecute = true
-					continue
+				if n == tn {
+					sss.Context = utils.MergeDict(sss.Context, context)
+					if err := state.UpdateStateByNames(cn, t.Name, sss); err != nil {
+						return err
+					}
+					if t.AutoExecute {
+						shouldExecute = true
+						continue
+					}
 				}
 				s, err := state.GetStateByNames(cn, n)
 				if err != nil {
@@ -200,7 +226,7 @@ func stateChange(cn, tn, status string) error {
 				}
 			}
 			if shouldExecute {
-				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
+				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context); err != nil {
 					return err
 				}
 			}
@@ -235,7 +261,7 @@ func stateChange(cn, tn, status string) error {
 				}
 			}
 			if shouldExecute {
-				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
+				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context); err != nil {
 					return err
 				}
 			}
@@ -252,7 +278,7 @@ func stateChange(cn, tn, status string) error {
 					if err := state.UpdateStateByNames(cn, t.Name, s); err != nil {
 						return err
 					}
-					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
+					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context); err != nil {
 						return err
 					}
 				}
@@ -267,7 +293,7 @@ func stateChange(cn, tn, status string) error {
 					if err := state.UpdateStateByNames(cn, t.Name, s); err != nil {
 						return err
 					}
-					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
+					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context); err != nil {
 						return err
 					}
 				}
@@ -282,7 +308,7 @@ func stateChange(cn, tn, status string) error {
 					if err := state.UpdateStateByNames(cn, t.Name, s); err != nil {
 						return err
 					}
-					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED); err != nil {
+					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context); err != nil {
 						return err
 					}
 				}
@@ -489,7 +515,7 @@ func InputChangeStateChange(name string, changed []string) error {
 	for _, t := range c.Tasks {
 		for _, i := range changed {
 			if utils.Contains(utils.Keys(t.Inputs), i) {
-				stateChange(name, t.Name, constants.STATE_STATUS_NOT_STARTED)
+				stateChange(name, t.Name, constants.STATE_STATUS_NOT_STARTED, map[string]string{})
 				// state.CopyStatesByNames(name, t.Name, fmt.Sprintf("SCAFFOLD_PREVIOUS-%s", t.Name))
 				state.ClearStateByNames(name, t.Name, t.RunNumber)
 				break
