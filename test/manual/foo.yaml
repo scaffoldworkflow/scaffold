@@ -3,20 +3,37 @@ name: foo
 groups:
   - foo
 inputs:
-  - name: foo
+  - name: fooInput
     description: foo
     default: foo
     type: text
-  - name: bar
+  - name: barInput
     description: bar
     default: bar
     type: text
 tasks:
 - name: a
+  inputs:
+    fooInput: fooInput
+    barInput: barInput
   run: |
-    echo "foo=${foo}"
-    echo "bar=${bar}"
-    export foo="a"
+    export "foo=${fooInput}"
+    export "bar=${barInput}"
+  store:
+    env:
+      - foo
+      - bar
+  load:
+    env:
+      - foo
+      - bar
+- name: aa
+  run: |
+    export "foo=${fooInput}"
+    export "bar=${barInput}"
+  inputs:
+    fooInput: fooInput
+    barInput: barInput
   store:
     env:
       - foo
@@ -28,9 +45,8 @@ tasks:
 - name: b
   image: ubuntu:20.04
   run: |
-    echo "foo=${foo}"
-    echo "bar=${bar}"
-    export bar="b"
+    export "foo=${foo}"
+    export "bar=${bar}"
   store:
     env:
       - foo
@@ -42,6 +58,7 @@ tasks:
   depends_on:
     success:
       - a
+      - aa
   auto_execute: true
 - name: c
   run: |

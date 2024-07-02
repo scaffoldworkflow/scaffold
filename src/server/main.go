@@ -10,7 +10,9 @@ import (
 	"net/http"
 	"scaffold/server/config"
 	"scaffold/server/constants"
+	"scaffold/server/filestore"
 	"scaffold/server/manager"
+	"scaffold/server/mongodb"
 	"scaffold/server/rabbitmq"
 	"scaffold/server/worker"
 	"time"
@@ -42,6 +44,9 @@ func run(ctx context.Context, channel chan struct{}) {
 	initializeRoutes()
 
 	rand.Seed(time.Now().UnixNano())
+
+	mongodb.InitCollections()
+	filestore.InitBucket()
 
 	if config.Config.Node.Type == constants.NODE_TYPE_MANAGER {
 		rabbitmq.RunManagerProducer()

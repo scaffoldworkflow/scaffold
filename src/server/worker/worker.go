@@ -9,9 +9,7 @@ import (
 	"scaffold/server/config"
 	"scaffold/server/constants"
 	"scaffold/server/container"
-	"scaffold/server/filestore"
 	"scaffold/server/health"
-	"scaffold/server/mongodb"
 	"scaffold/server/msg"
 	"scaffold/server/run"
 	"scaffold/server/state"
@@ -34,14 +32,12 @@ var currentCascade = ""
 func Run() {
 	ID = uuid.New().String()
 
-	mongodb.InitCollections()
-	filestore.InitBucket()
 	container.CompletedRuns = make(map[string]run.Run)
 	// StartWebsocketServer()
 
 	go EnsureManagerConnection()
 
-	go EnsureManagerConnection()
+	// go EnsureManagerConnection()
 
 	health.IsHealthy = true
 

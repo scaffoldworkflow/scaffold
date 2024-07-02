@@ -11,9 +11,7 @@ import (
 	"scaffold/server/config"
 	"scaffold/server/constants"
 	scron "scaffold/server/cron"
-	"scaffold/server/filestore"
 	"scaffold/server/health"
-	"scaffold/server/mongodb"
 	"scaffold/server/msg"
 	"scaffold/server/proxy"
 	"scaffold/server/rabbitmq"
@@ -32,9 +30,6 @@ import (
 var toKill []string
 
 func Run() {
-	mongodb.InitCollections()
-	filestore.InitBucket()
-
 	// r := http.NewServeMux()
 	r := mux.NewRouter()
 	// mux.Handle("/ws", websocket.Handler(run))
@@ -203,7 +198,8 @@ func stateChange(cn, tn, status string, context map[string]string) error {
 					return err
 				}
 				if s.Status != constants.STATE_STATUS_ERROR && s.Status != constants.STATE_STATUS_SUCCESS {
-					return nil
+					// return nil
+					continue
 				}
 			}
 			for _, n := range t.DependsOn.Success {
@@ -222,7 +218,8 @@ func stateChange(cn, tn, status string, context map[string]string) error {
 					return err
 				}
 				if s.Status != constants.STATE_STATUS_SUCCESS {
-					return nil
+					// return nil
+					continue
 				}
 			}
 			if shouldExecute {
@@ -244,7 +241,8 @@ func stateChange(cn, tn, status string, context map[string]string) error {
 					return err
 				}
 				if s.Status != constants.STATE_STATUS_ERROR && s.Status != constants.STATE_STATUS_SUCCESS {
-					return nil
+					// return nil
+					continue
 				}
 			}
 			for _, n := range t.DependsOn.Error {
@@ -257,7 +255,8 @@ func stateChange(cn, tn, status string, context map[string]string) error {
 					return err
 				}
 				if s.Status != constants.STATE_STATUS_ERROR {
-					return nil
+					// return nil
+					continue
 				}
 			}
 			if shouldExecute {
@@ -459,9 +458,9 @@ func DoTrigger(cn, tn string, context map[string]string) error {
 		return err
 	}
 
-	if err := DoKill(cn, tn); err != nil {
-		return err
-	}
+	// if err := DoKill(cn, tn); err != nil {
+	// 	return err
+	// }
 
 	m := msg.TriggerMsg{
 		Task:    tn,

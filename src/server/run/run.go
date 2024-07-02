@@ -131,24 +131,24 @@ func StartContainerRun(r *Run) (bool, error) {
 
 	envInput := ""
 	for key, val := range r.Task.Inputs {
-		contextVal, ok := r.Context[val]
+		dsVal, ok := ds.Env[val]
 		var encoded string
 		if ok {
-			encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
-		} else {
-			encoded = base64.StdEncoding.EncodeToString([]byte(ds.Env[val]))
+			encoded = base64.StdEncoding.EncodeToString([]byte(dsVal))
+			envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+			continue
 		}
-		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+		logger.Warnf("", "Input value missing for %s", val)
 	}
 	for _, key := range r.Task.Load.Env {
 		contextVal, ok := r.Context[key]
 		var encoded string
 		if ok {
 			encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
-		} else {
-			encoded = base64.StdEncoding.EncodeToString([]byte(ds.Env[key]))
+			envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+			continue
 		}
-		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+		logger.Warnf("", "ENV load value missing for %s", key)
 	}
 	for key, val := range r.Task.Env {
 		encoded := base64.StdEncoding.EncodeToString([]byte(val))
@@ -608,24 +608,24 @@ func StartLocalRun(r *Run) (bool, error) {
 
 	envInput := ""
 	for key, val := range r.Task.Inputs {
-		contextVal, ok := r.Context[val]
+		dsVal, ok := ds.Env[val]
 		var encoded string
 		if ok {
-			encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
-		} else {
-			encoded = base64.StdEncoding.EncodeToString([]byte(ds.Env[val]))
+			encoded = base64.StdEncoding.EncodeToString([]byte(dsVal))
+			envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+			continue
 		}
-		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+		logger.Warnf("", "Input value missing for %s", val)
 	}
 	for _, key := range r.Task.Load.Env {
 		contextVal, ok := r.Context[key]
 		var encoded string
 		if ok {
 			encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
-		} else {
-			encoded = base64.StdEncoding.EncodeToString([]byte(ds.Env[key]))
+			envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+			continue
 		}
-		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+		logger.Warnf("", "ENV load value missing for %s", key)
 	}
 	for key, val := range r.Task.Env {
 		encoded := base64.StdEncoding.EncodeToString([]byte(val))
@@ -826,6 +826,9 @@ func StartLocalRun(r *Run) (bool, error) {
 		envVarMap[name] = string(decoded)
 	}
 
+	if r.Context == nil {
+		r.Context = make(map[string]string)
+	}
 	for _, name := range r.Task.Store.Env {
 		r.Context[name] = envVarMap[name]
 	}
