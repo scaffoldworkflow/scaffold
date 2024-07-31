@@ -154,6 +154,7 @@ function toggleCurrentState() {
         legend.classList.remove("show");
         $("#current-legend").css("left", `calc(100%)`)
         // Show state
+        updateStateStatus(true)
         sidebar.classList.add("show");
         sidebar.classList.remove("right-slide-out-500");
         sidebar.classList.add("right-slide-in-500")
@@ -425,7 +426,9 @@ function getStates(shouldInit) {
                 setInterval(function() {
                     workflow.UpdateWorkflow()
                 }, workflowIntervalMilliSeconds);
-                setInterval(updateStateStatus, stateIntervalMilliSeconds)
+                setInterval(function() {
+                    updateStateStatus(false)
+                }, stateIntervalMilliSeconds)
             }
         },
         error: function (result) {

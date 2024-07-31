@@ -39,6 +39,8 @@ const Workflow = class {
         this.parent = $(`#${parent_id}`)
         this.height = `${this.parent.height()}px;`
         this.width = `${this.parent.width()}px;`
+
+        
         
         $(this.parent).append(`<canvas 
                 style=""${this.canvas_style}width:${this.width};"
@@ -84,120 +86,21 @@ const Workflow = class {
         return {width: width, height: height}
     }
 
-    AddNodeChildren(node_structure, name, depends) {
-        for (let idx = 0; idx < node_structure.length; idx++) {
-            if (depends.includes(node_structure[idx].name)) {
-                node_structure[idx].children.push({name: name, children: []})
-                return {node_structure: node_structure, was_found: true}
-            }
-        
-            let data = this.AddNodeChildren(node_structure[idx].children, name, depends)
-            node_structure[idx].children = data.node_structure
-            let found = data.was_found
-            if (found) {
-                return {node_structure: node_structure, was_found: true}
-            }
-        }
-        return {node_structure: node_structure, was_found: false}
-    }
-
-    // GetXY(node_structure, x, y) {
-    GetXY(g) {
-
-        let positions = {}
-        
-        let y = this.padding
-        for (let r = 0; r < g.length; r++) {
-            let x = this.padding
-            for (let c = 0; c < g[r].length; c++) {
-                let n = g[r][c];
-                if (n == "") {
-                    x += this.widths[c] + this.padding
-                    continue
-                }
-                let s = this.GetNodeSize(n)
-                let delta_x = (this.widths[c] - s.width) / 2
-                positions[n] = {name: n, x: x + delta_x, y: y, width: this.widths[c], height: this.heights[r]}
-                x += this.widths[c] + this.padding
-            }
-            y += this.heights[r] + this.padding
-        }
-
-        return {positions: positions}
-        
-        // let positions = {}
-        // let max_width = 0
-
-        // for (let node of node_structure) {
-        //     let size_data = this.GetNodeSize(node.name)
-        //     if (size_data.width > max_width) {
-        //         max_width = size_data.width
-        //     }
-        // }
-
-        // let height = 0
-        
-        // for (let node of node_structure) {
-        //     let size_data = this.GetNodeSize(node.name)
-
-        //     positions[node.name] = {name: node.name, x: x, y: y, width: size_data.width, height: size_data.height}
-
-        //     let data = this.GetXY(node.children, x + max_width + this.padding, y)
-        //     let to_add = data.positions
-                
-        //     y += size_data.height + this.padding
-
-        //     for (let [key, val] of Object.entries(to_add)) {
-        //         positions[key] = val
-        //     }
-        // }
-        // return {positions: positions}
-    }
-
-    BuildNodeStructure() {
-        // let node_structure = []
-        // let to_add = {}
-
-        // for (let [key, val] of Object.entries(this.structure)) {
-        //     to_add[key] = []
-        //     for (let idx = 0; idx < val.length; idx++) {
-        //         to_add[key].push(val[idx])
-        //     }
-        // }
-
-        // let found = true
-        // while (found) {
-        //     found = false
-        //     let to_remove = []
-        //     for (let [key, val] of Object.entries(to_add)) {
-        //         if (val.length == 0) {
-        //             found = true
-        //             let data = this.AddNodeChildren(node_structure, key, this.structure[key])
-        //             node_structure = data.node_structure
-        //             let was_found = data.was_found
-        //             if (!was_found) {
-        //                 node_structure.push({name: key, children: []})
-        //             }
-        //             for (let [key2, val2] of Object.entries(to_add)) {
-        //                 while(val2.indexOf(key) > -1) {
-        //                     to_add[key2].splice(val2.indexOf(key), 1);
-        //                 }
-        //             }
-        //             to_remove.push(key)
-        //         }
-        //     }
-        //     for (let idx = 0; idx < to_remove.length; idx++) {
-        //         delete to_add[to_remove[idx]]
-        //     }
-        // }
-        // return node_structure
-    }
-
     SetupNodes() {
-        for (let [name, _] of Object.entries(this.tasks)) {
-            this.structure[name] = []
-        }
+        // Set an object for the graph label
+        var g = new dagre.graphlib.Graph();
+        
+        g.setGraph({});
+
+        // Default to assigning a new object as a label for each new edge.
+        g.setDefaultEdgeLabel(function () {
+            return {};
+        });
+
         for (let [name, task] of Object.entries(this.tasks)) {
+            let size = this.GetNodeSize(name)
+            g.setNode(name, { label: name, width: size.width, height: size.height });
+
             if (task.out != null && task.out != undefined) {
                 for (let [pin, nodes] of Object.entries(task.out)) {
                     for (let node of nodes) {
@@ -207,32 +110,20 @@ const Workflow = class {
                             pin: pin,
                             color: this.pin_colors[pin],
                         })
-                    }
-                }
-                for (let [_, children] of Object.entries(task.out)) {
-                    for (let child of children) {
-                        this.structure[child].push(name)
+                        g.setEdge(name, node);
                     }
                 }
             }
         }
 
-        let grid = [[]]
-        grid = this.GetGrid(0, 0, this.tasks, grid)
-        grid = this.TransposeGrid(grid)
-        grid = this.RemoveDuplicates(grid)
+        // Create layout
+        dagre.layout(g, {align: "UL"});
 
-        this.PrintGrid(grid)
-        
-        // let node_structure = this.BuildNodeStructure(this.structure)
-
-        // let data = this.GetXY(node_structure, this.canvas.offset().left + this.padding, this.padding)
-        let data = this.GetXY(grid)
-        let positions = data.positions
-
-        for (let [key, val] of Object.entries(positions)) {
-            this.nodes[key] = val
-        }
+        g.nodes().forEach(function (v) {
+            console.log("Node " + v + ": " + JSON.stringify(g.node(v)));
+            let n = g.node(v)
+            this.nodes[v] = {name: v, x: n.x, y: n.y, width: n.width, height: n.height}
+        }, this);
     }
 
     RenderNodes() {
@@ -242,16 +133,9 @@ const Workflow = class {
             let bg_color = this.tasks[key].title.background_color
             let fg_color = this.tasks[key].title.foreground_color
 
-            let rows = ''
             let outputs = []
             if (this.tasks[key].out != null && this.tasks[key].out != undefined) {
                 outputs = Object.keys(this.tasks[key].out)
-            }
-            let input_cells = `<td><i class="fa-solid fa-circle-dot" style="color:${this.input_color}" data-pin="${key}.Input"></i></td>
-                                <td style="color:${this.input_color}">Input</td>`
-            if (this.structure[key].length == 0) {
-                input_cells = `<td></td>
-                                <td></td>`
             }
 
             let func_def = ""
@@ -362,174 +246,6 @@ const Workflow = class {
         }
 
         this.RenderLines()
-    }
-
-    TransposeGrid(grid) {
-        this.PrintGrid(grid)
-        let out = []
-
-        this.widths = []
-        for (let i = 0; i < grid.length; i++) {
-            this.widths.push(0)
-        }
-
-        this.heights = []
-        for (let i = 0; i < grid[0].length; i++) {
-            this.heights.push(0)
-        }
-
-        for (let c = 0; c < grid[0].length; c++) {
-            out.push([])
-            for (let r = 0; r < grid.length; r++) {
-                let row = grid[r]
-                out[c].push(row[c])
-                if (row[c] == "") {
-                    continue
-                }
-                let size = this.GetNodeSize(row[c])
-                if (size.width > this.widths[r]) {
-                    this.widths[r] = size.width
-                }
-                if (size.height > this.heights[c]) {
-                    this.heights[c] = size.height
-                }
-            }
-        }
-
-        console.log(out)
-        console.log(this.widths)
-        console.log(this.heights)
-
-        return out
-    }
-
-    GetChildTasks(ts, ns, tr) {
-        let out = {}
-        for (let [k, t] of Object.entries(ts)) {
-            let tc = Object.assign({}, t)
-            if (tr.includes(k)) {
-                continue
-            }
-            let parents = []
-            for (let p of tc.parents) {
-                if (ns.includes(p)) {
-                    continue
-                }
-                parents.push(p)
-            }
-            tc.parents = [...parents]
-            out[k] = tc
-        }
-        return out
-    }
-
-    GetBlankRow(c) {
-        let out = []
-        for (let i = 0; i < c; i++) {
-            out.push('')
-        }
-
-        return out
-    }
-
-    PrintGrid(g) {
-        let ws = []
-        for (let i = 0; i < g[0].length; i++) {
-            ws.push(0)
-        }
-
-        for (let r of g) {
-            for (let i = 0; i < r.length; i++) {
-                let c = r[i]
-                if (c.length > ws[i]) {
-                    ws[i] = c.length
-                }
-            }
-        }
-
-        let out = "+"
-        for (let w of ws) {
-            for (let i = 0; i < w + 2; i++) {
-                out += "-"
-            }
-            out += "+"
-        } 
-        console.log(out)
-
-        for (let r of g) {
-            out = "| "
-            for (let i = 0; i < r.length; i++) {
-                let c = r[i]
-                while (c.length < ws[i]) {
-                    c += " "
-                }
-                out += c + " | "
-            }
-            console.log(out)
-        }
-
-        out = "+"
-        for (let w of ws) {
-            for (let i = 0; i < w + 2; i++) {
-                out += "-"
-            }
-            out += "+"
-        } 
-        console.log(out)
-    }
-
-    GetGrid(r, c, ts, g) {
-        if (ts.length == 0) {
-            return g
-        }
-
-        let to_process = []
-        for (let [k, t] of Object.entries(ts)) {
-            if (t.parents.length == 0) {
-                to_process.push(k)
-            }
-        }
-
-        let tsc = Object.assign({}, ts)
-
-        let ns = []
-
-        for (let i = 0; i < to_process.length; i++) {
-            let n = to_process[i]
-            ns.push(n)
-            if (g[0].length == c) {
-                for (let j = 0; j < g.length; j++) {
-                    g[j].push('')
-                }
-            }
-            if (i > 0) {
-                g.push(this.GetBlankRow(g[0].length))
-            }
-            
-            g[r][c] = n
-            g = this.GetGrid(r, c + 1, this.GetChildTasks(tsc, ns, to_process), g)
-            r = g.length
-        }
-        return g
-    }
-
-    RemoveDuplicates(g) {
-        let out = []
-        for (let r = 0; r < g.length; r++) {
-            let row = g[r]
-            let temp = []
-            for (let c = 0; c < row.length; c++) {
-                let col = row[c]
-                if (temp.includes(col)) {
-                    temp.push('')
-                    continue
-                }
-                temp.push(col)
-            }
-            out.push(temp)
-        }
-
-        return out
     }
 }
 
@@ -726,18 +442,8 @@ var colors = {
 
 var CurrentStateName
 
-function updateStateStatus() {
-    let ids = ["cascade-state-header", "cascade-output-header", "cascade-status-header", "cascade-code-header"]
-    // for (let k = 0; k < color_keys.length; k++) {
-    //     $(`#cascade-check-header`).removeClass(state_colors[color_keys[k]])
-    // }
-    // $(`#cascade-check-header`).addClass(state_colors['not_started'])
-    // $("#state-check").text('')
-    // for (let k = 0; k < color_keys.length; k++) {
-    //     $(`#cascade-previous-header`).removeClass(state_colors[color_keys[k]])
-    // }
-    // $(`#cascade-previous-header`).addClass(state_colors['not_started'])
-    // $("#state-previous").text('')
+function updateStateStatus(force) {
+    let ids = ["cascade-state-header", "cascade-output-header", "cascade-status-header", "cascade-code-header", "cascade-context-header"]
     if (CurrentStateName != "" && states != undefined) {
         for (let state of states) {
             if (state.task == CurrentStateName) {
@@ -756,7 +462,7 @@ function updateStateStatus() {
                 $("#state-status").text(`Status: ${state.status}`)
                 $("#state-started").text(`Started: ${state.started}`)
                 $("#state-finished").text(`Finished: ${state.finished}`)
-                $("#state-output").text(state.output)
+                
                 $("#toggle-icon").removeClass("fa-toggle-off");
                 $("#toggle-icon").removeClass("fa-toggle-on");
                 if (state.disabled) {
@@ -765,39 +471,14 @@ function updateStateStatus() {
                     $("#toggle-icon").addClass("fa-toggle-on");
                 }
 
-                // console.log("building display!")
-                // console.log(state)
-                // console.log(state.display)
-                console.log(state.context)
-                $(`#state-context`).empty();
-                $(`#state-context`).append(buildContextTable(state.context, color, text_color))
-                buildDisplay(state.display, "current", color, text_color)
+                if (state.status == "running" || force) {
+                    $("#state-output").text(state.output)
+                    $(`#state-context`).empty();
+                    $(`#state-context`).append(buildContextTable(state.context, color, text_color))
+                    buildDisplay(state.display, "current", color, text_color)
+                }
                 continue
             }
-            // if (state.task == `SCAFFOLD_PREVIOUS-${CurrentStateName}`) {
-            //     let color = state_colors[state.status]
-            //     let text_color = state_text_colors[state.status]
-            //     for (let color of color_keys) {
-            //         $(`#previous-header`).removeClass(state_colors[color])
-            //     }
-            //     $("#previous-run").text(`Run: ${state.number}`)
-            //     $(`#previous-header`).addClass(color)
-            //     $("#state-previous").text(state.output)
-            //     buildDisplay(state.display, "previous", color, text_color)
-            //     continue
-            // }
-            // if (state.task == `SCAFFOLD_CHECK-${CurrentStateName}`) {
-            //     let color = state_colors[state.status]
-            //     let text_color = state_text_colors[state.status]
-            //     for (let color of color_keys) {
-            //         $(`#check-header`).removeClass(state_colors[color])
-            //     }
-            //     $("#check-run").text(`Run: ${state.number}`)
-            //     $(`#check-header`).addClass(color)
-            //     $("#state-check").text(state.output)
-            //     buildDisplay(state.display, "check", color, text_color)
-            //     continue
-            // }
         }
     }
 }
@@ -807,7 +488,7 @@ function buildContextTable(context, color, text_color) {
     // create the card
     let output = `<div class="w3-border w3-card ${theme} theme-light theme-border-light w3-round">`
     output += `
-        <header class="w3-container ${color}">
+        <header class="w3-container ${color}" id="cascade-context-header">
             <h4>Context Values</h4>
         </header>
     `
@@ -1081,7 +762,7 @@ function changeStateName(name) {
         closeModal("state-modal")
     }
     CurrentStateName = name
-    updateStateStatus()
+    updateStateStatus(true)
     openModal("state-modal")
 }
 
@@ -1381,6 +1062,7 @@ function toggleCurrentState() {
         legend.classList.remove("show");
         $("#current-legend").css("left", `calc(100%)`)
         // Show state
+        updateStateStatus(true)
         sidebar.classList.add("show");
         sidebar.classList.remove("right-slide-out-500");
         sidebar.classList.add("right-slide-in-500")
@@ -1652,7 +1334,9 @@ function getStates(shouldInit) {
                 setInterval(function() {
                     workflow.UpdateWorkflow()
                 }, workflowIntervalMilliSeconds);
-                setInterval(updateStateStatus, stateIntervalMilliSeconds)
+                setInterval(function() {
+                    updateStateStatus(false)
+                }, stateIntervalMilliSeconds)
             }
         },
         error: function (result) {

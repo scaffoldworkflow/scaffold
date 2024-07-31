@@ -129,7 +129,6 @@ func initializeRoutes() {
 				runRoutes := v1Routes.Group("/run")
 				{
 					runRoutes.POST(":cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.CreateRun)
-					runRoutes.GET("/containers", middleware.EnsureLoggedIn(), api.GetAllContainers)
 					runRoutes.DELETE("/:cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureCascadeGroup("cascade"), api.ManagerKillRun)
 				}
 				webhookRoutes := v1Routes.Group("/webhook")

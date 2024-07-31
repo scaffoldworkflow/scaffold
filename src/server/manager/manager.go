@@ -102,10 +102,6 @@ func QueueDataReceive(data []byte) error {
 			logger.Errorf("", "Error publishing kill id: %s", err.Error())
 			return err
 		}
-		// if err := bulwark.BufferSet(bulwark.BufferClient, toKill); err != nil {
-		// 	logger.Errorf("", "Encountered error while updating buffer: %s", err.Error())
-		// 	return err
-		// }
 	}
 	return nil
 }
@@ -439,15 +435,15 @@ func DoTrigger(cn, tn string, context map[string]string) error {
 			return nil
 		}
 	}
-	for _, s := range t.DependsOn.Success {
-		ss, err := state.GetStateByNames(cn, s)
-		if err != nil {
-			return err
-		}
-		if ss.Status == constants.STATE_STATUS_NOT_STARTED {
-			return nil
-		}
-	}
+	// for _, s := range t.DependsOn.Always {
+	// 	ss, err := state.GetStateByNames(cn, s)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	if ss.Status == constants.STATE_STATUS_NOT_STARTED {
+	// 		return nil
+	// 	}
+	// }
 
 	s, err := state.GetStateByNames(cn, tn)
 	if err != nil {
@@ -547,8 +543,9 @@ func GetStatus(ctx *gin.Context) {
 	if !health.IsHealthy {
 		managerStatus = "degraded"
 	}
+	toRemove := []string{}
 	nodes = append(nodes, map[string]string{"name": config.Config.Host, "ip": ip, "status": managerStatus, "version": constants.VERSION})
-	for _, node := range auth.Nodes {
+	for id, node := range auth.Nodes {
 		if node.Ping < config.Config.PingHealthyThreshold {
 			nodes = append(nodes, map[string]string{"name": node.Name, "ip": node.Host, "status": "healthy", "version": node.Version})
 			continue
@@ -558,7 +555,16 @@ func GetStatus(ctx *gin.Context) {
 			continue
 		}
 		nodes = append(nodes, map[string]string{"name": node.Name, "ip": node.Host, "status": "unhealthy", "version": node.Version})
+		if node.Ping > config.Config.PingDownThreshold {
+			toRemove = append(toRemove, id)
+		}
 	}
+
+	auth.NodeLock.Lock()
+	for _, id := range toRemove {
+		delete(auth.Nodes, id)
+	}
+	auth.NodeLock.Unlock()
 
 	ctx.JSON(http.StatusOK, gin.H{"nodes": nodes})
 }

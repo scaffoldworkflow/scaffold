@@ -9,8 +9,9 @@ import (
 	"net/url"
 	"os"
 	"reflect"
-	"scaffold/server/constants"
 	"strconv"
+
+	"github.com/jfcarter2358/go-logger"
 )
 
 const DEFAULT_CONFIG_PATH = "/home/scaffold/data/config.json"
@@ -43,7 +44,9 @@ type ConfigObject struct {
 	KillQueueName            string          `json:"kill_queue_name" env:"KILL_QUEUE_NAME"`
 	PingHealthyThreshold     int             `json:"ping_healthy_threshold" env:"PING_HEALTHY_THRESHOLD"`
 	PingUnknownThreshold     int             `json:"ping_unknown_threshold" env:"PING_UNKNOWN_THRESHOLD"`
+	PingDownThreshold        int             `json:"ping_down_threshold" env:"PING_DOWN_THRESHOLD"`
 	CheckInterval            int             `json:"check_interval" env:"CHECK_INTERVAL"`
+	RestartPeriod            int             `json:"restart_period" env:"RESTART_PERIOD"`
 }
 
 type FileStoreObject struct {
@@ -102,8 +105,8 @@ func LoadConfig() {
 		Protocol:          "",
 		BaseURL:           "http://localhost:2997",
 		WSPort:            8080,
-		LogLevel:          constants.LOG_LEVEL_INFO,
-		LogFormat:         constants.LOG_FORMAT_CONSOLE,
+		LogLevel:          logger.LOG_LEVEL_INFO,
+		LogFormat:         logger.LOG_FORMAT_CONSOLE,
 		HeartbeatInterval: 1000,
 		HeartbeatBackoff:  10,
 		TLSEnabled:        false,
@@ -147,7 +150,9 @@ func LoadConfig() {
 		KillQueueName:            "scaffold_kill",
 		PingHealthyThreshold:     3,
 		PingUnknownThreshold:     6,
+		PingDownThreshold:        9,
 		CheckInterval:            2000,
+		RestartPeriod:            86400, // 24 hours
 	}
 
 	jsonFile, err := os.Open(configPath)

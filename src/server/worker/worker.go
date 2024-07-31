@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"scaffold/server/auth"
 	"scaffold/server/config"
 	"scaffold/server/constants"
-	"scaffold/server/container"
 	"scaffold/server/health"
 	"scaffold/server/msg"
 	"scaffold/server/run"
@@ -21,28 +21,32 @@ import (
 )
 
 var RunQueue []run.Run
+var startTime int64
 
 var JoinKey = ""
 var PrimaryKey = ""
 var ID = ""
 var isRunning = false
-var currentTask = ""
-var currentCascade = ""
 
 func Run() {
-	ID = uuid.New().String()
+	startTime = time.Now().UTC().Unix()
 
-	container.CompletedRuns = make(map[string]run.Run)
-	// StartWebsocketServer()
+	ID = uuid.New().String()
 
 	go EnsureManagerConnection()
 
-	// go EnsureManagerConnection()
-
 	health.IsHealthy = true
-
-	container.PruneContainers()
-
+	if config.Config.RestartPeriod > 0 {
+		for {
+			if !isRunning {
+				now := time.Now().UTC().Unix()
+				if now-startTime > int64(config.Config.RestartPeriod) {
+					os.Exit(0)
+				}
+				time.Sleep(500 * time.Millisecond)
+			}
+		}
+	}
 }
 
 func JoinManager() error {
@@ -176,9 +180,6 @@ func QueueDataReceive(data []byte) error {
 			Context: m.Context,
 		}
 
-		currentTask = m.Task
-		currentCascade = m.Cascade
-
 		if t.Kind == constants.TASK_KIND_CONTAINER {
 			// run.ContainerKill(m.Cascade, m.Task)
 
@@ -219,21 +220,8 @@ func QueueDataReceive(data []byte) error {
 		}
 
 		logger.Debugf("", "Run finished")
-		container.LastRun = append(container.LastRun, container.CurrentRun.Name)
-		container.LastImage = append(container.LastImage, container.CurrentRun.Task.Image)
-		container.LastGroups = append(container.LastGroups, m.Groups)
-
-		currentTask = ""
-		currentCascade = ""
 	}
 
 	isRunning = false
 	return nil
 }
-
-// func StartWebsocketServer() {
-// 	logger.Info("", "Starting websocket application")
-// 	//Open a goroutine execution start program
-// 	// go socket.Manager.Start()
-// 	go cmd.StartWSServer()
-// }

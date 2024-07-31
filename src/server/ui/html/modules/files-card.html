@@ -17,10 +17,10 @@
                     <table class="w3-table light w3-hide w3-border theme-border-light theme-table-striped" id="table-{{ . }}">
                         <tbody style="display:table;width:100%;">
                             <tr>
-                                <th class="table-title w3-medium scaffold-text-green">
+                                <th class="table-title w3-medium scaffold-text-green" onclick="sortTable(0, 'table-{{ . }}')">
                                     <span class="table-title-text">Name</span>
                                 </th>
-                                <th class="table-title w3-medium scaffold-text-green">
+                                <th class="table-title w3-medium scaffold-text-green" onclick="sortTable(1, 'table-{{ . }}')">
                                     <span class="table-title-text">Last Modified</span>   
                                 </th>
                                 <th class="table-title w3-medium scaffold-text-green">

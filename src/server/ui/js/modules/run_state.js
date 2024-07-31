@@ -1,17 +1,7 @@
 var CurrentStateName
 
-function updateStateStatus() {
-    let ids = ["cascade-state-header", "cascade-output-header", "cascade-status-header", "cascade-code-header"]
-    // for (let k = 0; k < color_keys.length; k++) {
-    //     $(`#cascade-check-header`).removeClass(state_colors[color_keys[k]])
-    // }
-    // $(`#cascade-check-header`).addClass(state_colors['not_started'])
-    // $("#state-check").text('')
-    // for (let k = 0; k < color_keys.length; k++) {
-    //     $(`#cascade-previous-header`).removeClass(state_colors[color_keys[k]])
-    // }
-    // $(`#cascade-previous-header`).addClass(state_colors['not_started'])
-    // $("#state-previous").text('')
+function updateStateStatus(force) {
+    let ids = ["cascade-state-header", "cascade-output-header", "cascade-status-header", "cascade-code-header", "cascade-context-header"]
     if (CurrentStateName != "" && states != undefined) {
         for (let state of states) {
             if (state.task == CurrentStateName) {
@@ -30,7 +20,7 @@ function updateStateStatus() {
                 $("#state-status").text(`Status: ${state.status}`)
                 $("#state-started").text(`Started: ${state.started}`)
                 $("#state-finished").text(`Finished: ${state.finished}`)
-                $("#state-output").text(state.output)
+                
                 $("#toggle-icon").removeClass("fa-toggle-off");
                 $("#toggle-icon").removeClass("fa-toggle-on");
                 if (state.disabled) {
@@ -39,39 +29,14 @@ function updateStateStatus() {
                     $("#toggle-icon").addClass("fa-toggle-on");
                 }
 
-                // console.log("building display!")
-                // console.log(state)
-                // console.log(state.display)
-                console.log(state.context)
-                $(`#state-context`).empty();
-                $(`#state-context`).append(buildContextTable(state.context, color, text_color))
-                buildDisplay(state.display, "current", color, text_color)
+                if (state.status == "running" || force) {
+                    $("#state-output").text(state.output)
+                    $(`#state-context`).empty();
+                    $(`#state-context`).append(buildContextTable(state.context, color, text_color))
+                    buildDisplay(state.display, "current", color, text_color)
+                }
                 continue
             }
-            // if (state.task == `SCAFFOLD_PREVIOUS-${CurrentStateName}`) {
-            //     let color = state_colors[state.status]
-            //     let text_color = state_text_colors[state.status]
-            //     for (let color of color_keys) {
-            //         $(`#previous-header`).removeClass(state_colors[color])
-            //     }
-            //     $("#previous-run").text(`Run: ${state.number}`)
-            //     $(`#previous-header`).addClass(color)
-            //     $("#state-previous").text(state.output)
-            //     buildDisplay(state.display, "previous", color, text_color)
-            //     continue
-            // }
-            // if (state.task == `SCAFFOLD_CHECK-${CurrentStateName}`) {
-            //     let color = state_colors[state.status]
-            //     let text_color = state_text_colors[state.status]
-            //     for (let color of color_keys) {
-            //         $(`#check-header`).removeClass(state_colors[color])
-            //     }
-            //     $("#check-run").text(`Run: ${state.number}`)
-            //     $(`#check-header`).addClass(color)
-            //     $("#state-check").text(state.output)
-            //     buildDisplay(state.display, "check", color, text_color)
-            //     continue
-            // }
         }
     }
 }
@@ -81,7 +46,7 @@ function buildContextTable(context, color, text_color) {
     // create the card
     let output = `<div class="w3-border w3-card ${theme} theme-light theme-border-light w3-round">`
     output += `
-        <header class="w3-container ${color}">
+        <header class="w3-container ${color}" id="cascade-context-header">
             <h4>Context Values</h4>
         </header>
     `
@@ -355,7 +320,7 @@ function changeStateName(name) {
         closeModal("state-modal")
     }
     CurrentStateName = name
-    updateStateStatus()
+    updateStateStatus(true)
     openModal("state-modal")
 }
 

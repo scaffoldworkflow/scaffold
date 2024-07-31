@@ -5,6 +5,7 @@
 // import user_menu.js
 // import deploy_status.js
 // import data.js
+// import table.js
 
 var users
 var groupTagify
