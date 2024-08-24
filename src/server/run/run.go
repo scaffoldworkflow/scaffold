@@ -42,6 +42,7 @@ type Run struct {
 	Worker  string            `json:"worker" yaml:"worker"`
 	PID     int               `json:"pid" yaml:"pid"`
 	Context map[string]string `json:"context" yaml:"context"`
+	RunID   string            `json:"run_id" yaml:"run_id"`
 }
 
 type RunContext struct {
@@ -70,14 +71,16 @@ func runCmd(cmd *exec.Cmd) {
 func updateRunState(r *Run, send bool) error {
 	r.State.PID = r.PID
 	m := msg.RunMsg{
-		Task:    r.Task.Name,
-		Cascade: r.Task.Cascade,
-		Status:  r.State.Status,
-		Context: r.Context,
+		Task:     r.Task.Name,
+		Workflow: r.Task.Workflow,
+		Status:   r.State.Status,
+		Context:  r.Context,
+		State:    r.State,
+		RunID:    r.RunID,
 	}
 	logger.Debugf("", "Updating run state for %v", m)
-	if err := state.UpdateStateRunByNames(r.State.Cascade, r.State.Task, r.State); err != nil {
-		logger.Errorf("", "Cannot update state run: %s %s %v %s", r.Task.Cascade, r.Task.Name, r.State, err.Error())
+	if err := state.UpdateStateRunByNames(r.State.Workflow, r.State.Task, r.State); err != nil {
+		logger.Errorf("", "Cannot update state run: %s %s %v %s", r.Task.Workflow, r.Task.Name, r.State, err.Error())
 		return err
 	}
 	if send {
@@ -101,15 +104,15 @@ func setupRun(rc *RunContext) (bool, error) {
 	rc.Run.State.Status = constants.STATE_STATUS_RUNNING
 	currentTime := time.Now().UTC()
 	rc.Run.State.Started = currentTime.Format("2006-01-02T15:04:05Z")
-	if err := state.UpdateStateKilledByNames(rc.Run.Task.Cascade, rc.Run.Task.Name, false); err != nil {
-		logger.Infof("", "Cannot update state killed: %s %s %s", rc.Run.Task.Cascade, rc.Run.Task.Name, err.Error())
+	if err := state.UpdateStateKilledByNames(rc.Run.Task.Workflow, rc.Run.Task.Name, false); err != nil {
+		logger.Infof("", "Cannot update state killed: %s %s %s", rc.Run.Task.Workflow, rc.Run.Task.Name, err.Error())
 		return false, err
 	}
 	if err := updateRunState(rc.Run, false); err != nil {
 		return false, err
 	}
 
-	rc.RunDir = fmt.Sprintf("/tmp/run/%s/%s/%d", rc.Run.State.Cascade, rc.Run.State.Task, rc.Run.Number)
+	rc.RunDir = fmt.Sprintf("/tmp/run/%s/%s/%d", rc.Run.State.Workflow, rc.Run.State.Task, rc.Run.Number)
 	rc.ScriptPath = rc.RunDir + "/.run.sh"
 	rc.EnvInPath = rc.RunDir + "/.envin"
 	rc.EnvOutPath = rc.RunDir + ".envout"
@@ -128,9 +131,9 @@ func setupRun(rc *RunContext) (bool, error) {
 	}
 
 	// Setup datastore
-	rc.DataStore, err = datastore.GetDataStoreByCascade(rc.Run.State.Cascade)
+	rc.DataStore, err = datastore.GetDataStoreByWorkflow(rc.Run.State.Workflow)
 	if err != nil {
-		logger.Errorf("", "Cannot get datastore %s", rc.Run.State.Cascade)
+		logger.Errorf("", "Cannot get datastore %s", rc.Run.State.Workflow)
 		setErrorStatus(rc.Run, err.Error())
 		if err := updateRunState(rc.Run, true); err != nil {
 			return false, err
@@ -222,7 +225,7 @@ func setupRunScript(rc *RunContext) (bool, error) {
 
 func loadFiles(rc *RunContext) (bool, error) {
 	for _, name := range rc.Run.Task.Load.File {
-		err := filestore.GetFile(fmt.Sprintf("%s/%s", rc.Run.State.Cascade, name), fmt.Sprintf("%s/%s", rc.RunDir, name))
+		err := filestore.GetFile(fmt.Sprintf("%s/%s", rc.Run.State.Workflow, name), fmt.Sprintf("%s/%s", rc.RunDir, name))
 		if err != nil {
 			logger.Errorf("", "Error getting file %s", err.Error())
 			setErrorStatus(rc.Run, err.Error())
@@ -267,9 +270,9 @@ func storeFiles(rc *RunContext) {
 	for _, name := range rc.Run.Task.Store.File {
 		filePath := fmt.Sprintf("%s/%s", rc.RunDir, name)
 		if _, err := os.Stat(filePath); err == nil {
-			err := filestore.UploadFile(filePath, fmt.Sprintf("%s/%s", rc.Run.Task.Cascade, name))
+			err := filestore.UploadFile(filePath, fmt.Sprintf("%s/%s", rc.Run.Task.Workflow, name))
 			if err != nil {
-				logger.Errorf("", "Error uploading file %s: %s\n", fmt.Sprintf("%s/%s", rc.Run.Task.Cascade, name), err.Error())
+				logger.Errorf("", "Error uploading file %s: %s\n", fmt.Sprintf("%s/%s", rc.Run.Task.Workflow, name), err.Error())
 			}
 			rc.DataStore.Files = append(rc.DataStore.Files, name)
 			rc.DataStore.Files = utils.RemoveDuplicateValues(rc.DataStore.Files)
@@ -352,7 +355,7 @@ func StartContainerRun(rr *Run) (bool, error) {
 		return shouldRestart, err
 	}
 
-	containerName := fmt.Sprintf("%s-%s-%d", rc.Run.State.Cascade, rc.Run.State.Task, rc.Run.Number)
+	containerName := fmt.Sprintf("%s-%s-%d", rc.Run.State.Workflow, rc.Run.State.Task, rc.Run.Number)
 
 	// Clean up any possible artifacts
 	if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman kill %s", containerName)).Run(); err != nil {

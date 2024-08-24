@@ -40,7 +40,6 @@ func run(ctx context.Context, channel chan struct{}) {
 
 	logger.Infof("", "Running with port: %d", config.Config.Port)
 
-	router.LoadHTMLGlob("templates/*")
 	initializeRoutes()
 
 	rand.Seed(time.Now().UnixNano())

@@ -20,7 +20,7 @@ func DoDelete(profile, object, context string) {
 	uri := fmt.Sprintf("%s://%s:%s", p.Protocol, p.Host, p.Port)
 
 	logger.Debugf("", "Checking if object is valid")
-	objects := []string{"cascade", "datastore", "state", "task", "file", "user", "input"}
+	objects := []string{"workflow", "datastore", "state", "task", "file", "user", "input"}
 
 	parts := strings.Split(object, "/")
 
@@ -32,9 +32,9 @@ func DoDelete(profile, object, context string) {
 		logger.Fatalf("", "Object passed in need to be of format '<object type>/<object name>")
 	}
 
-	if parts[0] != "cascade" && parts[0] != "datastore" && parts[0] != "user" {
+	if parts[0] != "workflow" && parts[0] != "datastore" && parts[0] != "user" {
 		if context == "" {
-			context = p.Cascade
+			context = p.Workflow
 		}
 		object = fmt.Sprintf("%s/%s/%s", parts[0], context, parts[1])
 	}

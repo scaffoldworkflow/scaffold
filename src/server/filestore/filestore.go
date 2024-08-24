@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"scaffold/server/cascade"
 	"scaffold/server/config"
 	"scaffold/server/constants"
+	"scaffold/server/workflow"
 	"strings"
 
 	logger "github.com/jfcarter2358/go-logger"
@@ -29,7 +29,7 @@ var S3Config *aws.Config
 type ObjectMetadata struct {
 	Name     string `json:"name" bson:"name" yaml:"name"`
 	Modified string `json:"modified" bson:"modified" yaml:"modified"`
-	Cascade  string `json:"cascade" bson:"cascade" yaml:"cascade"`
+	Workflow string `json:"workflow" bson:"workflow" yaml:"workflow"`
 }
 
 func InitBucket() {
@@ -166,9 +166,9 @@ func doArtifactoryDownload(inputPath, outputPath string) error {
 
 func doArtifactoryList() (map[string]ObjectMetadata, error) {
 	output := make(map[string]ObjectMetadata)
-	cascades, _ := cascade.GetAllCascades()
+	workflows, _ := workflow.GetAllWorkflows()
 	uri := fmt.Sprintf("%s://%s:%d/artifactory/%s", config.Config.FileStore.Protocol, config.Config.FileStore.Host, config.Config.FileStore.Port, config.Config.FileStore.Bucket)
-	for _, c := range cascades {
+	for _, c := range workflows {
 		// Get the data
 		httpClient := &http.Client{}
 		requestURL := fmt.Sprintf("%s/%s", uri, c.Name)
@@ -207,7 +207,7 @@ func doArtifactoryList() (map[string]ObjectMetadata, error) {
 				output[name] = ObjectMetadata{
 					Name:     fmt.Sprintf("%s/%s", c.Name, name),
 					Modified: lastModified,
-					Cascade:  c.Name,
+					Workflow: c.Name,
 				}
 			}
 		}
@@ -309,11 +309,11 @@ func doS3List() (map[string]ObjectMetadata, error) {
 	output := make(map[string]ObjectMetadata)
 
 	for _, item := range resp.Contents {
-		cascade := strings.Split(*item.Key, "/")[0]
+		workflow := strings.Split(*item.Key, "/")[0]
 		output[*item.Key] = ObjectMetadata{
 			Name:     *item.Key,
 			Modified: (*item.LastModified).Format("2006-01-02T15:04:05Z"),
-			Cascade:  cascade,
+			Workflow: workflow,
 		}
 	}
 	return output, nil

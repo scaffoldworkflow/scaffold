@@ -1,57 +1,73 @@
-vrersion: v1
+version: v1
 name: bar
 groups:
   - bar
-inputs:
-  - name: foo
-    description: foo
-    type: text
-    default: foo
 tasks:
-- name: a
-  image: ubuntu:20.04
+- name: get_latest_build
   run: |
-    echo "a"
-    export foo="bar"
-    sleep 10
-  store:
-    env:
-      - foo 
-- name: b
-  image: ubuntu:20.04
+    echo "foobar"
+- name: setup_kubeconfig
   run: |
-    echo "b"
+    echo "foobar"
+- name: manual_deploy
+  run: |
+    echo "foobar"
+- name: db_backup
+  run: |
+    echo "foobar"
   depends_on:
     success:
-      - a
-  cron: '*/15 * * * * *'
-- name: c
-  image: ubuntu:20.04
+      - get_latest_build
+      - setup_kubeconfig
+      - manual_deploy
+- name: db_migration
   run: |
-    echo "c"
+    echo "foobar"
+  depends_on:
+    success:
+      - db_backup
+- name: deploy
+  run: |
+    echo "foobar"
+  depends_on:
+    success:
+      - db_migration
+- name: diagnostics
+  run: |
+    echo "foobar"
+  depends_on:
+    success:
+      - deploy
+- name: rollback
+  run: |
+    echo "foobar"
   depends_on:
     error:
-      - b
-- name: d
-  image: ubuntu:20.04
+      - deploy
+- name: db_restore
   run: |
-    echo "d"
+    echo "foobar"
   depends_on:
+    always:
+      - rollback
     error:
-      - a
-- name: e
-  image: ubuntu:20.04
+      - db_migration
+- name: integration_tests
   run: |
-    echo "e"
+    echo "foobar"
   depends_on:
     success:
-      - d
-- name: f_this_has_a_really_long_name_thats_too_long
-  image: ubuntu:20.04
+      - deploy
+- name: promote_image
   run: |
-    echo "f"
+    echo "foobar"
   depends_on:
     success:
-      - e
-  cron: '*/60 * * * * *'
-  auto_execute: true
+      - diagnostics
+      - integration_tests
+- name: trigger_staging
+  run: |
+    echo "foobar"
+  depends_on:
+    success:
+      - deploy

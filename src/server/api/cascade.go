@@ -4,20 +4,20 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"scaffold/server/cascade"
 	"scaffold/server/utils"
+	"scaffold/server/workflow"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-//	@summary					Create a cascade
-//	@description				Create a cascade from a JSON object
+//	@summary					Create a workflow
+//	@description				Create a workflow from a JSON object
 //	@tags						manager
-//	@tags						cascade
+//	@tags						workflow
 //	@accept						json
 //	@produce					json
-//	@Param						cascade	body		cascade.Cascade	true	"Cascade Data"
+//	@Param						workflow	body		workflow.Workflow	true	"Workflow Data"
 //	@success					201		{object}	object
 //	@failure					500		{object}	object
 //	@failure					401		{object}	object
@@ -25,9 +25,9 @@ import (
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/cascade [post]
-func CreateCascade(ctx *gin.Context) {
-	var c cascade.Cascade
+//	@router						/api/v1/workflow [post]
+func CreateWorkflow(ctx *gin.Context) {
+	var c workflow.Workflow
 	if err := ctx.ShouldBindJSON(&c); err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
@@ -39,7 +39,7 @@ func CreateCascade(ctx *gin.Context) {
 		}
 	}
 
-	err := cascade.CreateCascade(&c)
+	err := workflow.CreateWorkflow(&c)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -49,10 +49,10 @@ func CreateCascade(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Created"})
 }
 
-//	@summary					Delete a cascade
-//	@description				Delete a cascade by its name
+//	@summary					Delete a workflow
+//	@description				Delete a workflow by its name
 //	@tags						manager
-//	@tags						cascade
+//	@tags						workflow
 //	@produce					json
 //	@success					200	{object}	object
 //	@failure					500	{object}	object
@@ -61,11 +61,11 @@ func CreateCascade(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/cascade/{cascade_name} [delete]
-func DeleteCascadeByName(ctx *gin.Context) {
+//	@router						/api/v1/workflow/{workflow_name} [delete]
+func DeleteWorkflowByName(ctx *gin.Context) {
 	name := ctx.Param("name")
 
-	err := cascade.DeleteCascadeByName(name)
+	err := workflow.DeleteWorkflowByName(name)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -75,21 +75,21 @@ func DeleteCascadeByName(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
 }
 
-//	@summary					Get all cascades
-//	@description				Get all cascades
+//	@summary					Get all workflows
+//	@description				Get all workflows
 //	@tags						manager
-//	@tags						cascade
+//	@tags						workflow
 //	@produce					json
-//	@success					200	{array}		cascade.Cascade
+//	@success					200	{array}		workflow.Workflow
 //	@failure					500	{object}	object
 //	@failure					401	{object}	object
 //	@securityDefinitions.apiKey	token
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/cascade [get]
-func GetAllCascades(ctx *gin.Context) {
-	cascades, err := cascade.GetAllCascades()
+//	@router						/api/v1/workflow [get]
+func GetAllWorkflows(ctx *gin.Context) {
+	workflows, err := workflow.GetAllWorkflows()
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -100,39 +100,39 @@ func GetAllCascades(ctx *gin.Context) {
 		return
 	}
 
-	// Need to copy each cascade from pointer to value since pointers are returned
+	// Need to copy each workflow from pointer to value since pointers are returned
 	// weirdly (I think at least)
-	cascadesOut := make([]cascade.Cascade, 0)
-	for _, c := range cascades {
+	workflowsOut := make([]workflow.Workflow, 0)
+	for _, c := range workflows {
 		if c.Groups != nil {
 			if validateUserGroup(ctx, c.Groups) {
-				cascadesOut = append(cascadesOut, *c)
+				workflowsOut = append(workflowsOut, *c)
 			}
 			continue
 		}
-		cascadesOut = append(cascadesOut, *c)
+		workflowsOut = append(workflowsOut, *c)
 	}
 
-	ctx.JSON(http.StatusOK, cascadesOut)
+	ctx.JSON(http.StatusOK, workflowsOut)
 }
 
-//	@summary					Get a cascade
-//	@description				Get a cascade by its name
+//	@summary					Get a workflow
+//	@description				Get a workflow by its name
 //	@tags						manager
-//	@tags						cascade
+//	@tags						workflow
 //	@produce					json
-//	@success					200	{object}	cascade.Cascade
+//	@success					200	{object}	workflow.Workflow
 //	@failure					500	{object}	object
 //	@failure					401	{object}	object
 //	@securityDefinitions.apiKey	token
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/cascade/{cascade_name} [get]
-func GetCascadeByName(ctx *gin.Context) {
+//	@router						/api/v1/workflow/{workflow_name} [get]
+func GetWorkflowByName(ctx *gin.Context) {
 	name := ctx.Param("name")
 
-	c, err := cascade.GetCascadeByName(name)
+	c, err := workflow.GetWorkflowByName(name)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -140,20 +140,20 @@ func GetCascadeByName(ctx *gin.Context) {
 	}
 
 	if c == nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("Cascade %s does not exist", name)})
+		ctx.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("Workflow %s does not exist", name)})
 		return
 	}
 
 	ctx.JSON(http.StatusOK, *c)
 }
 
-//	@summary					Update a cascade
-//	@description				Update a cascade from a JSON object
+//	@summary					Update a workflow
+//	@description				Update a workflow from a JSON object
 //	@tags						manager
-//	@tags						cascade
+//	@tags						workflow
 //	@accept						json
 //	@produce					json
-//	@Param						cascade	body		cascade.Cascade	true	"Cascade Data"
+//	@Param						workflow	body		workflow.Workflow	true	"Workflow Data"
 //	@success					201		{object}	object
 //	@failure					500		{object}	object
 //	@failure					401		{object}	object
@@ -161,17 +161,17 @@ func GetCascadeByName(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/cascade/{cascade_name} [put]
-func UpdateCascadeByName(ctx *gin.Context) {
+//	@router						/api/v1/workflow/{workflow_name} [put]
+func UpdateWorkflowByName(ctx *gin.Context) {
 	name := ctx.Param("name")
 
-	var c cascade.Cascade
+	var c workflow.Workflow
 	if err := ctx.ShouldBindJSON(&c); err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
 	}
 
-	err := cascade.UpdateCascadeByName(name, &c)
+	err := workflow.UpdateWorkflowByName(name, &c)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return

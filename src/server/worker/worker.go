@@ -152,9 +152,9 @@ func QueueDataReceive(data []byte) error {
 
 	switch m.Action {
 	case constants.ACTION_TRIGGER:
-		t, err := task.GetTaskByNames(m.Cascade, m.Task)
+		t, err := task.GetTaskByNames(m.Workflow, m.Task)
 		if err != nil {
-			logger.Errorf("", "Error getting task %s.%s: %s", m.Cascade, m.Task, err.Error())
+			logger.Errorf("", "Error getting task %s.%s: %s", m.Workflow, m.Task, err.Error())
 			isRunning = false
 			return err
 		}
@@ -164,9 +164,10 @@ func QueueDataReceive(data []byte) error {
 			Task:   *t,
 			Number: m.Number,
 			Groups: m.Groups,
+			RunID:  m.RunID,
 			State: state.State{
 				Task:     m.Task,
-				Cascade:  m.Cascade,
+				Workflow: m.Workflow,
 				Status:   constants.STATE_STATUS_WAITING,
 				Started:  "",
 				Finished: "",
@@ -181,10 +182,10 @@ func QueueDataReceive(data []byte) error {
 		}
 
 		if t.Kind == constants.TASK_KIND_CONTAINER {
-			// run.ContainerKill(m.Cascade, m.Task)
+			// run.ContainerKill(m.Workflow, m.Task)
 
 			for {
-				s, err := state.GetStateByNames(m.Cascade, m.Task)
+				s, err := state.GetStateByNames(m.Workflow, m.Task)
 				if err != nil {
 					return err
 				}
@@ -200,10 +201,10 @@ func QueueDataReceive(data []byte) error {
 			}
 		}
 		if t.Kind == constants.TASK_KIND_LOCAL {
-			// run.LocalKill(m.Cascade, m.Task)
+			// run.LocalKill(m.Workflow, m.Task)
 
 			for {
-				s, err := state.GetStateByNames(m.Cascade, m.Task)
+				s, err := state.GetStateByNames(m.Workflow, m.Task)
 				if err != nil {
 					return err
 				}

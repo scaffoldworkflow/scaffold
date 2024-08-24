@@ -1,6 +1,6 @@
-version: str # cascade api version
-name: str # cascade name
-groups:  # cascade groups that can view this cascade
+version: str # workflow api version
+name: str # workflow name
+groups:  # workflow groups that can view this workflow
   - str
 inputs:
   - name: str # input name

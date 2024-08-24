@@ -1,5 +1,5 @@
 definitions:
-  cascade.Cascade:
+  workflow.Workflow:
     properties:
       created:
         type: string
@@ -45,7 +45,7 @@ definitions:
     type: object
   filestore.ObjectMetadata:
     properties:
-      cascade:
+      workflow:
         type: string
       modified:
         type: string
@@ -54,7 +54,7 @@ definitions:
     type: object
   input.Input:
     properties:
-      cascade:
+      workflow:
         type: string
       default:
         type: string
@@ -67,7 +67,7 @@ definitions:
     type: object
   state.State:
     properties:
-      cascade:
+      workflow:
         type: string
       disabled:
         type: boolean
@@ -103,7 +103,7 @@ definitions:
     properties:
       auto_execute:
         type: boolean
-      cascade:
+      workflow:
         type: string
       container_login_command:
         description: Check                 TaskCheck         `json:"check" bson:"check"
@@ -222,7 +222,7 @@ definitions:
     type: object
   webhook.Webhook:
     properties:
-      cascade:
+      workflow:
         type: string
       entrypoint:
         type: string
@@ -242,9 +242,9 @@ info:
   title: Scaffold Swagger API
   version: "2.0"
 paths:
-  /api/v1/cascade:
+  /api/v1/workflow:
     get:
-      description: Get all cascades
+      description: Get all workflows
       produces:
       - application/json
       responses:
@@ -252,7 +252,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/cascade.Cascade'
+              $ref: '#/definitions/workflow.Workflow'
             type: array
         "401":
           description: Unauthorized
@@ -264,21 +264,21 @@ paths:
             type: object
       security:
       - X-Scaffold-API: []
-      summary: Get all cascades
+      summary: Get all workflows
       tags:
       - manager
-      - cascade
+      - workflow
     post:
       consumes:
       - application/json
-      description: Create a cascade from a JSON object
+      description: Create a workflow from a JSON object
       parameters:
-      - description: Cascade Data
+      - description: Workflow Data
         in: body
-        name: cascade
+        name: workflow
         required: true
         schema:
-          $ref: '#/definitions/cascade.Cascade'
+          $ref: '#/definitions/workflow.Workflow'
       produces:
       - application/json
       responses:
@@ -296,13 +296,13 @@ paths:
             type: object
       security:
       - X-Scaffold-API: []
-      summary: Create a cascade
+      summary: Create a workflow
       tags:
       - manager
-      - cascade
-  /api/v1/cascade/{cascade_name}:
+      - workflow
+  /api/v1/workflow/{workflow_name}:
     delete:
-      description: Delete a cascade by its name
+      description: Delete a workflow by its name
       produces:
       - application/json
       responses:
@@ -320,19 +320,19 @@ paths:
             type: object
       security:
       - X-Scaffold-API: []
-      summary: Delete a cascade
+      summary: Delete a workflow
       tags:
       - manager
-      - cascade
+      - workflow
     get:
-      description: Get a cascade by its name
+      description: Get a workflow by its name
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/cascade.Cascade'
+            $ref: '#/definitions/workflow.Workflow'
         "401":
           description: Unauthorized
           schema:
@@ -343,21 +343,21 @@ paths:
             type: object
       security:
       - X-Scaffold-API: []
-      summary: Get a cascade
+      summary: Get a workflow
       tags:
       - manager
-      - cascade
+      - workflow
     put:
       consumes:
       - application/json
-      description: Update a cascade from a JSON object
+      description: Update a workflow from a JSON object
       parameters:
-      - description: Cascade Data
+      - description: Workflow Data
         in: body
-        name: cascade
+        name: workflow
         required: true
         schema:
-          $ref: '#/definitions/cascade.Cascade'
+          $ref: '#/definitions/workflow.Workflow'
       produces:
       - application/json
       responses:
@@ -375,10 +375,10 @@ paths:
             type: object
       security:
       - X-Scaffold-API: []
-      summary: Update a cascade
+      summary: Update a workflow
       tags:
       - manager
-      - cascade
+      - workflow
   /api/v1/datastore:
     get:
       description: Get all datastores
@@ -437,7 +437,7 @@ paths:
       tags:
       - manager
       - datastore
-  /api/v1/datastore/{cascade_name}:
+  /api/v1/datastore/{workflow_name}:
     delete:
       description: Delete a datastore by its name
       produces:
@@ -542,9 +542,9 @@ paths:
       tags:
       - manager
       - file
-  /api/v1/file/{cascade_name}:
+  /api/v1/file/{workflow_name}:
     get:
-      description: Get files by cascade
+      description: Get files by workflow
       produces:
       - application/json
       responses:
@@ -568,9 +568,9 @@ paths:
       tags:
       - manager
       - file
-  /api/v1/file/{cascade_name}/{file_name}:
+  /api/v1/file/{workflow_name}/{file_name}:
     get:
-      description: Get file by cascade and name
+      description: Get file by workflow and name
       produces:
       - application/json
       responses:
@@ -592,9 +592,9 @@ paths:
       tags:
       - manager
       - file
-  /api/v1/file/{cascade_name}/{file_name}/download:
+  /api/v1/file/{workflow_name}/{file_name}/download:
     get:
-      description: Download a file from a cascade
+      description: Download a file from a workflow
       produces:
       - application/text
       responses:
@@ -616,7 +616,7 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: Upload a file to a cascade
+      description: Upload a file to a workflow
       produces:
       - application/json
       responses:
@@ -694,9 +694,9 @@ paths:
       tags:
       - manager
       - input
-  /api/v1/input/{cascade_name}:
+  /api/v1/input/{workflow_name}:
     delete:
-      description: Delete inputs by their cascade
+      description: Delete inputs by their workflow
       produces:
       - application/json
       responses:
@@ -719,7 +719,7 @@ paths:
       - manager
       - input
     get:
-      description: Get inputs by their cascade
+      description: Get inputs by their workflow
       produces:
       - application/json
       responses:
@@ -743,9 +743,9 @@ paths:
       tags:
       - manager
       - input
-  /api/v1/input/{cascade_name}/{input_name}:
+  /api/v1/input/{workflow_name}/{input_name}:
     get:
-      description: Get a input by its name and its cascade
+      description: Get a input by its name and its workflow
       produces:
       - application/json
       responses:
@@ -799,7 +799,7 @@ paths:
       tags:
       - manager
       - input
-  /api/v1/input/{cascade_name}/update:
+  /api/v1/input/{workflow_name}/update:
     post:
       description: Trigger updates of states for dependent tasks
       produces:
@@ -825,7 +825,7 @@ paths:
       - input
   /api/v1/input/{input_name}:
     delete:
-      description: Delete a input by its name and its cascade
+      description: Delete a input by its name and its workflow
       produces:
       - application/json
       responses:
@@ -847,7 +847,7 @@ paths:
       tags:
       - manager
       - input
-  /api/v1/kill/{cascade_name}/{task_name}:
+  /api/v1/kill/{workflow_name}/{task_name}:
     delete:
       description: Kill a run on a worker
       responses:
@@ -863,9 +863,9 @@ paths:
       tags:
       - worker
       - run
-  /api/v1/run/{cascade_name}/{task_name}:
+  /api/v1/run/{workflow_name}/{task_name}:
     post:
-      description: Create a run from a cascade and task
+      description: Create a run from a workflow and task
       responses:
         "201":
           description: Created
@@ -885,7 +885,7 @@ paths:
       tags:
       - manager
       - run
-  /api/v1/run/{cascade_name}/{task_name}/{task_number}:
+  /api/v1/run/{workflow_name}/{task_name}/{task_number}:
     delete:
       description: Instruct a manager to kill a run
       produces:
@@ -992,9 +992,9 @@ paths:
       tags:
       - manager
       - state
-  /api/v1/state/{cascade_name}:
+  /api/v1/state/{workflow_name}:
     delete:
-      description: Delete states by their cascade
+      description: Delete states by their workflow
       produces:
       - application/json
       responses:
@@ -1017,7 +1017,7 @@ paths:
       - manager
       - state
     get:
-      description: Get states by their cascade
+      description: Get states by their workflow
       produces:
       - application/json
       responses:
@@ -1041,9 +1041,9 @@ paths:
       tags:
       - manager
       - state
-  /api/v1/state/{cascade_name}/{state_name}:
+  /api/v1/state/{workflow_name}/{state_name}:
     delete:
-      description: Delete a state by its name and its cascade
+      description: Delete a state by its name and its workflow
       produces:
       - application/json
       responses:
@@ -1066,7 +1066,7 @@ paths:
       - manager
       - state
     get:
-      description: Get a state by its name and its cascade
+      description: Get a state by its name and its workflow
       produces:
       - application/json
       responses:
@@ -1178,9 +1178,9 @@ paths:
       tags:
       - manager
       - task
-  /api/v1/task/{cascade_name}:
+  /api/v1/task/{workflow_name}:
     delete:
-      description: Delete tasks by their cascade
+      description: Delete tasks by their workflow
       produces:
       - application/json
       responses:
@@ -1203,7 +1203,7 @@ paths:
       - manager
       - task
     get:
-      description: Get tasks by their cascade
+      description: Get tasks by their workflow
       produces:
       - application/json
       responses:
@@ -1227,9 +1227,9 @@ paths:
       tags:
       - manager
       - task
-  /api/v1/task/{cascade_name}/{task_name}:
+  /api/v1/task/{workflow_name}/{task_name}:
     get:
-      description: Get a task by its name and its cascade
+      description: Get a task by its name and its workflow
       produces:
       - application/json
       responses:
@@ -1283,7 +1283,7 @@ paths:
       tags:
       - manager
       - task
-  /api/v1/task/{cascade_name}/{task_name}/enabled:
+  /api/v1/task/{workflow_name}/{task_name}/enabled:
     put:
       description: Update a task from a JSON object
       responses:
@@ -1307,7 +1307,7 @@ paths:
       - task
   /api/v1/task/{task_name}:
     delete:
-      description: Delete a task by its name and its cascade
+      description: Delete a task by its name and its workflow
       produces:
       - application/json
       responses:
@@ -1527,7 +1527,7 @@ paths:
       tags:
       - manager
       - webhook
-  /api/v1/webhook/{cascade_name}/{webhook_id}:
+  /api/v1/webhook/{workflow_name}/{webhook_id}:
     post:
       consumes:
       - application/json

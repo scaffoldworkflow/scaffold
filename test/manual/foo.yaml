@@ -45,8 +45,8 @@ tasks:
 - name: b
   image: ubuntu:20.04
   run: |
-    export "foo=${foo}"
-    export "bar=${bar}"
+    echo "foo=${foo}"
+    echo "bar=${bar}"
   store:
     env:
       - foo
@@ -58,12 +58,12 @@ tasks:
   depends_on:
     success:
       - a
+    always:
       - aa
   auto_execute: true
 - name: c
   run: |
-    echo "foo=${foo}"
-    echo "bar=${bar}"
+    exit 1
   store:
     env:
       - foo

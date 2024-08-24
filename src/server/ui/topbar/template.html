@@ -1,0 +1,26 @@
+<div class="navbar {{ .Classes }}"
+{{ if ne .Style "" }}
+style="{{ .Style }}"
+{{ end }}
+>
+  <div class="navbar-start">
+    <div>
+      <label for="sidebar" class="btn theme-base drawer-button">
+        <i class="fa-solid fa-bars w3-large"></i>
+      </label>
+    </div>
+  </div>
+  <div class="navbar-center">
+    <a class="btn btn-ghost text-xl">{{ .Title }}</a>
+  </div>
+  <div class="navbar-end">
+    {{ range .Components }}
+    {{ .Render }}
+    {{ end }}
+    {{ range .Buttons }}
+    <button class="btn theme-base" style="margin-right:16px;">
+      {{ .Render }}
+    </button>
+    {{ end }}
+  </div>
+</div>

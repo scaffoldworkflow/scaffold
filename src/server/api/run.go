@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"scaffold/server/cascade"
 	"scaffold/server/constants"
+	"scaffold/server/history"
 	"scaffold/server/manager"
 	"scaffold/server/msg"
 	"scaffold/server/rabbitmq"
@@ -13,7 +13,9 @@ import (
 	"scaffold/server/state"
 	"scaffold/server/task"
 	"scaffold/server/utils"
+	"scaffold/server/workflow"
 
+	"github.com/google/uuid"
 	logger "github.com/jfcarter2358/go-logger"
 
 	"github.com/gin-gonic/gin"
@@ -31,9 +33,9 @@ import (
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/run/{cascade_name}/{task_name}/{task_number} [delete]
+//	@router						/api/v1/run/{workflow_name}/{task_name}/{task_number} [delete]
 func ManagerKillRun(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+	cn := ctx.Param("workflow")
 	tn := ctx.Param("task")
 	// nn, err := strconv.Atoi(ctx.Param("number"))
 	// if err != nil {
@@ -78,12 +80,12 @@ func ManagerKillRun(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/kill/{cascade_name}/{task_name} [delete]
+//	@router						/api/v1/kill/{workflow_name}/{task_name} [delete]
 func KillRun(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+	cn := ctx.Param("workflow")
 	tn := ctx.Param("task")
 
-	c, err := cascade.GetCascadeByName(cn)
+	c, err := workflow.GetWorkflowByName(cn)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusNotFound)
 		return
@@ -116,7 +118,7 @@ func KillRun(ctx *gin.Context) {
 }
 
 //	@summary					Create a run
-//	@description				Create a run from a cascade and task
+//	@description				Create a run from a workflow and task
 //	@tags						manager
 //	@tags						run
 //	@success					201			{object}	object
@@ -126,12 +128,12 @@ func KillRun(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/run/{cascade_name}/{task_name} [post]
+//	@router						/api/v1/run/{workflow_name}/{task_name} [post]
 func CreateRun(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+	cn := ctx.Param("workflow")
 	tn := ctx.Param("task")
 
-	c, err := cascade.GetCascadeByName(cn)
+	c, err := workflow.GetWorkflowByName(cn)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
@@ -154,13 +156,27 @@ func CreateRun(ctx *gin.Context) {
 		return
 	}
 
+	runID := uuid.New().String()
+
 	m := msg.TriggerMsg{
-		Task:    tn,
-		Cascade: cn,
-		Action:  constants.ACTION_TRIGGER,
-		Groups:  c.Groups,
-		Number:  t.RunNumber + 1,
-		Context: s.Context,
+		Task:     tn,
+		Workflow: cn,
+		Action:   constants.ACTION_TRIGGER,
+		Groups:   c.Groups,
+		Number:   t.RunNumber + 1,
+		RunID:    runID,
+		Context:  s.Context,
+	}
+
+	h := history.History{
+		RunID:    runID,
+		States:   make([]state.State, 0),
+		Workflow: cn,
+	}
+
+	if err := history.CreateHistory(&h); err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
 	}
 
 	logger.Infof("", "Creating run with message %v", m)

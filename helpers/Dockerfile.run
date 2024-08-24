@@ -1,23 +1,79 @@
-FROM ubuntu:22.04
+FROM python:3.11.9-bookworm
 
 WORKDIR /home/scaffold
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="${PATH}:/usr/local/bin"
+
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+
+RUN apt-get update \
+    && apt-get install -y curl ca-certificates lsb-release \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' \
+    && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
 RUN apt-get update \
     && apt-get install --fix-missing -y \
-    bash \
-    git \
-    curl \
-    podman \
-    fuse-overlayfs \
-    adduser \
-    ca-certificates \
-    gnupg \
-    lsb-release \
-    tzdata \
-    software-properties-common \
-    sudo
+        bash \
+        jq \
+        git \
+        curl \
+        unzip \
+        wget \
+        postgresql-client-15 \
+        make \
+        build-essential \
+        podman \
+        fuse-overlayfs \
+        adduser \
+        ca-certificates \
+        gnupg \
+        lsb-release \
+        tzdata \
+        software-properties-common \
+        sudo
+
+# Install AWS CLI
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip -qq awscliv2.zip \
+    && ./aws/install \
+    && aws --version
+
+# Install Carvel tools
+RUN wget -O- https://carvel.dev/install.sh > install.sh \
+    && bash install.sh \
+    && rm install.sh \
+    && ytt version \
+    && kapp --version
+
+# Install gcloud CLI
+RUN curl https://sdk.cloud.google.com > install.sh \
+    && bash install.sh --disable-prompts \
+    && source /root/google-cloud-sdk/path.bash.inc \
+    && gcloud components install gke-gcloud-auth-plugin
+
+# Install kubectl
+RUN curl -LO "https://dl.k8s.io/release/v1.28.1/bin/linux/amd64/kubectl" \
+    && curl -LO "https://dl.k8s.io/release/v1.28.1/bin/linux/amd64/kubectl.sha256" \
+    && echo "$(cat kubectl.sha256) kubectl" | sha256sum --check \
+    && chmod +x kubectl \
+    && mkdir -p /usr/local/bin \
+    && mv ./kubectl /usr/local/bin/kubectl \
+    && rm kubectl.sha256 \
+    && kubectl version --client
+
+# Install Helm
+RUN curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | tee /usr/share/keyrings/helm.gpg > /dev/null \
+    && apt-get install apt-transport-https -y \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | tee /etc/apt/sources.list.d/helm-stable-debian.list \
+    && apt-get update \
+    && apt-get install helm
+
+# Install Python packages
+RUN pip install \
+        pyyaml \
+        yq 
 
 RUN adduser --disabled-password scaffold
 

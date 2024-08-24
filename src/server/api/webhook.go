@@ -1,168 +1,22 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-	"scaffold/server/cascade"
 	"scaffold/server/constants"
+	"scaffold/server/history"
 	"scaffold/server/msg"
 	"scaffold/server/rabbitmq"
+	"scaffold/server/state"
 	"scaffold/server/task"
 	"scaffold/server/utils"
-	"scaffold/server/webhook"
+	"scaffold/server/workflow"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	logger "github.com/jfcarter2358/go-logger"
-	"go.mongodb.org/mongo-driver/mongo"
 )
-
-//	@summary					Create a webhook
-//	@description				Create a webhook from a JSON object
-//	@tags						manager
-//	@tags						webhook
-//	@accept						json
-//	@produce					json
-//	@Param						webhook	body		webhook.Webhook	true	"Webhook Data"
-//	@success					201			{object}	object
-//	@failure					500			{object}	object
-//	@failure					401			{object}	object
-//	@securityDefinitions.apiKey	token
-//	@in							header
-//	@name						Authorization
-//	@security					X-Scaffold-API
-//	@router						/api/v1/webhook [post]
-func CreateWebhook(ctx *gin.Context) {
-	var w webhook.Webhook
-	if err := ctx.ShouldBindJSON(&w); err != nil {
-		utils.Error(err, ctx, http.StatusInternalServerError)
-		return
-	}
-
-	if err := webhook.CreateWebhook(&w); err != nil {
-		utils.Error(err, ctx, http.StatusInternalServerError)
-		return
-	}
-
-	ctx.JSON(http.StatusCreated, gin.H{"message": "Created"})
-}
-
-//	@summary					Get a webhook
-//	@description				Get a webhook by its ID
-//	@tags						manager
-//	@tags						webhook
-//	@produce					json
-//	@success					200	{object}	webhook.Webhook
-//	@failure					500	{object}	object
-//	@failure					401	{object}	object
-//	@securityDefinitions.apiKey	token
-//	@in							header
-//	@name						Authorization
-//	@security					X-Scaffold-API
-//	@router						/api/v1/webhook/{webhook_id} [get]
-func GetWebhookByID(ctx *gin.Context) {
-	id := ctx.Param("id")
-
-	w, err := webhook.GetWebhookByID(id)
-
-	if err != nil {
-		utils.Error(err, ctx, http.StatusInternalServerError)
-		return
-	}
-
-	if w == nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("Webhook %s does not exist", id)})
-		return
-	}
-
-	ctx.JSON(http.StatusOK, *w)
-}
-
-//	@summary					Delete a webhook
-//	@description				Delete a webhook by its ID
-//	@tags						manager
-//	@tags						webhook
-//	@produce					json
-//	@success					200	{object}	object
-//	@failure					500	{object}	object
-//	@failure					401	{object}	object
-//	@securityDefinitions.apiKey	token
-//	@in							header
-//	@name						Authorization
-//	@security					X-Scaffold-API
-//	@router						/api/v1/webhook/{webhook_id} [delete]
-func DeleteWebhookByID(ctx *gin.Context) {
-	id := ctx.Param("id")
-
-	err := webhook.DeleteWebhookByID(id)
-
-	if err != nil {
-		utils.Error(err, ctx, http.StatusInternalServerError)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
-}
-
-//	@summary					Get all webhooks
-//	@description				Get all webhooks
-//	@tags						manager
-//	@tags						webhook
-//	@produce					json
-//	@success					200	{array}		state.State
-//	@failure					500	{object}	object
-//	@failure					401	{object}	object
-//	@securityDefinitions.apiKey	token
-//	@in							header
-//	@name						Authorization
-//	@security					X-Scaffold-API
-//	@router						/api/v1/webhook [get]
-func GetAllWebhooks(ctx *gin.Context) {
-	webhooks, err := webhook.GetAllWebhooks()
-
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			ctx.JSON(http.StatusNoContent, []interface{}{})
-			return
-		}
-		utils.Error(err, ctx, http.StatusInternalServerError)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, webhooks)
-}
-
-//	@summary					Update a webhook
-//	@description				Update a webhook from a JSON object
-//	@tags						manager
-//	@tags						webhook
-//	@accept						json
-//	@produce					json
-//	@Param						state	body		state.State	true	"State Data"
-//	@success					201		{object}	object
-//	@failure					500		{object}	object
-//	@failure					401		{object}	object
-//	@securityDefinitions.apiKey	token
-//	@in							header
-//	@name						Authorization
-//	@security					X-Scaffold-API
-//	@router						/api/v1/webhook/{webhook_id} [put]
-func UpdateWebhooksByID(ctx *gin.Context) {
-	id := ctx.Param("id")
-
-	var w webhook.Webhook
-	if err := ctx.ShouldBindJSON(&w); err != nil {
-		utils.Error(err, ctx, http.StatusInternalServerError)
-		return
-	}
-
-	err := webhook.UpdateWebhooksByID(id, &w)
-	if err != nil {
-		utils.Error(err, ctx, http.StatusInternalServerError)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
-}
 
 //	@summary					Trigger a webhook
 //	@description				Trigger a webhook with optional input data
@@ -178,49 +32,63 @@ func UpdateWebhooksByID(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/webhook/{cascade_name}/{webhook_id} [post]
+//	@router						/api/v1/webhook/{workflow_name}/{webhook_id} [post]
 func TriggerWebhookByID(ctx *gin.Context) {
-	id := ctx.Param("id")
-
-	w, err := webhook.GetWebhookByID(id)
-	if err != nil {
-		utils.Error(err, ctx, http.StatusInternalServerError)
-		return
-	}
+	wName := ctx.Param("workflow")
+	tName := ctx.Param("task")
 
 	var data map[string]string
 	if err := ctx.ShouldBindJSON(&data); err != nil {
-		logger.Warnf("", "No input data found for trigger on webhook %s", id)
+		logger.Warnf("", "No input data found for trigger on webhook %s", wName)
 	}
 
-	c, err := cascade.GetCascadeByName(w.Cascade)
+	w, err := workflow.GetWorkflowByName(wName)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
 	}
 
-	t, err := task.GetTaskByNames(w.Cascade, w.Entrypoint)
+	if w.Groups != nil {
+		if !validateUserGroup(ctx, w.Groups) {
+			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusForbidden)
+		}
+	}
+
+	t, err := task.GetTaskByNames(wName, tName)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
 	}
 
 	if t.Disabled {
-		utils.Error(fmt.Errorf("task %s is disabled", w.Entrypoint), ctx, http.StatusServiceUnavailable)
+		utils.Error(fmt.Errorf("task %s is disabled", t.Name), ctx, http.StatusServiceUnavailable)
 		return
 	}
 
+	runID := uuid.New().String()
+
 	m := msg.TriggerMsg{
-		Task:    w.Entrypoint,
-		Cascade: w.Cascade,
-		Action:  constants.ACTION_TRIGGER,
-		Groups:  c.Groups,
-		Number:  t.RunNumber + 1,
-		Context: data,
+		Task:     tName,
+		Workflow: wName,
+		Action:   constants.ACTION_TRIGGER,
+		Groups:   w.Groups,
+		Number:   t.RunNumber + 1,
+		RunID:    runID,
+		Context:  data,
+	}
+
+	h := history.History{
+		RunID:    runID,
+		States:   make([]state.State, 0),
+		Workflow: wName,
+	}
+
+	if err := history.CreateHistory(&h); err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
 	}
 
 	logger.Infof("", "Creating run with message %v", m)
-	// bulwark.QueuePush(bulwark.WorkerClient, m)
 	rabbitmq.ManagerPublish(m)
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})

@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"scaffold/server/cascade"
 	"scaffold/server/state"
 	"scaffold/server/utils"
+	"scaffold/server/workflow"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -34,7 +34,7 @@ func CreateState(ctx *gin.Context) {
 		return
 	}
 
-	c, err := cascade.GetCascadeByName(s.Cascade)
+	c, err := workflow.GetWorkflowByName(s.Workflow)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusNotFound)
 	}
@@ -55,7 +55,7 @@ func CreateState(ctx *gin.Context) {
 }
 
 //	@summary					Delete a state
-//	@description				Delete a state by its name and its cascade
+//	@description				Delete a state by its name and its workflow
 //	@tags						manager
 //	@tags						state
 //	@produce					json
@@ -66,9 +66,9 @@ func CreateState(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/state/{cascade_name}/{state_name} [delete]
+//	@router						/api/v1/state/{workflow_name}/{state_name} [delete]
 func DeleteStateByNames(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+	cn := ctx.Param("workflow")
 	tn := ctx.Param("task")
 
 	err := state.DeleteStateByNames(cn, tn)
@@ -82,7 +82,7 @@ func DeleteStateByNames(ctx *gin.Context) {
 }
 
 //	@summary					Delete states
-//	@description				Delete states by their cascade
+//	@description				Delete states by their workflow
 //	@tags						manager
 //	@tags						state
 //	@produce					json
@@ -93,11 +93,11 @@ func DeleteStateByNames(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/state/{cascade_name} [delete]
-func DeleteStatesByCascade(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+//	@router						/api/v1/state/{workflow_name} [delete]
+func DeleteStatesByWorkflow(ctx *gin.Context) {
+	cn := ctx.Param("workflow")
 
-	err := state.DeleteStatesByCascade(cn)
+	err := state.DeleteStatesByWorkflow(cn)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -134,7 +134,7 @@ func GetAllStates(ctx *gin.Context) {
 
 	statesOut := make([]state.State, 0)
 	for _, s := range states {
-		c, err := cascade.GetCascadeByName(s.Cascade)
+		c, err := workflow.GetWorkflowByName(s.Workflow)
 		if err != nil {
 			continue
 		}
@@ -151,7 +151,7 @@ func GetAllStates(ctx *gin.Context) {
 }
 
 //	@summary					Get a state
-//	@description				Get a state by its name and its cascade
+//	@description				Get a state by its name and its workflow
 //	@tags						manager
 //	@tags						state
 //	@produce					json
@@ -162,9 +162,9 @@ func GetAllStates(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/state/{cascade_name}/{state_name} [get]
+//	@router						/api/v1/state/{workflow_name}/{state_name} [get]
 func GetStateByNames(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+	cn := ctx.Param("workflow")
 	tn := ctx.Param("task")
 
 	s, err := state.GetStateByNames(cn, tn)
@@ -183,7 +183,7 @@ func GetStateByNames(ctx *gin.Context) {
 }
 
 //	@summary					Get states
-//	@description				Get states by their cascade
+//	@description				Get states by their workflow
 //	@tags						manager
 //	@tags						state
 //	@produce					json
@@ -194,11 +194,11 @@ func GetStateByNames(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/state/{cascade_name} [get]
-func GetStatesByCascade(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+//	@router						/api/v1/state/{workflow_name} [get]
+func GetStatesByWorkflow(ctx *gin.Context) {
+	cn := ctx.Param("workflow")
 
-	s, err := state.GetStatesByCascade(cn)
+	s, err := state.GetStatesByWorkflow(cn)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -222,9 +222,9 @@ func GetStatesByCascade(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/state/{cascade_name}/{state_name} [put]
+//	@router						/api/v1/state/{workflow_name}/{state_name} [put]
 func UpdateStateByNames(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+	cn := ctx.Param("workflow")
 	tn := ctx.Param("task")
 
 	var s state.State

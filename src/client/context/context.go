@@ -7,7 +7,7 @@ import (
 func DoContext(profile, context string) {
 	p := auth.ReadProfile(profile)
 
-	p.Cascade = context
+	p.Workflow = context
 
 	auth.WriteProfile(profile, p)
 }

@@ -25,29 +25,29 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/cascade": {
+        "/api/v1/workflow": {
             "get": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Get all cascades",
+                "description": "Get all workflows",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "manager",
-                    "cascade"
+                    "workflow"
                 ],
-                "summary": "Get all cascades",
+                "summary": "Get all workflows",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/cascade.Cascade"
+                                "$ref": "#/definitions/workflow.Workflow"
                             }
                         }
                     },
@@ -71,7 +71,7 @@ const docTemplate = `{
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Create a cascade from a JSON object",
+                "description": "Create a workflow from a JSON object",
                 "consumes": [
                     "application/json"
                 ],
@@ -80,17 +80,17 @@ const docTemplate = `{
                 ],
                 "tags": [
                     "manager",
-                    "cascade"
+                    "workflow"
                 ],
-                "summary": "Create a cascade",
+                "summary": "Create a workflow",
                 "parameters": [
                     {
-                        "description": "Cascade Data",
-                        "name": "cascade",
+                        "description": "Workflow Data",
+                        "name": "workflow",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/cascade.Cascade"
+                            "$ref": "#/definitions/workflow.Workflow"
                         }
                     }
                 ],
@@ -116,27 +116,27 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/cascade/{cascade_name}": {
+        "/api/v1/workflow/{workflow_name}": {
             "get": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Get a cascade by its name",
+                "description": "Get a workflow by its name",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "manager",
-                    "cascade"
+                    "workflow"
                 ],
-                "summary": "Get a cascade",
+                "summary": "Get a workflow",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/cascade.Cascade"
+                            "$ref": "#/definitions/workflow.Workflow"
                         }
                     },
                     "401": {
@@ -159,7 +159,7 @@ const docTemplate = `{
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Update a cascade from a JSON object",
+                "description": "Update a workflow from a JSON object",
                 "consumes": [
                     "application/json"
                 ],
@@ -168,17 +168,17 @@ const docTemplate = `{
                 ],
                 "tags": [
                     "manager",
-                    "cascade"
+                    "workflow"
                 ],
-                "summary": "Update a cascade",
+                "summary": "Update a workflow",
                 "parameters": [
                     {
-                        "description": "Cascade Data",
-                        "name": "cascade",
+                        "description": "Workflow Data",
+                        "name": "workflow",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/cascade.Cascade"
+                            "$ref": "#/definitions/workflow.Workflow"
                         }
                     }
                 ],
@@ -209,15 +209,15 @@ const docTemplate = `{
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Delete a cascade by its name",
+                "description": "Delete a workflow by its name",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "manager",
-                    "cascade"
+                    "workflow"
                 ],
-                "summary": "Delete a cascade",
+                "summary": "Delete a workflow",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -331,7 +331,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/datastore/{cascade_name}": {
+        "/api/v1/datastore/{workflow_name}": {
             "get": {
                 "security": [
                     {
@@ -496,14 +496,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/file/{cascade_name}": {
+        "/api/v1/file/{workflow_name}": {
             "get": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Get files by cascade",
+                "description": "Get files by workflow",
                 "produces": [
                     "application/json"
                 ],
@@ -537,14 +537,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/file/{cascade_name}/{file_name}": {
+        "/api/v1/file/{workflow_name}/{file_name}": {
             "get": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Get file by cascade and name",
+                "description": "Get file by workflow and name",
                 "produces": [
                     "application/json"
                 ],
@@ -575,14 +575,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/file/{cascade_name}/{file_name}/download": {
+        "/api/v1/file/{workflow_name}/{file_name}/download": {
             "get": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Download a file from a cascade",
+                "description": "Download a file from a workflow",
                 "produces": [
                     "application/text"
                 ],
@@ -614,7 +614,7 @@ const docTemplate = `{
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Upload a file to a cascade",
+                "description": "Upload a file to a workflow",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -736,14 +736,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/input/{cascade_name}": {
+        "/api/v1/input/{workflow_name}": {
             "get": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Get inputs by their cascade",
+                "description": "Get inputs by their workflow",
                 "produces": [
                     "application/json"
                 ],
@@ -782,7 +782,7 @@ const docTemplate = `{
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Delete inputs by their cascade",
+                "description": "Delete inputs by their workflow",
                 "produces": [
                     "application/json"
                 ],
@@ -813,7 +813,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/input/{cascade_name}/update": {
+        "/api/v1/input/{workflow_name}/update": {
             "post": {
                 "security": [
                     {
@@ -851,14 +851,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/input/{cascade_name}/{input_name}": {
+        "/api/v1/input/{workflow_name}/{input_name}": {
             "get": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Get a input by its name and its cascade",
+                "description": "Get a input by its name and its workflow",
                 "produces": [
                     "application/json"
                 ],
@@ -946,7 +946,7 @@ const docTemplate = `{
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Delete a input by its name and its cascade",
+                "description": "Delete a input by its name and its workflow",
                 "produces": [
                     "application/json"
                 ],
@@ -977,7 +977,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/kill/{cascade_name}/{task_name}": {
+        "/api/v1/kill/{workflow_name}/{task_name}": {
             "delete": {
                 "security": [
                     {
@@ -1043,14 +1043,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/run/{cascade_name}/{task_name}": {
+        "/api/v1/run/{workflow_name}/{task_name}": {
             "post": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Create a run from a cascade and task",
+                "description": "Create a run from a workflow and task",
                 "tags": [
                     "manager",
                     "run"
@@ -1078,7 +1078,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/run/{cascade_name}/{task_name}/{task_number}": {
+        "/api/v1/run/{workflow_name}/{task_name}/{task_number}": {
             "delete": {
                 "security": [
                     {
@@ -1207,14 +1207,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/state/{cascade_name}": {
+        "/api/v1/state/{workflow_name}": {
             "get": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Get states by their cascade",
+                "description": "Get states by their workflow",
                 "produces": [
                     "application/json"
                 ],
@@ -1253,7 +1253,7 @@ const docTemplate = `{
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Delete states by their cascade",
+                "description": "Delete states by their workflow",
                 "produces": [
                     "application/json"
                 ],
@@ -1284,14 +1284,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/state/{cascade_name}/{state_name}": {
+        "/api/v1/state/{workflow_name}/{state_name}": {
             "get": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Get a state by its name and its cascade",
+                "description": "Get a state by its name and its workflow",
                 "produces": [
                     "application/json"
                 ],
@@ -1377,7 +1377,7 @@ const docTemplate = `{
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Delete a state by its name and its cascade",
+                "description": "Delete a state by its name and its workflow",
                 "produces": [
                     "application/json"
                 ],
@@ -1499,14 +1499,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/task/{cascade_name}": {
+        "/api/v1/task/{workflow_name}": {
             "get": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Get tasks by their cascade",
+                "description": "Get tasks by their workflow",
                 "produces": [
                     "application/json"
                 ],
@@ -1545,7 +1545,7 @@ const docTemplate = `{
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Delete tasks by their cascade",
+                "description": "Delete tasks by their workflow",
                 "produces": [
                     "application/json"
                 ],
@@ -1576,14 +1576,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/task/{cascade_name}/{task_name}": {
+        "/api/v1/task/{workflow_name}/{task_name}": {
             "get": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Get a task by its name and its cascade",
+                "description": "Get a task by its name and its workflow",
                 "produces": [
                     "application/json"
                 ],
@@ -1664,7 +1664,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/task/{cascade_name}/{task_name}/enabled": {
+        "/api/v1/task/{workflow_name}/{task_name}/enabled": {
             "put": {
                 "security": [
                     {
@@ -1706,7 +1706,7 @@ const docTemplate = `{
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Delete a task by its name and its cascade",
+                "description": "Delete a task by its name and its workflow",
                 "produces": [
                     "application/json"
                 ],
@@ -2048,7 +2048,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/webhook/{cascade_name}/{webhook_id}": {
+        "/api/v1/webhook/{workflow_name}/{webhook_id}": {
             "post": {
                 "security": [
                     {
@@ -2386,7 +2386,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "cascade.Cascade": {
+        "workflow.Workflow": {
             "type": "object",
             "properties": {
                 "created": {
@@ -2456,7 +2456,7 @@ const docTemplate = `{
         "filestore.ObjectMetadata": {
             "type": "object",
             "properties": {
-                "cascade": {
+                "workflow": {
                     "type": "string"
                 },
                 "modified": {
@@ -2470,7 +2470,7 @@ const docTemplate = `{
         "input.Input": {
             "type": "object",
             "properties": {
-                "cascade": {
+                "workflow": {
                     "type": "string"
                 },
                 "default": {
@@ -2490,7 +2490,7 @@ const docTemplate = `{
         "state.State": {
             "type": "object",
             "properties": {
-                "cascade": {
+                "workflow": {
                     "type": "string"
                 },
                 "disabled": {
@@ -2544,7 +2544,7 @@ const docTemplate = `{
                 "auto_execute": {
                     "type": "boolean"
                 },
-                "cascade": {
+                "workflow": {
                     "type": "string"
                 },
                 "container_login_command": {
@@ -2723,7 +2723,7 @@ const docTemplate = `{
         "webhook.Webhook": {
             "type": "object",
             "properties": {
-                "cascade": {
+                "workflow": {
                     "type": "string"
                 },
                 "entrypoint": {

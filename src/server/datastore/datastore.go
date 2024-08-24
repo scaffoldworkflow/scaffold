@@ -31,7 +31,7 @@ func CreateDataStore(d *DataStore) error {
 	d.Created = currentTime.Format("2006-01-02T15:04:05Z")
 	d.Updated = currentTime.Format("2006-01-02T15:04:05Z")
 
-	dd, err := GetDataStoreByCascade(d.Name)
+	dd, err := GetDataStoreByWorkflow(d.Name)
 	if err != nil {
 		return fmt.Errorf("error getting datastores: %s", err.Error())
 	}
@@ -43,7 +43,7 @@ func CreateDataStore(d *DataStore) error {
 	return err
 }
 
-func DeleteDataStoreByCascade(name string) error {
+func DeleteDataStoreByWorkflow(name string) error {
 	filter := bson.M{"name": name}
 
 	collection := mongodb.Collections[constants.MONGODB_DATASTORE_COLLECTION_NAME]
@@ -71,7 +71,7 @@ func GetAllDataStores() ([]*DataStore, error) {
 	return datastores, err
 }
 
-func GetDataStoreByCascade(name string) (*DataStore, error) {
+func GetDataStoreByWorkflow(name string) (*DataStore, error) {
 	filter := bson.M{"name": name}
 
 	datastores, err := FilterDataStores(filter)
@@ -91,7 +91,7 @@ func GetDataStoreByCascade(name string) (*DataStore, error) {
 	return datastores[0], nil
 }
 
-func UpdateDataStoreByCascade(name string, d *DataStore, is []input.Input) error {
+func UpdateDataStoreByWorkflow(name string, d *DataStore, is []input.Input) error {
 	filter := bson.M{"name": name}
 
 	currentTime := time.Now().UTC()
@@ -100,7 +100,7 @@ func UpdateDataStoreByCascade(name string, d *DataStore, is []input.Input) error
 	// if config.Config.Node.Type == constants.NODE_TYPE_MANAGER {
 	// 	logger.Infof("", "Node is of type %s", constants.NODE_TYPE_MANAGER)
 	toChange := []string{}
-	old, err := GetDataStoreByCascade(name)
+	old, err := GetDataStoreByWorkflow(name)
 	if err != nil {
 		logger.Errorf("", "Error getting datastore %s: %s\n", name, err.Error())
 		return err

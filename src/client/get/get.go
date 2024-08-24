@@ -20,7 +20,7 @@ func DoGet(profile, object, context string) {
 	uri := fmt.Sprintf("%s://%s:%s", p.Protocol, p.Host, p.Port)
 
 	logger.Debugf("", "Checking if object is valid")
-	objects := []string{"cascade", "datastore", "state", "task", "file", "user", "input"}
+	objects := []string{"workflow", "datastore", "state", "task", "file", "user", "input"}
 
 	parts := strings.Split(object, "/")
 
@@ -30,10 +30,10 @@ func DoGet(profile, object, context string) {
 
 	logger.Debugf("", "Getting context")
 	if context == "" {
-		context = p.Cascade
+		context = p.Workflow
 	}
 	if len(parts) == 2 {
-		if parts[0] != "cascade" && parts[0] != "datastore" && parts[0] != "user" {
+		if parts[0] != "workflow" && parts[0] != "datastore" && parts[0] != "user" {
 			object = fmt.Sprintf("%s/%s/%s", parts[0], context, parts[1])
 		}
 	}
@@ -46,8 +46,8 @@ func DoGet(profile, object, context string) {
 	logger.Debugf("", "JSON response: %s", string(data))
 
 	switch parts[0] {
-	case "cascade":
-		listCascades(data)
+	case "workflow":
+		listWorkflows(data)
 	case "state":
 		listStates(data, context)
 	case "task":
@@ -86,17 +86,17 @@ func getJSON(p auth.ProfileObj, uri, object string) []byte {
 	return body
 }
 
-func listCascades(data []byte) {
-	var cascades []map[string]interface{}
+func listWorkflows(data []byte) {
+	var workflows []map[string]interface{}
 
-	err := json.Unmarshal(data, &cascades)
+	err := json.Unmarshal(data, &workflows)
 	if err != nil {
-		logger.Fatalf("", "Unable to marshal cascades JSON: %s", err.Error())
+		logger.Fatalf("", "Unable to marshal workflows JSON: %s", err.Error())
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
 	fmt.Fprintln(w, "NAME \tVERSION \tGROUPS \tCREATED \tUPDATED \t")
-	for _, c := range cascades {
+	for _, c := range workflows {
 		name := c["name"].(string)
 		version := c["version"].(string)
 		groupList := c["groups"].([]interface{})
@@ -141,13 +141,13 @@ func listStates(data []byte, context string) {
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
 	fmt.Fprintln(w, "TASK \tCASCADE \tSTATUS \tSTARTED \tFINISHED \t")
 	for _, s := range states {
-		cascade := s["cascade"].(string)
+		workflow := s["workflow"].(string)
 		status := s["status"].(string)
 		task := s["task"].(string)
 		started := s["started"].(string)
 		finished := s["finished"].(string)
-		if cascade == context || context == constants.ALL_CONTEXTS {
-			fmt.Fprintf(w, "%s \t%s \t%s \t%s \t%s \n", task, cascade, status, started, finished)
+		if workflow == context || context == constants.ALL_CONTEXTS {
+			fmt.Fprintf(w, "%s \t%s \t%s \t%s \t%s \n", task, workflow, status, started, finished)
 		}
 	}
 	w.Flush()
@@ -167,13 +167,13 @@ func listTasks(data []byte, context string) {
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
 	fmt.Fprintln(w, "NAME \tCASCADE \tIMAGE \tRUN NUMBER \tUPDATED \t")
 	for _, t := range tasks {
-		cascade := t["cascade"].(string)
+		workflow := t["workflow"].(string)
 		name := t["name"].(string)
 		image := t["image"].(string)
 		runNumber := int(t["run_number"].(float64))
 		updated := t["updated"].(string)
-		if cascade == context || context == constants.ALL_CONTEXTS {
-			fmt.Fprintf(w, "%s \t%s \t%s \t%d \t%s \n", name, cascade, image, runNumber, updated)
+		if workflow == context || context == constants.ALL_CONTEXTS {
+			fmt.Fprintf(w, "%s \t%s \t%s \t%d \t%s \n", name, workflow, image, runNumber, updated)
 		}
 	}
 	w.Flush()
@@ -190,11 +190,11 @@ func listFiles(data []byte, context string) {
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
 	fmt.Fprintln(w, "NAME \tCASCADE \tUPDATED \t")
 	for _, f := range files {
-		cascade := f["cascade"].(string)
+		workflow := f["workflow"].(string)
 		name := f["name"].(string)
 		updated := f["modified"].(string)
-		if cascade == context || context == constants.ALL_CONTEXTS {
-			fmt.Fprintf(w, "%s \t%s \t%s \n", name, cascade, updated)
+		if workflow == context || context == constants.ALL_CONTEXTS {
+			fmt.Fprintf(w, "%s \t%s \t%s \n", name, workflow, updated)
 		}
 	}
 	w.Flush()
@@ -243,12 +243,12 @@ func listInputs(data []byte, context string) {
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
 	fmt.Fprintln(w, "NAME \tCASCADE \tTYPE \tType \tDEFAULT \t")
 	for _, i := range inputs {
-		cascade := i["cascade"].(string)
+		workflow := i["workflow"].(string)
 		name := i["name"].(string)
 		inputType := i["type"].(string)
 		inputDefault := i["default"].(string)
-		if cascade == context || context == constants.ALL_CONTEXTS {
-			fmt.Fprintf(w, "%s \t%s \t%s \t%s \n", name, cascade, inputType, inputDefault)
+		if workflow == context || context == constants.ALL_CONTEXTS {
+			fmt.Fprintf(w, "%s \t%s \t%s \t%s \n", name, workflow, inputType, inputDefault)
 		}
 	}
 	w.Flush()
