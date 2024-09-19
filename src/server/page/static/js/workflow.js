@@ -1047,6 +1047,7 @@ function getStates(shouldInit) {
         contentType: "application/json",
         success: function (result) {
             states = result 
+            console.log(states)
             updateNodes()
             if (shouldInit) {
                 workflow = new Workflow("workflow-canvas", "workflow-card", "", "", 995, "theme-light", tasks, pin_colors)
