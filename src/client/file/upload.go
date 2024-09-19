@@ -12,7 +12,7 @@ import (
 	"scaffold/client/logger"
 )
 
-func DoUpload(profile, cascade, inPath string) {
+func DoUpload(profile, workflow, inPath string) {
 	p := auth.ReadProfile(profile)
 	uri := fmt.Sprintf("%s://%s:%s", p.Protocol, p.Host, p.Port)
 
@@ -26,7 +26,7 @@ func DoUpload(profile, cascade, inPath string) {
 	writer.Close()
 
 	httpClient := &http.Client{}
-	requestURL := fmt.Sprintf("%s/api/v1/file/%s", uri, cascade)
+	requestURL := fmt.Sprintf("%s/api/v1/file/%s", uri, workflow)
 	req, _ := http.NewRequest("POST", requestURL, body)
 	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", p.APIToken))
 	req.Header.Add("Content-Type", writer.FormDataContentType())
@@ -39,6 +39,6 @@ func DoUpload(profile, cascade, inPath string) {
 		logger.Fatalf("", "Error, got status code %d", resp.StatusCode)
 	}
 
-	logger.Successf("", "Successfully uploaded %s to %s filestore", inPath, cascade)
+	logger.Successf("", "Successfully uploaded %s to %s filestore", inPath, workflow)
 
 }

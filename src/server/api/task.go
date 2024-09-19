@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"scaffold/server/cascade"
 	"scaffold/server/state"
 	"scaffold/server/task"
 	"scaffold/server/utils"
+	"scaffold/server/workflow"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -35,7 +35,7 @@ func CreateTask(ctx *gin.Context) {
 		return
 	}
 
-	c, err := cascade.GetCascadeByName(t.Cascade)
+	c, err := workflow.GetWorkflowByName(t.Workflow)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusNotFound)
 	}
@@ -56,7 +56,7 @@ func CreateTask(ctx *gin.Context) {
 }
 
 //	@summary					Delete a task
-//	@description				Delete a task by its name and its cascade
+//	@description				Delete a task by its name and its workflow
 //	@tags						manager
 //	@tags						task
 //	@produce					json
@@ -69,7 +69,7 @@ func CreateTask(ctx *gin.Context) {
 //	@security					X-Scaffold-API
 //	@router						/api/v1/task/{task_name} [delete]
 func DeleteTaskByNames(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+	cn := ctx.Param("workflow")
 	tn := ctx.Param("task")
 
 	err := task.DeleteTaskByNames(cn, tn)
@@ -83,7 +83,7 @@ func DeleteTaskByNames(ctx *gin.Context) {
 }
 
 //	@summary					Delete tasks
-//	@description				Delete tasks by their cascade
+//	@description				Delete tasks by their workflow
 //	@tags						manager
 //	@tags						task
 //	@produce					json
@@ -94,11 +94,11 @@ func DeleteTaskByNames(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/task/{cascade_name} [delete]
-func DeleteTasksByCascade(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+//	@router						/api/v1/task/{workflow_name} [delete]
+func DeleteTasksByWorkflow(ctx *gin.Context) {
+	cn := ctx.Param("workflow")
 
-	err := task.DeleteTasksByCascade(cn)
+	err := task.DeleteTasksByWorkflow(cn)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -135,7 +135,7 @@ func GetAllTasks(ctx *gin.Context) {
 
 	tasksOut := make([]task.Task, 0)
 	for _, t := range tasks {
-		c, err := cascade.GetCascadeByName(t.Cascade)
+		c, err := workflow.GetWorkflowByName(t.Workflow)
 		if err != nil {
 			continue
 		}
@@ -152,7 +152,7 @@ func GetAllTasks(ctx *gin.Context) {
 }
 
 //	@summary					Get a task
-//	@description				Get a task by its name and its cascade
+//	@description				Get a task by its name and its workflow
 //	@tags						manager
 //	@tags						task
 //	@produce					json
@@ -163,9 +163,9 @@ func GetAllTasks(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/task/{cascade_name}/{task_name} [get]
+//	@router						/api/v1/task/{workflow_name}/{task_name} [get]
 func GetTaskByNames(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+	cn := ctx.Param("workflow")
 	tn := ctx.Param("task")
 
 	t, err := task.GetTaskByNames(cn, tn)
@@ -184,7 +184,7 @@ func GetTaskByNames(ctx *gin.Context) {
 }
 
 //	@summary					Get tasks
-//	@description				Get tasks by their cascade
+//	@description				Get tasks by their workflow
 //	@tags						manager
 //	@tags						task
 //	@produce					json
@@ -195,11 +195,11 @@ func GetTaskByNames(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/task/{cascade_name} [get]
-func GetTasksByCascade(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+//	@router						/api/v1/task/{workflow_name} [get]
+func GetTasksByWorkflow(ctx *gin.Context) {
+	cn := ctx.Param("workflow")
 
-	t, err := task.GetTasksByCascade(cn)
+	t, err := task.GetTasksByWorkflow(cn)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -223,9 +223,9 @@ func GetTasksByCascade(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/task/{cascade_name}/{task_name} [put]
+//	@router						/api/v1/task/{workflow_name}/{task_name} [put]
 func UpdateTaskByNames(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+	cn := ctx.Param("workflow")
 	tn := ctx.Param("task")
 
 	var t task.Task
@@ -254,9 +254,9 @@ func UpdateTaskByNames(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/task/{cascade_name}/{task_name}/enabled [put]
+//	@router						/api/v1/task/{workflow_name}/{task_name}/enabled [put]
 func ToggleTaskEnabled(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+	cn := ctx.Param("workflow")
 	tn := ctx.Param("task")
 
 	t, err := task.GetTaskByNames(cn, tn)

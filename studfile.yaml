@@ -31,13 +31,13 @@ build-docker-helpers:
     stud set-server-version
 
     docker build -t scaffold:build -f helpers/Dockerfile.build .
-    docker build -t scaffold:run -f helpers/Dockerfile.run .
+    docker build -t scaffold:run --no-cache -f helpers/Dockerfile.run .
 build-docker:
   help: Build Scaffold Docker image
   cmd: |
     stud set-server-version
-    wsc compile
-    docker build -t scaffold -f src/server/Dockerfile .
+    # wsc compile
+    docker build -t scaffold --no-cache -f src/server/Dockerfile .
 push-docker:
   help: Build Scaffold Docker image
   cmd: |

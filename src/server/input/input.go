@@ -12,27 +12,27 @@ import (
 
 type Input struct {
 	Name        string `json:"name" bson:"name" yaml:"name"`
-	Cascade     string `json:"cascade" bson:"cascade" yaml:"cascade"`
+	Workflow    string `json:"workflow" bson:"workflow" yaml:"workflow"`
 	Description string `json:"description" bson:"description" yaml:"description"`
 	Default     string `json:"default" bson:"default" yaml:"default"`
 	Type        string `json:"type" bson:"type" yaml:"type"`
 }
 
 func CreateInput(i *Input) error {
-	ii, err := GetInputByNames(i.Cascade, i.Name)
+	ii, err := GetInputByNames(i.Workflow, i.Name)
 	if err != nil {
 		return fmt.Errorf("error getting inputs: %s", err.Error())
 	}
 	if ii != nil {
-		return fmt.Errorf("input already exists with names %s, %s", i.Cascade, i.Name)
+		return fmt.Errorf("input already exists with names %s, %s", i.Workflow, i.Name)
 	}
 
 	_, err = mongodb.Collections[constants.MONGODB_INPUT_COLLECTION_NAME].InsertOne(mongodb.Ctx, i)
 	return err
 }
 
-func DeleteInputByNames(cascade, name string) error {
-	filter := bson.M{"cascade": cascade, "name": name}
+func DeleteInputByNames(workflow, name string) error {
+	filter := bson.M{"workflow": workflow, "name": name}
 
 	collection := mongodb.Collections[constants.MONGODB_INPUT_COLLECTION_NAME]
 	ctx := mongodb.Ctx
@@ -44,15 +44,15 @@ func DeleteInputByNames(cascade, name string) error {
 	}
 
 	if result.DeletedCount != 1 {
-		return fmt.Errorf("no input found with names %s, %s", cascade, name)
+		return fmt.Errorf("no input found with names %s, %s", workflow, name)
 	}
 
 	return nil
 
 }
 
-func DeleteInputsByCascade(cascade string) error {
-	filter := bson.M{"cascade": cascade}
+func DeleteInputsByWorkflow(workflow string) error {
+	filter := bson.M{"workflow": workflow}
 
 	collection := mongodb.Collections[constants.MONGODB_INPUT_COLLECTION_NAME]
 	ctx := mongodb.Ctx
@@ -64,7 +64,7 @@ func DeleteInputsByCascade(cascade string) error {
 	}
 
 	if result.DeletedCount == 0 {
-		return fmt.Errorf("no inputs found with cascade %s", cascade)
+		return fmt.Errorf("no inputs found with workflow %s", workflow)
 	}
 
 	return nil
@@ -79,8 +79,8 @@ func GetAllInputs() ([]*Input, error) {
 	return inputs, err
 }
 
-func GetInputByNames(cascade, name string) (*Input, error) {
-	filter := bson.M{"cascade": cascade, "name": name}
+func GetInputByNames(workflow, name string) (*Input, error) {
+	filter := bson.M{"workflow": workflow, "name": name}
 
 	inputs, err := FilterInputs(filter)
 
@@ -93,14 +93,14 @@ func GetInputByNames(cascade, name string) (*Input, error) {
 	}
 
 	if len(inputs) > 1 {
-		return nil, fmt.Errorf("multiple inputs found with names %s, %s", cascade, name)
+		return nil, fmt.Errorf("multiple inputs found with names %s, %s", workflow, name)
 	}
 
 	return inputs[0], nil
 }
 
-func GetInputsByCascade(cascade string) ([]*Input, error) {
-	filter := bson.M{"cascade": cascade}
+func GetInputsByWorkflow(workflow string) ([]*Input, error) {
+	filter := bson.M{"workflow": workflow}
 
 	inputs, err := FilterInputs(filter)
 
@@ -111,8 +111,8 @@ func GetInputsByCascade(cascade string) ([]*Input, error) {
 	return inputs, nil
 }
 
-func UpdateInputByNames(cascade, name string, i *Input) error {
-	filter := bson.M{"cascade": cascade, "name": name}
+func UpdateInputByNames(workflow, name string, i *Input) error {
+	filter := bson.M{"workflow": workflow, "name": name}
 
 	collection := mongodb.Collections[constants.MONGODB_INPUT_COLLECTION_NAME]
 	ctx := mongodb.Ctx
@@ -127,7 +127,7 @@ func UpdateInputByNames(cascade, name string, i *Input) error {
 
 	if result.ModifiedCount != 1 {
 		return CreateInput(i)
-		// return fmt.Errorf("no input found with names %s, %s", cascade, name)
+		// return fmt.Errorf("no input found with names %s, %s", workflow, name)
 	}
 
 	return nil

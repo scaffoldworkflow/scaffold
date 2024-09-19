@@ -1,0 +1,264 @@
+<!doctype html>
+<html style="height:100%;min-height:100%;" class="theme-base">
+
+<head>
+    <title>Scaffold</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <!-- add the icon -->
+    <link rel="icon" href="/static/img/favicon.png">
+    <!-- add w3 css -->
+    <link rel="stylesheet" type="text/css" href="https://www.w3schools.com/w3css/4/w3.css">
+    <!-- add jquery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- add fontawesome -->
+    <script src="https://kit.fontawesome.com/239a824854.js" crossorigin="anonymous"></script>
+    <!-- add htmx -->
+    <script src="https://unpkg.com/htmx.org@2.0.1"
+        integrity="sha384-QWGpdj554B4ETpJJC9z+ZHJcA/i59TyjxEPXiiUgN2WmTyV5OEZWCD6gQhgkdpB/"
+        crossorigin="anonymous"></script>
+    <!-- add daisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- add jquery form -->
+    <script src="https://malsup.github.io/jquery.form.js"></script>
+    <style type="text/css">
+        .theme-text,
+        .theme-text:hover {
+            color: #ECEFF4 !important;
+        }
+
+        /* neutral colors */
+        .theme-dark,
+        .theme-hover-dark:hover {
+            color: #ECEFF4 !important;
+            background-color: #333333 !important;
+        }
+
+        .theme-base,
+        .theme-hover-base:hover {
+            color: #ECEFF4 !important;
+            background-color: #4b4b4b !important;
+        }
+
+        .theme-light,
+        .theme-hover-light:hover {
+            color: #ECEFF4 !important;
+            background-color: #646464 !important;
+        }
+
+        /* neutral color text */
+        .theme-text-dark,
+        .theme-hover-text-dark:hover {
+            color: #333333 !important;
+        }
+
+        .theme-text-base,
+        .theme-hover-text-base:hover {
+            color: #4b4b4b !important;
+        }
+
+        .theme-text-light,
+        .theme-hover-text-light:hover {
+            color: #646464 !important;
+        }
+
+        /* neutral color border */
+        .theme-border-dark,
+        .theme-hover-border-dark:hover {
+            border-color: #333333 !important;
+        }
+
+        .theme-border-base,
+        .theme-hover-border-base:hover {
+            border-color: #4b4b4b !important;
+        }
+
+        .theme-border-light,
+        .theme-hover-border-light:hover {
+            border-color: #646464 !important;
+        }
+
+        /* table stripes */
+        .theme-table-striped tr:nth-child(1) {
+            color: #ECEFF4 !important;
+            background-color: #333333 !important;
+        }
+
+        .theme-table-striped tr:nth-child(even) {
+            color: #ECEFF4 !important;
+            background-color: #646464 !important;
+        }
+
+        .theme-table-striped tr:nth-child(odd) {
+            color: #ECEFF4 !important;
+            background-color: #4b4b4b !important;
+        }
+
+        /* background colors */
+        .scaffold-charcoal,
+        .scaffold-hover-charcoal:hover {
+            color: #fff !important;
+            background-color: #373F51 !important
+        }
+
+        .scaffold-grey,
+        .scaffold-hover-grey:hover {
+            color: #000 !important;
+            background-color: #aaaaaa !important
+        }
+
+        .scaffold-white,
+        .scaffold-hover-white:hover {
+            color: #fff !important;
+            background-color: #D8DBE2 !important
+        }
+
+        .scaffold-blue,
+        .scaffold-hover-blue:hover {
+            color: #fff !important;
+            background-color: #5E81AC !important
+        }
+
+        .scaffold-green,
+        .scaffold-hover-green:hover {
+            color: #fff !important;
+            background-color: #A3BE8C !important
+        }
+
+        .scaffold-yellow,
+        .scaffold-hover-yellow:hover {
+            color: #000 !important;
+            background-color: #EBCB8B !important
+        }
+
+        .scaffold-orange,
+        .scaffold-hover-orange:hover {
+            color: #000 !important;
+            background-color: #D08770 !important
+        }
+
+        .scaffold-red,
+        .scaffold-hover-red:hover {
+            color: #000 !important;
+            background-color: #BF616A !important
+        }
+
+        .scaffold-purple,
+        .scaffold-hover-purple:hover {
+            color: #000 !important;
+            background-color: #B48EAD !important
+        }
+
+        /* text colors */
+        .scaffold-text-charcoal,
+        .scaffold-hover-text-charcoal:hover {
+            color: #373F51 !important
+        }
+
+        .scaffold-text-grey,
+        .scaffold-hover-text-grey:hover {
+            color: #aaaaaa !important
+        }
+
+        .scaffold-text-white,
+        .scaffold-hover-text-white:hover {
+            color: #D8DBE2 !important
+        }
+
+        .scaffold-text-blue,
+        .scaffold-hover-text-blue:hover {
+            color: #5E81AC !important
+        }
+
+        .scaffold-text-green,
+        .scaffold-hover-text-green:hover {
+            color: #A3BE8C !important
+        }
+
+        .scaffold-text-yellow,
+        .scaffold-hover-text-yellow:hover {
+            color: #EBCB8B !important
+        }
+
+        .scaffold-text-orange,
+        .scaffold-hover-text-orange:hover {
+            color: #D08770 !important
+        }
+
+        .scaffold-text-red,
+        .scaffold-hover-text-red:hover {
+            color: #BF616A !important
+        }
+
+        .scaffold-text-purple,
+        .scaffold-hover-text-purple:hover {
+            color: #B48EAD !important
+        }
+
+
+        /* border colors */
+        .scaffold-border-charcoal,
+        .scaffold-hover-border-charcoal:hover {
+            border-color: #373F51 !important
+        }
+
+        .scaffold-border-grey,
+        .scaffold-hover-border-grey:hover {
+            border-color: #aaaaaa !important
+        }
+
+        .scaffold-border-white,
+        .scaffold-hover-border-white:hover {
+            border-color: #D8DBE2 !important
+        }
+
+        .scaffold-border-blue,
+        .scaffold-hover-border-blue:hover {
+            border-color: #5E81AC !important
+        }
+
+        .scaffold-border-green,
+        .scaffold-hover-border-green:hover {
+            border-color: #A3BE8C !important
+        }
+
+        .scaffold-border-yellow,
+        .scaffold-hover-border-yellow:hover {
+            border-color: #EBCB8B !important
+        }
+
+        .scaffold-border-orange,
+        .scaffold-hover-border-orange:hover {
+            border-color: #D08770 !important
+        }
+
+        .scaffold-border-red,
+        .scaffold-hover-border-red:hover {
+            border-color: #BF616A !important
+        }
+
+        .scaffold-border-purple,
+        .scaffold-hover-border-purple:hover {
+            border-color: #B48EAD !important
+        }
+    </style>
+</head>
+
+<body class="theme-base" style="height:100%;">
+    {{ if .SidebarEnabled }}
+    <div class="drawer">
+        <input id="sidebar" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content">
+    {{ end }}
+            <div class="main" id="main" style="height:100%;">
+                {{ range .Components }}
+                {{ .Render }}
+                {{ end }}
+            </div>
+    {{ if .SidebarEnabled }}
+        </div>
+        {{ .Sidebar.Render }}
+    </div>
+    {{ end }}
+</html>

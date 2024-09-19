@@ -3,15 +3,14 @@
 package main
 
 import (
-	"net/http"
 	"scaffold/server/api"
 	"scaffold/server/auth"
 	"scaffold/server/config"
 	"scaffold/server/constants"
 	"scaffold/server/docs"
-	"scaffold/server/manager"
 	"scaffold/server/middleware"
 	"scaffold/server/page"
+	"scaffold/server/page/common"
 
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"
@@ -30,7 +29,7 @@ func initializeRoutes() {
 	router.GET("/", page.RedirectIndexPage)
 
 	router.NoRoute(func(c *gin.Context) {
-		c.HTML(http.StatusNotFound, "404.html", gin.H{})
+		common.Code404Endpoint(c)
 	})
 
 	healthRoutes := router.Group("/health", middleware.CORSMiddleware())
@@ -40,7 +39,6 @@ func initializeRoutes() {
 		if config.Config.Node.Type == constants.NODE_TYPE_WORKER {
 			healthRoutes.GET("/available", api.Available)
 		} else {
-			healthRoutes.GET("/status", middleware.EnsureLoggedIn(), manager.GetStatus)
 			healthRoutes.POST("/ping/:name", middleware.EnsureLoggedIn(), api.Ping)
 		}
 	}
@@ -61,62 +59,62 @@ func initializeRoutes() {
 		{
 			v1Routes := apiRoutes.Group("/v1")
 			{
-				cascadeRoutes := v1Routes.Group("/cascade")
+				workflowRoutes := v1Routes.Group("/workflow")
 				{
-					cascadeRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetAllCascades)
-					cascadeRoutes.GET("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.GetCascadeByName)
-					cascadeRoutes.DELETE("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("name"), api.DeleteCascadeByName)
-					cascadeRoutes.POST("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.CreateCascade)
-					cascadeRoutes.PUT("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("name"), api.UpdateCascadeByName)
+					workflowRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetAllWorkflows)
+					workflowRoutes.GET("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("name"), api.GetWorkflowByName)
+					workflowRoutes.DELETE("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("name"), api.DeleteWorkflowByName)
+					workflowRoutes.POST("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.CreateWorkflow)
+					workflowRoutes.PUT("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("name"), api.UpdateWorkflowByName)
 				}
 				datastoreRoutes := v1Routes.Group("/datastore")
 				{
 					datastoreRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetAllDataStores)
-					datastoreRoutes.GET("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.GetDataStoreByName)
-					datastoreRoutes.DELETE("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("name"), api.DeleteDataStoreByCascade)
+					datastoreRoutes.GET("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("name"), api.GetDataStoreByName)
+					datastoreRoutes.DELETE("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("name"), api.DeleteDataStoreByWorkflow)
 					datastoreRoutes.POST("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.CreateDataStore)
-					datastoreRoutes.PUT("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("name"), api.UpdateDataStoreByCascade)
+					datastoreRoutes.PUT("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("name"), api.UpdateDataStoreByWorkflow)
 				}
 				fileRoutes := v1Routes.Group("/file")
 				{
 					fileRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetAllFiles)
-					fileRoutes.GET("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.GetFilesByCascade)
-					fileRoutes.GET("/:name/:file", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.GetFileByNames)
-					// fileRoutes.GET("/:name/:file/view", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.ViewFile)
-					fileRoutes.GET("/:name/:file/download", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.DownloadFile)
-					fileRoutes.POST("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("name"), api.UploadFile)
+					fileRoutes.GET("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("name"), api.GetFilesByWorkflow)
+					fileRoutes.GET("/:name/:file", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("name"), api.GetFileByNames)
+					// fileRoutes.GET("/:name/:file/view", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("name"), api.ViewFile)
+					fileRoutes.GET("/:name/:file/download", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("name"), api.DownloadFile)
+					fileRoutes.POST("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("name"), api.UploadFile)
 				}
 				stateRoutes := v1Routes.Group("/state")
 				{
 					stateRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetAllStates)
-					stateRoutes.GET("/:cascade", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("cascade"), api.GetStatesByCascade)
-					stateRoutes.GET("/:cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("cascade"), api.GetStateByNames)
-					stateRoutes.DELETE("/:cascade", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.DeleteStatesByCascade)
-					stateRoutes.DELETE("/:cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.DeleteStateByNames)
+					stateRoutes.GET("/:workflow", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("workflow"), api.GetStatesByWorkflow)
+					stateRoutes.GET("/:workflow/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("workflow"), api.GetStateByNames)
+					stateRoutes.DELETE("/:workflow", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("workflow"), api.DeleteStatesByWorkflow)
+					stateRoutes.DELETE("/:workflow/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("workflow"), api.DeleteStateByNames)
 					stateRoutes.POST("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.CreateState)
-					stateRoutes.PUT("/:cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.UpdateStateByNames)
+					stateRoutes.PUT("/:workflow/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("workflow"), api.UpdateStateByNames)
 				}
 				inputRoutes := v1Routes.Group("/input")
 				{
 					inputRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetAllInputs)
-					inputRoutes.GET("/:cascade", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("cascade"), api.GetInputsByCascade)
-					inputRoutes.GET("/:cascade/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("cascade"), api.GetInputByNames)
-					inputRoutes.DELETE("/:cascade", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.DeleteInputsByCascade)
-					inputRoutes.DELETE("/:cascade/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.DeleteInputByNames)
+					inputRoutes.GET("/:workflow", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("workflow"), api.GetInputsByWorkflow)
+					inputRoutes.GET("/:workflow/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("workflow"), api.GetInputByNames)
+					inputRoutes.DELETE("/:workflow", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("workflow"), api.DeleteInputsByWorkflow)
+					inputRoutes.DELETE("/:workflow/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("workflow"), api.DeleteInputByNames)
 					inputRoutes.POST("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.CreateInput)
-					inputRoutes.POST("/:cascade/update", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.UpdateInputDependenciesByName)
-					inputRoutes.PUT("/:cascade/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.UpdateInputByNames)
+					inputRoutes.POST("/:workflow/update", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("workflow"), api.UpdateInputDependenciesByName)
+					inputRoutes.PUT("/:workflow/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("workflow"), api.UpdateInputByNames)
 				}
 				taskRoutes := v1Routes.Group("/task")
 				{
 					taskRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetAllTasks)
-					taskRoutes.GET("/:cascade", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("cascade"), api.GetTasksByCascade)
-					taskRoutes.GET("/:cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureCascadeGroup("cascade"), api.GetTaskByNames)
-					taskRoutes.DELETE("/:cascade", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.DeleteTasksByCascade)
-					taskRoutes.DELETE("/:cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.DeleteTaskByNames)
+					taskRoutes.GET("/:workflow", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("workflow"), api.GetTasksByWorkflow)
+					taskRoutes.GET("/:workflow/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("workflow"), api.GetTaskByNames)
+					taskRoutes.DELETE("/:workflow", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("workflow"), api.DeleteTasksByWorkflow)
+					taskRoutes.DELETE("/:workflow/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("workflow"), api.DeleteTaskByNames)
 					taskRoutes.POST("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.CreateTask)
-					taskRoutes.PUT("/:cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.UpdateTaskByNames)
-					taskRoutes.PUT("/:cascade/:task/enabled", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.ToggleTaskEnabled)
+					taskRoutes.PUT("/:workflow/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("workflow"), api.UpdateTaskByNames)
+					taskRoutes.PUT("/:workflow/:task/enabled", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("workflow"), api.ToggleTaskEnabled)
 				}
 				userRoutes := v1Routes.Group("/user")
 				{
@@ -128,40 +126,78 @@ func initializeRoutes() {
 				}
 				runRoutes := v1Routes.Group("/run")
 				{
-					runRoutes.POST(":cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.CreateRun)
-					runRoutes.GET("/containers", middleware.EnsureLoggedIn(), api.GetAllContainers)
-					runRoutes.DELETE("/:cascade/:task", middleware.EnsureLoggedIn(), middleware.EnsureCascadeGroup("cascade"), api.ManagerKillRun)
+					runRoutes.POST("/:workflow/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("workflow"), api.CreateRun)
+					runRoutes.DELETE("/:workflow/:task", middleware.EnsureLoggedIn(), middleware.EnsureWorkflowGroup("workflow"), api.ManagerKillRun)
 				}
 				webhookRoutes := v1Routes.Group("/webhook")
 				{
-					webhookRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin"}), api.GetAllWebhooks)
-					webhookRoutes.GET("/:id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin"}), api.GetWebhookByID)
-					webhookRoutes.DELETE("/:id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin"}), api.DeleteWebhookByID)
-					webhookRoutes.POST("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin"}), api.CreateWebhook)
-					webhookRoutes.PUT("/:id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin"}), api.UpdateWebhooksByID)
-					webhookRoutes.POST("/:cascade/:id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureCascadeGroup("cascade"), api.TriggerWebhookByID)
+					webhookRoutes.POST("/:workflow/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("workflow"), api.TriggerWebhookByID)
 				}
 			}
 		}
 
 		uiRoutes := router.Group("/ui", middleware.CORSMiddleware())
 		{
-			uiRoutes.GET("/login", middleware.EnsureNotLoggedIn(), page.ShowLoginPage)
+			uiRoutes.GET("/login", middleware.EnsureNotLoggedIn(), page.LoginPageEndpoint)
 			uiRoutes.GET("/forgot_password", middleware.EnsureNotLoggedIn(), page.ShowForgotPasswordPage)
 			uiRoutes.GET("/email_success", middleware.EnsureNotLoggedIn(), page.ShowEmailSuccessPage)
 			uiRoutes.GET("/email_failure", middleware.EnsureNotLoggedIn(), page.ShowEmailFailurePage)
 			uiRoutes.GET("/reset_password/:reset_password", middleware.EnsureNotLoggedIn(), page.ShowResetPasswordPage)
 
-			uiRoutes.GET("/cascades", middleware.EnsureLoggedIn(), page.ShowCascadesPage)
-			uiRoutes.GET("/cascades/:name", middleware.EnsureLoggedIn(), page.ShowCascadePage)
+			uiRoutes.GET("/dashboard", middleware.EnsureLoggedIn(), page.DashboardPageEndpoint)
 
-			uiRoutes.GET("/files", middleware.EnsureLoggedIn(), page.ShowFilesPage)
+			uiRoutes.GET("/workflows", middleware.EnsureLoggedIn(), page.WorkflowsPageEndpoint)
+			uiRoutes.GET("/workflows/:name", middleware.EnsureLoggedIn(), page.WorkflowPageEndpoint)
 
-			uiRoutes.GET("/users", middleware.EnsureLoggedIn(), page.ShowUsersPage)
-			uiRoutes.GET("/user/:username", middleware.EnsureLoggedIn(), page.ShowUserPage)
+			uiRoutes.GET("/runs", middleware.EnsureLoggedIn(), page.HistoriesPageEndpoint)
+			uiRoutes.GET("/runs/:run_id", middleware.EnsureLoggedIn(), page.HistoryPageEndpoint)
 
-			uiRoutes.GET("/webhooks", middleware.EnsureLoggedIn(), page.ShowWebhooksPage)
+			uiRoutes.GET("/users", middleware.EnsureLoggedIn(), page.UsersPageEndpoint)
+			uiRoutes.GET("/users/:username", middleware.EnsureLoggedIn(), page.UserPageEndpoint)
+
+			uiRoutes.GET("/401", common.Code401Endpoint)
+			uiRoutes.GET("/403", common.Code403Endpoint)
+			uiRoutes.GET("/404", common.Code404Endpoint)
+			uiRoutes.GET("/500", common.Code500Endpoint)
 		}
+
+		htmxRoutes := router.Group("/htmx", middleware.CORSMiddleware(), middleware.EnsureLoggedInAPI())
+		{
+			// commonRoutes := htmxRoutes.Group("/common")
+			// {
+			// 	if err := common.Init(); err != nil {
+			// 		panic(err)
+			// 	}
+			// 	commonRoutes.GET("/status", common.StatusEndpoint)
+			// 	commonRoutes.GET("/sidebar", common.SidebarEndpoint)
+			// 	commonRoutes.GET("/error", common.ErrorEndpoint)
+			// 	commonRoutes.GET("/success", common.ErrorEndpoint)
+			// 	commonRoutes.GET("/header", common.HeaderEndpoint)
+			// }
+			workflowsRoutes := htmxRoutes.Group("/workflows")
+			{
+				workflowsRoutes.GET("/table", page.WorkflowsTableEndpoint)
+				workflowsRoutes.GET("/search", page.WorkflowsSearchEndpoint)
+			}
+			dashboardRoutes := htmxRoutes.Group("/dashboard")
+			{
+				dashboardRoutes.GET("/table", page.DashboardTableEndpoint)
+				dashboardRoutes.GET("/search", page.DashboardSearchEndpoint)
+			}
+			runsRoutes := htmxRoutes.Group("/runs")
+			{
+				runsRoutes.GET("/table", page.HistoriesTableEndpoint)
+				runsRoutes.GET("/search", page.HistoriesSearchEndpoint)
+				runsRoutes.GET("/timeline/:run_id", page.HistoryTimelineEndpoint)
+				runsRoutes.GET("/timeline/:run_id/status/:state_name", page.HistoryStateEndpoint)
+			}
+			usersRoutes := htmxRoutes.Group("/users")
+			{
+				usersRoutes.GET("/table", page.UsersTableEndpoint)
+				usersRoutes.GET("/search", page.UsersSearchEndpoint)
+			}
+		}
+
 	}
 	if config.Config.Node.Type == constants.NODE_TYPE_WORKER {
 		apiRoutes := router.Group("/api", middleware.CORSMiddleware())
@@ -170,7 +206,7 @@ func initializeRoutes() {
 			{
 				taskRoutes := v1Routes.Group("/run")
 				{
-					taskRoutes.DELETE("/:cascade/:task", middleware.EnsureLoggedIn(), api.KillRun)
+					taskRoutes.DELETE("/:workflow/:task", middleware.EnsureLoggedIn(), api.KillRun)
 				}
 			}
 		}

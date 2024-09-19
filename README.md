@@ -2,7 +2,7 @@
 
 ## About
 
-Scaffold is an infrastructure management tool that takes a waterfall approach to management. This works by tracking the state of each cascade (waterfall workflow DAG) task and triggering the next task as all its parents are in a success state. Cascades are manually triggered and report their state to the UI so engineers can track deployment and upgrade processes to ensure that they work as expected. Additionally, Scaffold allows for input and file storage and loading to make task execution easier. Finally, tasks are executed within container images to enable dependencies to be brought along to the task execution.
+Scaffold is an infrastructure management tool that takes a waterfall approach to management. This works by tracking the state of each workflow (waterfall workflow DAG) task and triggering the next task as all its parents are in a success state. Workflows are manually triggered and report their state to the UI so engineers can track deployment and upgrade processes to ensure that they work as expected. Additionally, Scaffold allows for input and file storage and loading to make task execution easier. Finally, tasks are executed within container images to enable dependencies to be brought along to the task execution.
 
 ## Rationale
 
@@ -237,18 +237,18 @@ Infrastructure management is an interesting problem to tackle. Many organization
         - [x] Generate API token from CLI
         - [x] Read/write token from/to a `~/.scaffold/creds` file
 
-    - __Cascade Interaction__
+    - __Workflow Interaction__
 
-        - [x] Upload cascade
-        - [x] Delete cascade
-        - [x] Update cascade
-        - [x] Set cascade context in profile
+        - [x] Upload workflow
+        - [x] Delete workflow
+        - [x] Update workflow
+        - [x] Set workflow context in profile
 
     - __Object Interaction__
 
-        - [x] Get cascades
-        - [x] Get cascade by name
-        - [x] Describe cascade
+        - [x] Get workflows
+        - [x] Get workflow by name
+        - [x] Describe workflow
         - [x] Get datastores
         - [x] Get datastore by name
         - [x] Describe datastore
@@ -290,9 +290,9 @@ Infrastructure management is an interesting problem to tackle. Many organization
     -  __Security Improvements__
         - [x] Hash and salt api tokens
         - [x] Hash and salt login tokens
-        - [x] Cascade group-based access
+        - [x] Workflow group-based access
             - [x] Files
-            - [x] Cascades
+            - [x] Workflows
         - [x] Run with HTTPS
         - [x] Implement basic auth for API token request
         - [x] Group based access for container exec
@@ -305,12 +305,12 @@ Infrastructure management is an interesting problem to tackle. Many organization
 
     -  __UI Improvements__
 
-        - [x] Fix cascade search
+        - [x] Fix workflow search
         - [x] Task search to highlight tasks containing search string
-        - [x] Display Cascade links
-        - [x] Display current Cascade state
+        - [x] Display Workflow links
+        - [x] Display current Workflow state
         - [x] Add group and role removal from user create page
-        - [x] Add legend to cascade page
+        - [x] Add legend to workflow page
         - [x] Fix user search
         - [x] Task store and show previous state
         - [x] Task formatted display
@@ -327,7 +327,7 @@ Infrastructure management is an interesting problem to tackle. Many organization
         - [ ] Write documentation
         - [x] Swagger docs
 
-    -  __Cascade Improvements__
+    -  __Workflow Improvements__
 
         - [x] Add check recurring tasks
         - [x] Selective auto-execute
@@ -346,7 +346,7 @@ Infrastructure management is an interesting problem to tackle. Many organization
         - [x] Basic CLI get interaction testing
         - [x] Group-based access testing
         - [x] Run trigger testing
-        - [x] Cascade REST testing
+        - [x] Workflow REST testing
         - [x] DataStore REST testing
         - [x] Input REST testing
         - [x] State REST testing
@@ -367,15 +367,15 @@ Infrastructure management is an interesting problem to tackle. Many organization
     -  __UI Improvements__
 
         - [ ] Move task status to right slide in
-        - [ ] Change auto-execute from cascade page
-        - [ ] Upload cascade from cascades page
+        - [ ] Change auto-execute from workflow page
+        - [ ] Upload workflow from workflows page
             - [ ] Create new on non-existing
             - [ ] Upgrade on existing
-        - [ ] Delete cascade from cascades page
+        - [ ] Delete workflow from workflows page
     
-    - __Cascade Improvements__
+    - __Workflow Improvements__
         
-        - [ ] Inputs should update when cascades are updated
+        - [ ] Inputs should update when workflows are updated
 
 ### v0.2.1
 
@@ -387,12 +387,12 @@ Infrastructure management is an interesting problem to tackle. Many organization
     -  __UI Improvements__
 
         - [ ] Move task status to right slide in
-        - [ ] Change auto-execute from cascade page
-        - [ ] Upload cascade from cascades page
+        - [ ] Change auto-execute from workflow page
+        - [ ] Upload workflow from workflows page
             - [ ] Create new on non-existing
             - [ ] Upgrade on existing
-        - [ ] Delete cascade from cascades page
+        - [ ] Delete workflow from workflows page
     
-    - __Cascade Improvements__
+    - __Workflow Improvements__
         
-        - [ ] Inputs should update when cascades are updated
+        - [ ] Inputs should update when workflows are updated

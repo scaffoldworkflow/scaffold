@@ -42,6 +42,17 @@ type Run struct {
 	Worker  string            `json:"worker" yaml:"worker"`
 	PID     int               `json:"pid" yaml:"pid"`
 	Context map[string]string `json:"context" yaml:"context"`
+	RunID   string            `json:"run_id" yaml:"run_id"`
+}
+
+type RunContext struct {
+	Run         *Run
+	DataStore   *datastore.DataStore
+	RunDir      string
+	ScriptPath  string
+	EnvInPath   string
+	EnvOutPath  string
+	DisplayPath string
 }
 
 func setErrorStatus(r *Run, output string) {
@@ -60,14 +71,16 @@ func runCmd(cmd *exec.Cmd) {
 func updateRunState(r *Run, send bool) error {
 	r.State.PID = r.PID
 	m := msg.RunMsg{
-		Task:    r.Task.Name,
-		Cascade: r.Task.Cascade,
-		Status:  r.State.Status,
-		Context: r.Context,
+		Task:     r.Task.Name,
+		Workflow: r.Task.Workflow,
+		Status:   r.State.Status,
+		Context:  r.Context,
+		State:    r.State,
+		RunID:    r.RunID,
 	}
 	logger.Debugf("", "Updating run state for %v", m)
-	if err := state.UpdateStateRunByNames(r.State.Cascade, r.State.Task, r.State); err != nil {
-		logger.Errorf("", "Cannot update state run: %s %s %v %s", r.Task.Cascade, r.Task.Name, r.State, err.Error())
+	if err := state.UpdateStateRunByNames(r.State.Workflow, r.State.Task, r.State); err != nil {
+		logger.Errorf("", "Cannot update state run: %s %s %v %s", r.Task.Workflow, r.Task.Name, r.State, err.Error())
 		return err
 	}
 	if send {
@@ -76,88 +89,107 @@ func updateRunState(r *Run, send bool) error {
 	return nil
 }
 
-func StartContainerRun(r *Run) (bool, error) {
-	r.State.Status = constants.STATE_STATUS_RUNNING
-	currentTime := time.Now().UTC()
-	r.State.Started = currentTime.Format("2006-01-02T15:04:05Z")
-	if err := state.UpdateStateKilledByNames(r.Task.Cascade, r.Task.Name, false); err != nil {
-		logger.Infof("", "Cannot update state killed: %s %s %s", r.Task.Cascade, r.Task.Name, err.Error())
-		return false, err
-	}
-	if err := updateRunState(r, false); err != nil {
-		return false, err
-	}
-
-	cName := r.State.Cascade
-	tName := r.State.Task
-
-	logger.Debugf("", "Getting datastore by name %s", cName)
-	ds, err := datastore.GetDataStoreByCascade(cName)
-	if err != nil {
-		logger.Errorf("", "Cannot get datastore %s", cName)
-		setErrorStatus(r, err.Error())
-		if err := updateRunState(r, true); err != nil {
-			return false, err
-		}
-		return false, err
-	}
-
-	// containerName := strings.Replace(r.Name, ".", "-", -1)
-	containerName := fmt.Sprintf("%s-%s-%d", cName, tName, r.Number)
-
-	runDir := fmt.Sprintf("/tmp/run/%s/%s/%d", cName, tName, r.Number)
-
-	if _, err := os.Stat(runDir); err != nil {
+func nukeDir(path string) {
+	logger.Debugf("", "Removing directory %s", path)
+	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			// file does not exist
 		} else {
-			os.RemoveAll(runDir)
+			os.RemoveAll(path)
 		}
 	}
+}
 
-	err = os.MkdirAll(runDir, 0755)
+func setupRun(rc *RunContext) (bool, error) {
+	rc.Run.State.Status = constants.STATE_STATUS_RUNNING
+	currentTime := time.Now().UTC()
+	rc.Run.State.Started = currentTime.Format("2006-01-02T15:04:05Z")
+	if err := state.UpdateStateKilledByNames(rc.Run.Task.Workflow, rc.Run.Task.Name, false); err != nil {
+		logger.Infof("", "Cannot update state killed: %s %s %s", rc.Run.Task.Workflow, rc.Run.Task.Name, err.Error())
+		return false, err
+	}
+	if err := updateRunState(rc.Run, false); err != nil {
+		return false, err
+	}
+
+	rc.RunDir = fmt.Sprintf("/tmp/run/%s/%s/%d", rc.Run.State.Workflow, rc.Run.State.Task, rc.Run.Number)
+	rc.ScriptPath = rc.RunDir + "/.run.sh"
+	rc.EnvInPath = rc.RunDir + "/.envin"
+	rc.EnvOutPath = rc.RunDir + ".envout"
+	rc.DisplayPath = rc.RunDir + "/.display"
+
+	// Setup run directory
+	nukeDir(rc.RunDir)
+	err := os.MkdirAll(rc.RunDir, 0755)
 	if err != nil {
 		logger.Errorf("", "Error creating run directory %s", err.Error())
-		setErrorStatus(r, err.Error())
-		if err := updateRunState(r, true); err != nil {
+		setErrorStatus(rc.Run, err.Error())
+		if err := updateRunState(rc.Run, true); err != nil {
 			return false, err
 		}
 		return false, err
 	}
 
-	scriptPath := runDir + "/.run.sh"
-	envInPath := runDir + "/.envin"
-	displayPath := runDir + "/.display"
+	// Setup datastore
+	rc.DataStore, err = datastore.GetDataStoreByWorkflow(rc.Run.State.Workflow)
+	if err != nil {
+		logger.Errorf("", "Cannot get datastore %s", rc.Run.State.Workflow)
+		setErrorStatus(rc.Run, err.Error())
+		if err := updateRunState(rc.Run, true); err != nil {
+			return false, err
+		}
+		return false, err
+	}
 
+	return false, nil
+}
+
+func setupEnvLoad(rc *RunContext) (bool, error) {
 	envInput := ""
-	for key, val := range r.Task.Inputs {
-		contextVal, ok := r.Context[val]
+	for key, val := range rc.Run.Task.Inputs {
+		dsVal, ok := rc.DataStore.Env[val]
+		var encoded string
+		if ok {
+			encoded = base64.StdEncoding.EncodeToString([]byte(dsVal))
+			envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+			continue
+		}
+		logger.Warnf("", "Input value missing for %s", val)
+	}
+	for _, key := range rc.Run.Task.Load.Env {
+		contextVal, ok := rc.Run.Context[key]
 		var encoded string
 		if ok {
 			encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
-		} else {
-			encoded = base64.StdEncoding.EncodeToString([]byte(ds.Env[val]))
+			envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+			continue
 		}
-		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+		logger.Warnf("", "ENV load value missing for %s", key)
 	}
-	for _, key := range r.Task.Load.Env {
-		contextVal, ok := r.Context[key]
-		var encoded string
-		if ok {
-			encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
-		} else {
-			encoded = base64.StdEncoding.EncodeToString([]byte(ds.Env[key]))
-		}
-		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
-	}
-	for key, val := range r.Task.Env {
+	for key, val := range rc.Run.Task.Env {
 		encoded := base64.StdEncoding.EncodeToString([]byte(val))
 		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
 	}
 
+	// Write out envin script
+	data := []byte(envInput)
+	err := os.WriteFile(rc.EnvInPath, data, 0777)
+	if err != nil {
+		logger.Errorf("", "Error writing envin file %s", err.Error())
+		setErrorStatus(rc.Run, err.Error())
+		if err := updateRunState(rc.Run, true); err != nil {
+			return false, err
+		}
+		return false, err
+	}
+
+	return false, nil
+}
+
+func setupRunScript(rc *RunContext) (bool, error) {
 	envOutput := ""
-	for _, key := range r.Task.Store.Env {
-		envOutput += fmt.Sprintf("echo \"%s;$(echo \"${%s}\" | base64)\" >> /tmp/run/.envout\n", key, key)
+	for _, key := range rc.Run.Task.Store.Env {
+		envOutput += fmt.Sprintf("echo \"%s;$(echo \"${%s}\" | base64)\" >> %s\n", key, key, rc.EnvOutPath)
 	}
 
 	runScript := fmt.Sprintf(`
@@ -167,50 +199,163 @@ func StartContainerRun(r *Run) (bool, error) {
 		name=${line%%;*}
 		value=${line#*;}
 		export ${name}="$(echo "${value}" | base64 -d)"
-	done < /tmp/run/.envin
+	done < %s
 	
 	# run command
 	%s
 	
 	# save ENV vars
 	%s
-	`, r.Task.Run, envOutput)
+	`, rc.EnvInPath, rc.Run.Task.Run, envOutput)
 
 	// Write out our run script
 	data := []byte(runScript)
-	err = os.WriteFile(scriptPath, data, 0777)
+	err := os.WriteFile(rc.ScriptPath, data, 0777)
 	if err != nil {
 		logger.Errorf("", "Error writing run file %s", err.Error())
-		setErrorStatus(r, err.Error())
-		if err := updateRunState(r, true); err != nil {
+		setErrorStatus(rc.Run, err.Error())
+		if err := updateRunState(rc.Run, true); err != nil {
 			return false, err
 		}
 		return false, err
 	}
 
-	// Write out envin script
-	data = []byte(envInput)
-	err = os.WriteFile(envInPath, data, 0777)
-	if err != nil {
-		logger.Errorf("", "Error writing envin file %s", err.Error())
-		setErrorStatus(r, err.Error())
-		if err := updateRunState(r, true); err != nil {
-			return false, err
-		}
-		return false, err
-	}
+	return false, nil
+}
 
-	for _, name := range r.Task.Load.File {
-		err := filestore.GetFile(fmt.Sprintf("%s/%s", cName, name), fmt.Sprintf("%s/%s", runDir, name))
+func loadFiles(rc *RunContext) (bool, error) {
+	for _, name := range rc.Run.Task.Load.File {
+		err := filestore.GetFile(fmt.Sprintf("%s/%s", rc.Run.State.Workflow, name), fmt.Sprintf("%s/%s", rc.RunDir, name))
 		if err != nil {
 			logger.Errorf("", "Error getting file %s", err.Error())
-			setErrorStatus(r, err.Error())
-			if err := updateRunState(r, true); err != nil {
+			setErrorStatus(rc.Run, err.Error())
+			if err := updateRunState(rc.Run, true); err != nil {
 				return false, err
 			}
 			return false, err
 		}
 	}
+
+	return false, nil
+}
+
+func checkDisplay(rc *RunContext) (bool, error) {
+	logger.Tracef("", "Checking for display at %s", rc.DisplayPath)
+	if _, err := os.Stat(rc.DisplayPath); err == nil {
+		logger.Tracef("", "Display path is present")
+		if data, err := os.ReadFile(rc.DisplayPath); err == nil {
+			logger.Tracef("", "Read display file")
+			var obj []map[string]interface{}
+			if err := json.Unmarshal(data, &obj); err != nil {
+				logger.Errorf("", "Error unmarshalling display JSON: %v", err)
+			} else {
+				logger.Tracef("", "Updating display object")
+				rc.Run.State.Display = obj
+			}
+		} else {
+			logger.Tracef("", "Display read error: %s", err.Error())
+		}
+	} else {
+		logger.Tracef("", "Display stat error: %s", err.Error())
+	}
+	if err := updateRunState(rc.Run, false); err != nil {
+		logger.Errorf("", "Error updating run: %s", err.Error())
+		nukeDir(rc.RunDir)
+		return false, err
+	}
+	return false, nil
+}
+
+func storeFiles(rc *RunContext) {
+	for _, name := range rc.Run.Task.Store.File {
+		filePath := fmt.Sprintf("%s/%s", rc.RunDir, name)
+		if _, err := os.Stat(filePath); err == nil {
+			err := filestore.UploadFile(filePath, fmt.Sprintf("%s/%s", rc.Run.Task.Workflow, name))
+			if err != nil {
+				logger.Errorf("", "Error uploading file %s: %s\n", fmt.Sprintf("%s/%s", rc.Run.Task.Workflow, name), err.Error())
+			}
+			rc.DataStore.Files = append(rc.DataStore.Files, name)
+			rc.DataStore.Files = utils.RemoveDuplicateValues(rc.DataStore.Files)
+		}
+	}
+}
+
+func storeEnv(rc *RunContext) (bool, error) {
+	logger.Tracef("", "Storing ENV values to context")
+	var dat []byte
+	if _, err := os.Stat(rc.EnvOutPath); err == nil {
+		dat, err = os.ReadFile(rc.EnvOutPath)
+		if err != nil {
+			logger.Errorf("", "Error reading file %s\n", err.Error())
+			setErrorStatus(rc.Run, err.Error())
+			if err := updateRunState(rc.Run, true); err != nil {
+				nukeDir(rc.RunDir)
+				return false, err
+			}
+		}
+	}
+	envVarList := strings.Split(string(dat), "\n")
+	logger.Tracef("", "Got env var list: %v", envVarList)
+	envVarMap := map[string]string{}
+
+	for _, val := range envVarList {
+		name, val, _ := strings.Cut(val, ";")
+		decoded, _ := base64.StdEncoding.DecodeString(val)
+		envVarMap[name] = string(decoded)
+		logger.Tracef("", "Got ENV var %s: %s", name, string(decoded))
+	}
+
+	for _, name := range rc.Run.Task.Store.Env {
+		logger.Tracef("", "Storing %s to context", name)
+		if rc.Run.Context == nil {
+			rc.Run.Context = make(map[string]string)
+		}
+		rc.Run.Context[name] = envVarMap[name]
+	}
+
+	return false, nil
+}
+
+func setStatus(rc *RunContext, returnCodeString string, returnCodeInt int) {
+	currentTime := time.Now().UTC()
+	rc.Run.State.Finished = currentTime.Format("2006-01-02T15:04:05Z")
+	if returnCodeString == "" {
+		if returnCodeInt == 0 {
+			rc.Run.State.Status = constants.STATE_STATUS_SUCCESS
+		} else {
+			rc.Run.State.Status = constants.STATE_STATUS_ERROR
+		}
+		return
+	}
+	if returnCodeString == "0" {
+		rc.Run.State.Status = constants.STATE_STATUS_SUCCESS
+	} else {
+		rc.Run.State.Status = constants.STATE_STATUS_ERROR
+	}
+}
+
+func StartContainerRun(rr *Run) (bool, error) {
+	rc := &RunContext{
+		Run: rr,
+	}
+
+	if shouldRestart, err := setupRun(rc); err != nil {
+		return shouldRestart, err
+	}
+
+	if shouldRestart, err := setupEnvLoad(rc); err != nil {
+		return shouldRestart, err
+	}
+
+	if shouldRestart, err := setupRunScript(rc); err != nil {
+		return shouldRestart, err
+	}
+
+	if shouldRestart, err := loadFiles(rc); err != nil {
+		return shouldRestart, err
+	}
+
+	containerName := fmt.Sprintf("%s-%s-%d", rc.Run.State.Workflow, rc.Run.State.Task, rc.Run.Number)
 
 	// Clean up any possible artifacts
 	if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman kill %s", containerName)).Run(); err != nil {
@@ -220,24 +365,23 @@ func StartContainerRun(r *Run) (bool, error) {
 		logger.Infof("", "No running container with name %s exists, skipping removal\n", containerName)
 	}
 
-	if r.Task.ContainerLoginCommand != "" {
-		logger.Debugf("", "Logging into registry with command %s", r.Task.ContainerLoginCommand)
-		if err := exec.Command("/bin/sh", "-c", r.Task.ContainerLoginCommand).Run(); err != nil {
+	if rc.Run.Task.ContainerLoginCommand != "" {
+		logger.Debugf("", "Logging into registry with command %s", rc.Run.Task.ContainerLoginCommand)
+		if err := exec.Command("/bin/sh", "-c", rc.Run.Task.ContainerLoginCommand).Run(); err != nil {
 			logger.Infof("", "Cannot login to container registry: %s\n", err.Error())
 		}
 	}
 
 	podmanCommand := fmt.Sprintf("podman run --rm --privileged -d %s --device /dev/net/tun:/dev/net/tun ", config.Config.PodmanOpts)
-
 	podmanCommand += fmt.Sprintf("--name %s ", containerName)
-	podmanCommand += fmt.Sprintf("--mount type=bind,src=%s,dst=/tmp/run ", runDir)
-	for _, m := range r.Task.Load.Mounts {
+	podmanCommand += fmt.Sprintf("--mount type=bind,src=%s,dst=/tmp/run ", rc.RunDir)
+	for _, m := range rc.Run.Task.Load.Mounts {
 		podmanCommand += fmt.Sprintf("--mount type=bind,src=%s,dst=%s ", m, m)
 	}
-	for _, e := range r.Task.Load.EnvPassthrough {
+	for _, e := range rc.Run.Task.Load.EnvPassthrough {
 		podmanCommand += fmt.Sprintf("--env %s=\"${%s}\" ", e, e)
 	}
-	podmanCommand += r.Task.Image
+	podmanCommand += rc.Run.Task.Image
 	podmanCommand += " bash -c /tmp/run/.run.sh"
 
 	logger.Debugf("", "command: %s", podmanCommand)
@@ -262,24 +406,12 @@ func StartContainerRun(r *Run) (bool, error) {
 			}
 			logger.Debugf("", "Prune output: %s", logs)
 		}
-		setErrorStatus(r, string(output))
-		if err := updateRunState(r, true); err != nil {
-			if _, err := os.Stat(runDir); err != nil {
-				if os.IsNotExist(err) {
-					// file does not exist
-				} else {
-					os.RemoveAll(runDir)
-				}
-			}
+		setErrorStatus(rc.Run, string(output))
+		if err := updateRunState(rc.Run, true); err != nil {
+			nukeDir(rc.RunDir)
 			return false, err
 		}
-		if _, err := os.Stat(runDir); err != nil {
-			if os.IsNotExist(err) {
-				// file does not exist
-			} else {
-				os.RemoveAll(runDir)
-			}
-		}
+		nukeDir(rc.RunDir)
 		return shouldRestart, err
 	}
 
@@ -289,87 +421,31 @@ func StartContainerRun(r *Run) (bool, error) {
 		logger.Debugf("", "Checking for exit status: %s", string(output))
 		if string(output) == "" {
 			podmanOutput = outb.String() + "\n\n" + errb.String()
-			r.State.Output = podmanOutput
+			rc.Run.State.Output = podmanOutput
 			if runError != nil {
 				logger.Errorf("", "Error running pod %s\n", runError.Error())
-				setErrorStatus(r, fmt.Sprintf("%s :: %s", podmanOutput, string(runError.Error())))
-				if err := updateRunState(r, true); err != nil {
-					if _, err := os.Stat(runDir); err != nil {
-						if os.IsNotExist(err) {
-							// file does not exist
-						} else {
-							os.RemoveAll(runDir)
-						}
-					}
+				setErrorStatus(rc.Run, fmt.Sprintf("%s :: %s", podmanOutput, string(runError.Error())))
+				if err := updateRunState(rc.Run, true); err != nil {
+					nukeDir(rc.RunDir)
 					return false, err
 				}
 				erroredOut = true
 				break
 			}
 			// Load in display file if present and able
-			logger.Debugf("", "Display path: %s", displayPath)
-			if _, err = os.Stat(displayPath); err == nil {
-				logger.Tracef("", "Display path is present")
-				if data, err := os.ReadFile(displayPath); err == nil {
-					logger.Tracef("", "Read display file")
-					var obj []map[string]interface{}
-					if err := json.Unmarshal(data, &obj); err != nil {
-						logger.Errorf("", "Error unmarshalling display JSON: %v", err)
-					} else {
-						logger.Tracef("", "Updating display object")
-						r.State.Display = obj
-					}
-				} else {
-					logger.Errorf("", "read error: %s", err.Error())
-				}
-			} else {
-				logger.Errorf("", "stat error: %s", err.Error())
-			}
-			if err := updateRunState(r, false); err != nil {
-				if _, err := os.Stat(runDir); err != nil {
-					if os.IsNotExist(err) {
-						// file does not exist
-					} else {
-						os.RemoveAll(runDir)
-					}
-				}
-				return false, err
+			if shouldRestart, err := checkDisplay(rc); err != nil {
+				return shouldRestart, err
 			}
 		} else {
 			logs, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman logs %s", containerName)).CombinedOutput()
 			if err != nil {
-				r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s--------------------------------\n\n%s", podmanOutput, logs, string(err.Error()))
+				rc.Run.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s--------------------------------\n\n%s", podmanOutput, logs, string(err.Error()))
 			} else {
-				r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(logs))
+				rc.Run.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(logs))
 			}
 			// Load in display file if present and able
-			logger.Tracef("", "Checking for display at %s", displayPath)
-			if _, err = os.Stat(displayPath); err == nil {
-				logger.Tracef("", "Display path is present")
-				if data, err := os.ReadFile(displayPath); err == nil {
-					logger.Tracef("", "Read display file")
-					var obj []map[string]interface{}
-					if err := json.Unmarshal(data, &obj); err != nil {
-						logger.Errorf("", "Error unmarshalling display JSON: %v", err)
-					} else {
-						logger.Tracef("", "Updating display object")
-						r.State.Display = obj
-					}
-				} else {
-					logger.Errorf("", "Display read error: %s", err.Error())
-				}
-			} else {
-				logger.Tracef("", "Display stat error: %s", err.Error())
-			}
-			if err := updateRunState(r, false); err != nil {
-				if _, err := os.Stat(runDir); err != nil {
-					if os.IsNotExist(err) {
-						// file does not exist
-					} else {
-						os.RemoveAll(runDir)
-					}
-				}
-				return false, err
+			if shouldRestart, err := checkDisplay(rc); err != nil {
+				return shouldRestart, err
 			}
 		}
 		time.Sleep(500 * time.Millisecond)
@@ -383,123 +459,40 @@ func StartContainerRun(r *Run) (bool, error) {
 
 		logs, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("podman logs %s", containerName)).CombinedOutput()
 		if err != nil {
-			r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(err.Error()))
+			rc.Run.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(err.Error()))
 		} else {
-			r.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(logs))
+			rc.Run.State.Output = fmt.Sprintf("%s\n\n--------------------------------\n\n%s", podmanOutput, string(logs))
 		}
 
-		for _, name := range r.Task.Store.File {
-			filePath := fmt.Sprintf("%s/%s", runDir, name)
-			if _, err = os.Stat(filePath); err == nil {
-				err := filestore.UploadFile(filePath, fmt.Sprintf("%s/%s", r.Task.Cascade, name))
-				if err != nil {
-					logger.Errorf("", "ERROR UPLOADING %s: %s\n", fmt.Sprintf("%s/%s", r.Task.Cascade, name), err.Error())
-				}
-				ds.Files = append(ds.Files, name)
-				ds.Files = utils.RemoveDuplicateValues(ds.Files)
-			}
+		storeFiles(rc)
+
+		if shouldRestart, err := checkDisplay(rc); err != nil {
+			return shouldRestart, err
 		}
 
-		// Load in display file if present and able
-		logger.Tracef("", "Checking for display at %s", displayPath)
-		if _, err = os.Stat(displayPath); err == nil {
-			logger.Tracef("", "Display path is present")
-			if data, err := os.ReadFile(displayPath); err == nil {
-				logger.Tracef("", "Read display file")
-				var obj []map[string]interface{}
-				if err := json.Unmarshal(data, &obj); err != nil {
-					logger.Errorf("", "Error unmarshalling display JSON: %v", err)
-				} else {
-					logger.Tracef("", "Updating display object")
-					r.State.Display = obj
-				}
-			} else {
-				logger.Errorf("", "read error: %s", err.Error())
-			}
-		} else {
-			logger.Tracef("", "stat error: %s", err.Error())
+		if shouldRestart, err := storeEnv(rc); err != nil {
+			return shouldRestart, err
 		}
 
-		if err := updateRunState(r, false); err != nil {
-			if _, err := os.Stat(runDir); err != nil {
-				if os.IsNotExist(err) {
-					// file does not exist
-				} else {
-					os.RemoveAll(runDir)
-				}
-			}
-			return false, err
-		}
+		setStatus(rc, returnCode, 0)
 
-		envOutPath := fmt.Sprintf("%s/.envout", runDir)
-		var dat []byte
-		if _, err := os.Stat(envOutPath); err == nil {
-			dat, err = os.ReadFile(envOutPath)
-			if err != nil {
-				logger.Errorf("", "Error reading file %s\n", err.Error())
-				setErrorStatus(r, err.Error())
-				if err := updateRunState(r, true); err != nil {
-					if _, err := os.Stat(runDir); err != nil {
-						if os.IsNotExist(err) {
-							// file does not exist
-						} else {
-							os.RemoveAll(runDir)
-						}
-					}
-					return false, err
-				}
-			}
-		}
-		envVarList := strings.Split(string(dat), "\n")
-		envVarMap := map[string]string{}
-
-		for _, val := range envVarList {
-			name, val, _ := strings.Cut(val, ";")
-			decoded, _ := base64.StdEncoding.DecodeString(val)
-			envVarMap[name] = string(decoded)
-		}
-
-		for _, name := range r.Task.Store.Env {
-			r.Context[name] = envVarMap[name]
-		}
-
-		currentTime = time.Now().UTC()
-		r.State.Finished = currentTime.Format("2006-01-02T15:04:05Z")
-		if returnCode == "0" {
-			r.State.Status = constants.STATE_STATUS_SUCCESS
-		} else {
-			r.State.Status = constants.STATE_STATUS_ERROR
-		}
-
-		if r.Task.ShouldRM {
+		if rc.Run.Task.ShouldRM {
 			rmCommand := fmt.Sprintf("podman rm -f %s", containerName)
 			out, err := exec.Command("bash", "-c", rmCommand).CombinedOutput()
 			logger.Debugf("", "Podman rm: %s", string(out))
-			r.State.Output += fmt.Sprintf("\n\n--------------------------------\n\n%s", string(out))
+			rc.Run.State.Output += fmt.Sprintf("\n\n--------------------------------\n\n%s", string(out))
 			if err != nil {
 				logger.Error("", err.Error())
-				r.State.Output += fmt.Sprintf("\n\n--------------------------------\n\n%s", err.Error())
+				rc.Run.State.Output += fmt.Sprintf("\n\n--------------------------------\n\n%s", err.Error())
 			}
 		}
 	}
-	if err := updateRunState(r, true); err != nil {
-		if _, err := os.Stat(runDir); err != nil {
-			if os.IsNotExist(err) {
-				// file does not exist
-			} else {
-				os.RemoveAll(runDir)
-			}
-		}
+
+	nukeDir(rc.RunDir)
+	if err := updateRunState(rc.Run, true); err != nil {
 		return false, err
 	}
-	if _, err := os.Stat(runDir); err != nil {
-		if os.IsNotExist(err) {
-			// file does not exist
-		} else {
-			os.RemoveAll(runDir)
-		}
-	}
-	return false, err
+	return false, nil
 }
 
 func ContainerKill(cn, tn string) error {
@@ -522,26 +515,16 @@ func ContainerKill(cn, tn string) error {
 				logger.Infof("", "Cannot kill container with name %s with output %s", containerName, output)
 				return err
 			}
-			// m := msg.RunMsg{
-			// 	Task:    tn,
-			// 	Cascade: cn,
-			// 	Status:  constants.STATE_STATUS_KILLED,
-			// }
 			s, err := state.GetStateByNames(cn, tn)
 			if err != nil {
 				logger.Errorf("", "Unable to get state for run %s.%s with error %s", cn, tn, err.Error())
 				return err
 			}
 			s.Status = constants.STATE_STATUS_KILLED
-			// logger.Debugf("", "Updating run state for %v", m)
 			if err := state.UpdateStateByNames(cn, tn, s); err != nil {
 				logger.Errorf("", "Unable to update state %s.%s: %s", cn, tn, err.Error())
 				return err
 			}
-			// if err := bulwark.QueuePush(c, m); err != nil {
-			// 	logger.Errorf("", "Unable to push killed message to queue: %s", err.Error())
-			// 	return err
-			// }
 		}
 	}
 	return nil
@@ -556,146 +539,34 @@ func ExitCode(err error) int {
 	return 0
 }
 
-func StartLocalRun(r *Run) (bool, error) {
-	r.State.Status = constants.STATE_STATUS_RUNNING
-	currentTime := time.Now().UTC()
-	r.State.Started = currentTime.Format("2006-01-02T15:04:05Z")
-	if err := state.UpdateStateKilledByNames(r.Task.Cascade, r.Task.Name, false); err != nil {
-		logger.Infof("", "Cannot update state killed: %s %s %s", r.Task.Cascade, r.Task.Name, err.Error())
-		return false, err
-	}
-	if err := updateRunState(r, false); err != nil {
-		return false, err
+func StartLocalRun(rr *Run) (bool, error) {
+	rc := &RunContext{
+		Run: rr,
 	}
 
-	cName := r.State.Cascade
-	tName := r.State.Task
-
-	logger.Debugf("", "Getting datastore by name %s", cName)
-	ds, err := datastore.GetDataStoreByCascade(cName)
-	if err != nil {
-		logger.Errorf("", "Cannot get datastore %s", cName)
-		setErrorStatus(r, err.Error())
-		if err := updateRunState(r, true); err != nil {
-			return false, err
-		}
-		return false, err
+	if shouldRestart, err := setupRun(rc); err != nil {
+		return shouldRestart, err
 	}
 
-	runDir := fmt.Sprintf("/tmp/run/%s/%s/%d", cName, tName, r.Number)
-
-	if _, err := os.Stat(runDir); err != nil {
-		if os.IsNotExist(err) {
-			// file does not exist
-		} else {
-			os.RemoveAll(runDir)
-		}
+	if shouldRestart, err := setupEnvLoad(rc); err != nil {
+		return shouldRestart, err
 	}
 
-	err = os.MkdirAll(runDir, 0755)
-	if err != nil {
-		logger.Errorf("", "Error creating run directory %s", err.Error())
-		setErrorStatus(r, err.Error())
-		if err := updateRunState(r, true); err != nil {
-			return false, err
-		}
-		return false, err
+	if shouldRestart, err := setupRunScript(rc); err != nil {
+		return shouldRestart, err
 	}
 
-	scriptPath := runDir + "/.run.sh"
-	envInPath := runDir + "/.envin"
-	displayPath := runDir + "/.display"
-
-	envInput := ""
-	for key, val := range r.Task.Inputs {
-		contextVal, ok := r.Context[val]
-		var encoded string
-		if ok {
-			encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
-		} else {
-			encoded = base64.StdEncoding.EncodeToString([]byte(ds.Env[val]))
-		}
-		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
-	}
-	for _, key := range r.Task.Load.Env {
-		contextVal, ok := r.Context[key]
-		var encoded string
-		if ok {
-			encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
-		} else {
-			encoded = base64.StdEncoding.EncodeToString([]byte(ds.Env[key]))
-		}
-		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
-	}
-	for key, val := range r.Task.Env {
-		encoded := base64.StdEncoding.EncodeToString([]byte(val))
-		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+	if shouldRestart, err := loadFiles(rc); err != nil {
+		return shouldRestart, err
 	}
 
-	envOutput := ""
-	for _, key := range r.Task.Store.Env {
-		envOutput += fmt.Sprintf("echo \"%s;$(echo \"${%s}\" | base64)\" >> %s/.envout\n", key, key, runDir)
-	}
-
-	runScript := fmt.Sprintf(`
-	# load ENV var
-
-	while read -r line; do
-		name=${line%%;*}
-		value=${line#*;}
-		export ${name}="$(echo "${value}" | base64 -d)"
-	done < %s
-	
-	# run command
-	%s
-	
-	# save ENV vars
-	%s
-	`, envInPath, r.Task.Run, envOutput)
-
-	// Write out our run script
-	data := []byte(runScript)
-	err = os.WriteFile(scriptPath, data, 0777)
-	if err != nil {
-		logger.Errorf("", "Error writing run file %s", err.Error())
-		setErrorStatus(r, err.Error())
-		if err := updateRunState(r, true); err != nil {
-			return false, err
-		}
-		return false, err
-	}
-
-	// Write out envin script
-	data = []byte(envInput)
-	err = os.WriteFile(envInPath, data, 0777)
-	if err != nil {
-		logger.Errorf("", "Error writing envin file %s", err.Error())
-		setErrorStatus(r, err.Error())
-		if err := updateRunState(r, true); err != nil {
-			return false, err
-		}
-		return false, err
-	}
-
-	for _, name := range r.Task.Load.File {
-		err := filestore.GetFile(fmt.Sprintf("%s/%s", cName, name), fmt.Sprintf("%s/%s", runDir, name))
-		if err != nil {
-			logger.Errorf("", "Error getting file %s", err.Error())
-			setErrorStatus(r, err.Error())
-			if err := updateRunState(r, true); err != nil {
-				return false, err
-			}
-			return false, err
-		}
-	}
-
-	if r.PID > 0 {
-		if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill %d", r.PID)).Run(); err != nil {
+	if rc.Run.PID > 0 {
+		if err := exec.Command("/bin/sh", "-c", fmt.Sprintf("kill %d", rc.Run.PID)).Run(); err != nil {
 			logger.Infof("", "Cannot kill existing run: %s\n", err.Error())
 		}
 	}
 
-	localCommand := fmt.Sprintf("cd %s && ./.run.sh", runDir)
+	localCommand := fmt.Sprintf("cd %s && ./.run.sh", rc.RunDir)
 
 	logger.Debugf("", "command: %s", localCommand)
 
@@ -705,11 +576,8 @@ func StartLocalRun(r *Run) (bool, error) {
 	cmd.Stderr = &errb
 
 	runError = cmd.Start()
-	if err != nil {
-		return false, runError
-	}
-	r.PID = cmd.Process.Pid
-	if err := updateRunState(r, true); err != nil {
+	rc.Run.PID = cmd.Process.Pid
+	if err := updateRunState(rc.Run, true); err != nil {
 		return false, err
 	}
 
@@ -723,45 +591,32 @@ func StartLocalRun(r *Run) (bool, error) {
 	for !killed {
 		if runError != nil {
 			logger.Errorf("", "Error running pod %s\n", runError.Error())
-			setErrorStatus(r, fmt.Sprintf("Error running pod %s\n", runError.Error()))
-			if err := updateRunState(r, true); err != nil {
+			setErrorStatus(rc.Run, fmt.Sprintf("Error running pod %s\n", runError.Error()))
+			if err := updateRunState(rc.Run, true); err != nil {
 				return false, err
 			}
 		}
 		output := outb.String() + "\n\n" + errb.String()
 		logger.Tracef("", "setting output 1 %s", output)
-		r.State.Output = output
+		rc.Run.State.Output = output
 
-		logger.Tracef("", "Checking for display at %s", displayPath)
-		if _, err = os.Stat(displayPath); err == nil {
-			logger.Tracef("", "Display path is present")
-			if data, err := os.ReadFile(displayPath); err == nil {
-				logger.Tracef("", "Read display file")
-				var obj []map[string]interface{}
-				if err := json.Unmarshal(data, &obj); err != nil {
-					logger.Errorf("", "Error unmarshalling display JSON: %v", err)
-				} else {
-					logger.Tracef("", "Updating display object")
-					r.State.Display = obj
-				}
-			} else {
-				logger.Tracef("", "Display read error: %s", err.Error())
-			}
-		} else {
-			logger.Tracef("", "Display stat error: %s", err.Error())
+		// Load in display file if present and able
+		if shouldRestart, err := checkDisplay(rc); err != nil {
+			return shouldRestart, err
 		}
-		if err := updateRunState(r, false); err != nil {
-			logger.Errorf("", "Error updating run: %s", err.Error())
-			return false, err
+
+		if shouldRestart, err := storeEnv(rc); err != nil {
+			return shouldRestart, err
 		}
+
 		time.Sleep(500 * time.Millisecond)
 	}
 
 	output := outb.String() + "\n\n" + errb.String()
 	logger.Tracef("", "setting output 2 %s", output)
-	r.State.Output = output
+	rc.Run.State.Output = output
 
-	if err := updateRunState(r, false); err != nil {
+	if err := updateRunState(rc.Run, false); err != nil {
 		logger.Errorf("", "Error updating run: %s", err.Error())
 		return false, err
 	}
@@ -769,78 +624,22 @@ func StartLocalRun(r *Run) (bool, error) {
 	returnCode := 0
 	returnCode = ExitCode(runError)
 
-	for _, name := range r.Task.Store.File {
-		filePath := fmt.Sprintf("%s/%s", runDir, name)
-		if _, err = os.Stat(filePath); err == nil {
-			err := filestore.UploadFile(filePath, fmt.Sprintf("%s/%s", r.Task.Cascade, name))
-			if err != nil {
-				logger.Errorf("", "ERROR UPLOADING %s: %s\n", fmt.Sprintf("%s/%s", r.Task.Cascade, name), err.Error())
-			}
-			ds.Files = append(ds.Files, name)
-			ds.Files = utils.RemoveDuplicateValues(ds.Files)
-		}
-	}
+	storeFiles(rc)
 
 	// Load in display file if present and able
-	logger.Tracef("", "Checking for display at %s", displayPath)
-	if _, err = os.Stat(displayPath); err == nil {
-		logger.Tracef("", "Display path is present")
-		if data, err := os.ReadFile(displayPath); err == nil {
-			logger.Tracef("", "Read display file")
-			var obj []map[string]interface{}
-			if err := json.Unmarshal(data, &obj); err != nil {
-				logger.Errorf("", "Error unmarshalling display JSON: %v", err)
-			} else {
-				logger.Tracef("", "Updating display object")
-				r.State.Display = obj
-			}
-		} else {
-			logger.Errorf("", "read error: %s", err.Error())
-		}
-	} else {
-		logger.Tracef("", "stat error: %s", err.Error())
+	if shouldRestart, err := checkDisplay(rc); err != nil {
+		return shouldRestart, err
 	}
 
-	if err := updateRunState(r, false); err != nil {
-		return false, err
+	if shouldRestart, err := storeEnv(rc); err != nil {
+		return shouldRestart, err
 	}
 
-	envOutPath := fmt.Sprintf("%s/.envout", runDir)
-	var dat []byte
-	if _, err := os.Stat(envOutPath); err == nil {
-		dat, err = os.ReadFile(envOutPath)
-		if err != nil {
-			logger.Errorf("", "Error reading file %s\n", err.Error())
-			setErrorStatus(r, err.Error())
-			if err := updateRunState(r, true); err != nil {
-				return false, err
-			}
-		}
-	}
-	envVarList := strings.Split(string(dat), "\n")
-	envVarMap := map[string]string{}
+	setStatus(rc, "", returnCode)
 
-	for _, val := range envVarList {
-		name, val, _ := strings.Cut(val, ";")
-		decoded, _ := base64.StdEncoding.DecodeString(val)
-		envVarMap[name] = string(decoded)
-	}
+	rc.Run.PID = 0
 
-	for _, name := range r.Task.Store.Env {
-		r.Context[name] = envVarMap[name]
-	}
-
-	currentTime = time.Now().UTC()
-	r.State.Finished = currentTime.Format("2006-01-02T15:04:05Z")
-	if returnCode == 0 {
-		r.State.Status = constants.STATE_STATUS_SUCCESS
-	} else {
-		r.State.Status = constants.STATE_STATUS_ERROR
-	}
-
-	r.PID = 0
-
-	err = updateRunState(r, true)
+	err := updateRunState(rc.Run, true)
 	return false, err
 }
 

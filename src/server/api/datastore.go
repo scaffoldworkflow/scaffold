@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"scaffold/server/cascade"
 	"scaffold/server/config"
 	"scaffold/server/constants"
 	"scaffold/server/datastore"
 	"scaffold/server/input"
 	"scaffold/server/utils"
+	"scaffold/server/workflow"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -37,7 +37,7 @@ func CreateDataStore(ctx *gin.Context) {
 		return
 	}
 
-	c, err := cascade.GetCascadeByName(d.Name)
+	c, err := workflow.GetWorkflowByName(d.Name)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusNotFound)
 	}
@@ -69,11 +69,11 @@ func CreateDataStore(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/datastore/{cascade_name} [delete]
-func DeleteDataStoreByCascade(ctx *gin.Context) {
+//	@router						/api/v1/datastore/{workflow_name} [delete]
+func DeleteDataStoreByWorkflow(ctx *gin.Context) {
 	name := ctx.Param("name")
 
-	err := datastore.DeleteDataStoreByCascade(name)
+	err := datastore.DeleteDataStoreByWorkflow(name)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -108,11 +108,11 @@ func GetAllDataStores(ctx *gin.Context) {
 		return
 	}
 
-	// Need to copy each cascade from pointer to value since pointers are returned
+	// Need to copy each workflow from pointer to value since pointers are returned
 	// weirdly (I think at least)
 	datastoresOut := make([]datastore.DataStore, 0)
 	for _, d := range datastores {
-		c, err := cascade.GetCascadeByName(d.Name)
+		c, err := workflow.GetWorkflowByName(d.Name)
 		if err != nil {
 			continue
 		}
@@ -140,11 +140,11 @@ func GetAllDataStores(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/datastore/{cascade_name} [get]
+//	@router						/api/v1/datastore/{workflow_name} [get]
 func GetDataStoreByName(ctx *gin.Context) {
 	name := ctx.Param("name")
 
-	d, err := datastore.GetDataStoreByCascade(name)
+	d, err := datastore.GetDataStoreByWorkflow(name)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -173,8 +173,8 @@ func GetDataStoreByName(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/datastore/{cascade_name} [put]
-func UpdateDataStoreByCascade(ctx *gin.Context) {
+//	@router						/api/v1/datastore/{workflow_name} [put]
+func UpdateDataStoreByWorkflow(ctx *gin.Context) {
 	name := ctx.Param("name")
 
 	var d datastore.DataStore
@@ -183,11 +183,11 @@ func UpdateDataStoreByCascade(ctx *gin.Context) {
 		return
 	}
 
-	// Need to copy over cascade inputs since some weirdness happens when updating the
+	// Need to copy over workflow inputs since some weirdness happens when updating the
 	// datastore
 	inputs := []input.Input{}
 	if config.Config.Node.Type == constants.NODE_TYPE_MANAGER {
-		c, err := cascade.GetCascadeByName(name)
+		c, err := workflow.GetWorkflowByName(name)
 		if err != nil {
 			utils.Error(err, ctx, http.StatusInternalServerError)
 			return
@@ -195,7 +195,7 @@ func UpdateDataStoreByCascade(ctx *gin.Context) {
 		inputs = c.Inputs
 	}
 
-	err := datastore.UpdateDataStoreByCascade(name, &d, inputs)
+	err := datastore.UpdateDataStoreByWorkflow(name, &d, inputs)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return

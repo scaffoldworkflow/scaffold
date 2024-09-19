@@ -1,0 +1,30 @@
+<br>
+<table class="w3-table w3-border dark theme-border-light theme-table-striped w3-round" id="status-table">
+    <tr>
+        <th class="table-title w3-medium scaffold-text-green">
+        </th>
+        <th class="table-title w3-medium scaffold-text-green">
+            <span class="table-title-text">Service</span>
+        </th>
+        <th class="table-title w3-medium scaffold-text-green">
+            <span class="table-title-text">IP</span>
+        </th>
+        <th class="table-title w3-medium scaffold-text-green">
+            <span class="table-title-text">Status</span>
+        </th>
+        <th class="table-title w3-medium scaffold-text-green">
+            <span class="table-title-text">Version</span>
+        </th>
+    </tr>
+    {{ range .Nodes }}
+        <tr>
+            <td class="status-table-icon fa-solid {{ .Color }} {{ .Icon }}"></td>
+            <td>{{ .Name }}</td>
+            <td>{{ .IP }}</td>
+            <td class="status-table-status">{{ .Text }}</td>
+            <td>{{ .Version }}</td>
+        </tr>
+    {{ end }}
+</table>
+<br>
+<br>

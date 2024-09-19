@@ -5,13 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"scaffold/server/auth"
 	"scaffold/server/config"
 	"scaffold/server/constants"
-	"scaffold/server/container"
-	"scaffold/server/filestore"
 	"scaffold/server/health"
-	"scaffold/server/mongodb"
 	"scaffold/server/msg"
 	"scaffold/server/run"
 	"scaffold/server/state"
@@ -23,30 +21,32 @@ import (
 )
 
 var RunQueue []run.Run
+var startTime int64
 
 var JoinKey = ""
 var PrimaryKey = ""
 var ID = ""
 var isRunning = false
-var currentTask = ""
-var currentCascade = ""
 
 func Run() {
+	startTime = time.Now().UTC().Unix()
+
 	ID = uuid.New().String()
-
-	mongodb.InitCollections()
-	filestore.InitBucket()
-	container.CompletedRuns = make(map[string]run.Run)
-	// StartWebsocketServer()
-
-	go EnsureManagerConnection()
 
 	go EnsureManagerConnection()
 
 	health.IsHealthy = true
-
-	container.PruneContainers()
-
+	if config.Config.RestartPeriod > 0 {
+		for {
+			if !isRunning {
+				now := time.Now().UTC().Unix()
+				if now-startTime > int64(config.Config.RestartPeriod) {
+					os.Exit(0)
+				}
+				time.Sleep(500 * time.Millisecond)
+			}
+		}
+	}
 }
 
 func JoinManager() error {
@@ -152,9 +152,9 @@ func QueueDataReceive(data []byte) error {
 
 	switch m.Action {
 	case constants.ACTION_TRIGGER:
-		t, err := task.GetTaskByNames(m.Cascade, m.Task)
+		t, err := task.GetTaskByNames(m.Workflow, m.Task)
 		if err != nil {
-			logger.Errorf("", "Error getting task %s.%s: %s", m.Cascade, m.Task, err.Error())
+			logger.Errorf("", "Error getting task %s.%s: %s", m.Workflow, m.Task, err.Error())
 			isRunning = false
 			return err
 		}
@@ -164,9 +164,10 @@ func QueueDataReceive(data []byte) error {
 			Task:   *t,
 			Number: m.Number,
 			Groups: m.Groups,
+			RunID:  m.RunID,
 			State: state.State{
 				Task:     m.Task,
-				Cascade:  m.Cascade,
+				Workflow: m.Workflow,
 				Status:   constants.STATE_STATUS_WAITING,
 				Started:  "",
 				Finished: "",
@@ -180,14 +181,11 @@ func QueueDataReceive(data []byte) error {
 			Context: m.Context,
 		}
 
-		currentTask = m.Task
-		currentCascade = m.Cascade
-
 		if t.Kind == constants.TASK_KIND_CONTAINER {
-			// run.ContainerKill(m.Cascade, m.Task)
+			// run.ContainerKill(m.Workflow, m.Task)
 
 			for {
-				s, err := state.GetStateByNames(m.Cascade, m.Task)
+				s, err := state.GetStateByNames(m.Workflow, m.Task)
 				if err != nil {
 					return err
 				}
@@ -203,10 +201,10 @@ func QueueDataReceive(data []byte) error {
 			}
 		}
 		if t.Kind == constants.TASK_KIND_LOCAL {
-			// run.LocalKill(m.Cascade, m.Task)
+			// run.LocalKill(m.Workflow, m.Task)
 
 			for {
-				s, err := state.GetStateByNames(m.Cascade, m.Task)
+				s, err := state.GetStateByNames(m.Workflow, m.Task)
 				if err != nil {
 					return err
 				}
@@ -223,21 +221,8 @@ func QueueDataReceive(data []byte) error {
 		}
 
 		logger.Debugf("", "Run finished")
-		container.LastRun = append(container.LastRun, container.CurrentRun.Name)
-		container.LastImage = append(container.LastImage, container.CurrentRun.Task.Image)
-		container.LastGroups = append(container.LastGroups, m.Groups)
-
-		currentTask = ""
-		currentCascade = ""
 	}
 
 	isRunning = false
 	return nil
 }
-
-// func StartWebsocketServer() {
-// 	logger.Info("", "Starting websocket application")
-// 	//Open a goroutine execution start program
-// 	// go socket.Manager.Start()
-// 	go cmd.StartWSServer()
-// }

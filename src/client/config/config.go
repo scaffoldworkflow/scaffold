@@ -52,7 +52,7 @@ func DoConfig(host, port, protocol, wsPort, profile, username, password string, 
 		Port:       port,
 		WSPort:     wsPort,
 		APIToken:   obj.Token,
-		Cascade:    "default",
+		Workflow:   "default",
 		SkipVerify: skipVerify,
 	}
 

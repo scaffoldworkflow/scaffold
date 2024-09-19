@@ -3,10 +3,10 @@ package api
 import (
 	"errors"
 	"net/http"
-	"scaffold/server/cascade"
 	"scaffold/server/input"
 	"scaffold/server/manager"
 	"scaffold/server/utils"
+	"scaffold/server/workflow"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -34,7 +34,7 @@ func CreateInput(ctx *gin.Context) {
 		return
 	}
 
-	c, err := cascade.GetCascadeByName(i.Cascade)
+	c, err := workflow.GetWorkflowByName(i.Workflow)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusNotFound)
 	}
@@ -55,7 +55,7 @@ func CreateInput(ctx *gin.Context) {
 }
 
 //	@summary					Delete a input
-//	@description				Delete a input by its name and its cascade
+//	@description				Delete a input by its name and its workflow
 //	@tags						manager
 //	@tags						input
 //	@produce					json
@@ -68,7 +68,7 @@ func CreateInput(ctx *gin.Context) {
 //	@security					X-Scaffold-API
 //	@router						/api/v1/input/{input_name} [delete]
 func DeleteInputByNames(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+	cn := ctx.Param("workflow")
 	n := ctx.Param("name")
 
 	err := input.DeleteInputByNames(cn, n)
@@ -82,7 +82,7 @@ func DeleteInputByNames(ctx *gin.Context) {
 }
 
 //	@summary					Delete inputs
-//	@description				Delete inputs by their cascade
+//	@description				Delete inputs by their workflow
 //	@tags						manager
 //	@tags						input
 //	@produce					json
@@ -93,11 +93,11 @@ func DeleteInputByNames(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/input/{cascade_name} [delete]
-func DeleteInputsByCascade(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+//	@router						/api/v1/input/{workflow_name} [delete]
+func DeleteInputsByWorkflow(ctx *gin.Context) {
+	cn := ctx.Param("workflow")
 
-	err := input.DeleteInputsByCascade(cn)
+	err := input.DeleteInputsByWorkflow(cn)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -133,7 +133,7 @@ func GetAllInputs(ctx *gin.Context) {
 
 	inputsOut := make([]input.Input, 0)
 	for _, i := range inputs {
-		c, err := cascade.GetCascadeByName(i.Cascade)
+		c, err := workflow.GetWorkflowByName(i.Workflow)
 		if err == nil {
 			continue
 		}
@@ -150,7 +150,7 @@ func GetAllInputs(ctx *gin.Context) {
 }
 
 //	@summary					Get a input
-//	@description				Get a input by its name and its cascade
+//	@description				Get a input by its name and its workflow
 //	@tags						manager
 //	@tags						input
 //	@produce					json
@@ -161,9 +161,9 @@ func GetAllInputs(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/input/{cascade_name}/{input_name} [get]
+//	@router						/api/v1/input/{workflow_name}/{input_name} [get]
 func GetInputByNames(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+	cn := ctx.Param("workflow")
 	n := ctx.Param("name")
 
 	i, err := input.GetInputByNames(cn, n)
@@ -182,7 +182,7 @@ func GetInputByNames(ctx *gin.Context) {
 }
 
 //	@summary					Get inputs
-//	@description				Get inputs by their cascade
+//	@description				Get inputs by their workflow
 //	@tags						manager
 //	@tags						input
 //	@produce					json
@@ -193,11 +193,11 @@ func GetInputByNames(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/input/{cascade_name} [get]
-func GetInputsByCascade(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+//	@router						/api/v1/input/{workflow_name} [get]
+func GetInputsByWorkflow(ctx *gin.Context) {
+	cn := ctx.Param("workflow")
 
-	i, err := input.GetInputsByCascade(cn)
+	i, err := input.GetInputsByWorkflow(cn)
 
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
@@ -221,9 +221,9 @@ func GetInputsByCascade(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/input/{cascade_name}/{input_name} [put]
+//	@router						/api/v1/input/{workflow_name}/{input_name} [put]
 func UpdateInputByNames(ctx *gin.Context) {
-	cn := ctx.Param("cascade")
+	cn := ctx.Param("workflow")
 	n := ctx.Param("name")
 
 	var i input.Input
@@ -253,9 +253,9 @@ func UpdateInputByNames(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/input/{cascade_name}/update [post]
+//	@router						/api/v1/input/{workflow_name}/update [post]
 func UpdateInputDependenciesByName(ctx *gin.Context) {
-	name := ctx.Param("cascade")
+	name := ctx.Param("workflow")
 
 	var changed []string
 	if err := ctx.ShouldBindJSON(&changed); err != nil {

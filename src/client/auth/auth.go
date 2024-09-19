@@ -18,7 +18,7 @@ type ProfileObj struct {
 	Port       string
 	WSPort     string
 	APIToken   string
-	Cascade    string
+	Workflow   string
 	SkipVerify bool
 }
 

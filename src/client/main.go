@@ -27,28 +27,28 @@ func main() {
 	parser := argparse.NewParser("scaffold", "Scaffold infrastructure management client")
 
 	applyCommand := parser.NewCommand("apply", "Create or update a Scaffold object")
-	applyObject := applyCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object type to create. Valid object types are 'cascade', 'datastore', 'task', 'state', 'file', and 'user"})
-	applyContext := applyCommand.String("c", "context", &argparse.Options{Help: "Cascade context to use. If not set the value in your config file will be pulled", Default: ""})
+	applyObject := applyCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object type to create. Valid object types are 'workflow', 'datastore', 'task', 'state', 'file', and 'user"})
+	applyContext := applyCommand.String("c", "context", &argparse.Options{Help: "Workflow context to use. If not set the value in your config file will be pulled", Default: ""})
 	applyProfile := applyCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
 	applyFile := applyCommand.String("f", "file", &argparse.Options{Required: true, Help: "Scaffold manifest to apply"})
 	applyLogLevel := applyCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
 	deleteCommand := parser.NewCommand("delete", "Delete an existing Scaffold object")
-	deleteObject := deleteCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object to get. Can be of format '<object type>', or '<object type>/<object name>'. Valid object types are 'cascade', 'datastore', 'task', 'state', 'file', and 'user"})
-	deleteContext := deleteCommand.String("c", "context", &argparse.Options{Help: "Cascade context to use. If not set the value in your config file will be pulled", Default: ""})
+	deleteObject := deleteCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object to get. Can be of format '<object type>', or '<object type>/<object name>'. Valid object types are 'workflow', 'datastore', 'task', 'state', 'file', and 'user"})
+	deleteContext := deleteCommand.String("c", "context", &argparse.Options{Help: "Workflow context to use. If not set the value in your config file will be pulled", Default: ""})
 	deleteProfile := deleteCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
 	deleteLogLevel := deleteCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
 	getCommand := parser.NewCommand("get", "Get Scaffold objects")
-	getObject := getCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object to get. Can be of format '<object type>', or '<object type>/<object name>'. Valid object types are 'cascade', 'datastore', 'task', 'state', 'file', and 'user"})
-	getContext := getCommand.String("c", "context", &argparse.Options{Help: "Cascade context to use. If not set the value in your config file will be pulled", Default: ""})
+	getObject := getCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object to get. Can be of format '<object type>', or '<object type>/<object name>'. Valid object types are 'workflow', 'datastore', 'task', 'state', 'file', and 'user"})
+	getContext := getCommand.String("c", "context", &argparse.Options{Help: "Workflow context to use. If not set the value in your config file will be pulled", Default: ""})
 	getProfile := getCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
 	getLogLevel := getCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
 	describeCommand := parser.NewCommand("describe", "Describe a Scaffold object")
-	describeObject := describeCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object to describe. Must be of format '<object type>/<object name>'. Valid object types are 'cascade', 'datastore', 'task', 'state', 'file', and 'user'"})
+	describeObject := describeCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold object to describe. Must be of format '<object type>/<object name>'. Valid object types are 'workflow', 'datastore', 'task', 'state', 'file', and 'user'"})
 	describeProfile := describeCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
-	describeContext := describeCommand.String("c", "context", &argparse.Options{Help: "Cascade context to use. If not set the value in your config file will be pulled", Default: ""})
+	describeContext := describeCommand.String("c", "context", &argparse.Options{Help: "Workflow context to use. If not set the value in your config file will be pulled", Default: ""})
 	describeFormat := describeCommand.Selector("o", "output", []string{"yaml", "json"}, &argparse.Options{Help: "Output format to print. Valid options are 'yaml' and 'json'. Defaults to 'yaml'", Default: "yaml"})
 	describeLogLevel := describeCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
@@ -63,8 +63,8 @@ func main() {
 	configLogLevel := configCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 	configSkipVerify := configCommand.Flag("", "skip-verify", &argparse.Options{Help: "Should SSL certificates not be verified on connection"})
 
-	contextCommand := parser.NewCommand("context", "Configure cascade context for a Scaffold instance")
-	contextContext := contextCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold cascade context to use"})
+	contextCommand := parser.NewCommand("context", "Configure workflow context for a Scaffold instance")
+	contextContext := contextCommand.StringPositional(&argparse.Options{Required: true, Help: "Scaffold workflow context to use"})
 	contextProfile := contextCommand.String("p", "profile", &argparse.Options{Help: "Name for the profile to configure", Default: "default"})
 	contextLogLevel := contextCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
@@ -73,14 +73,14 @@ func main() {
 	uploadCommand := fileCommand.NewCommand("upload", "Upload a file to a filestore")
 	uploadProfile := uploadCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
 	uploadFile := uploadCommand.String("f", "file", &argparse.Options{Required: true, Help: "Path to file to upload"})
-	uploadCascade := uploadCommand.String("c", "cascade", &argparse.Options{Required: true, Help: "Cascade filestore to upload file to"})
+	uploadWorkflow := uploadCommand.String("c", "workflow", &argparse.Options{Required: true, Help: "Workflow filestore to upload file to"})
 	uploadLogLevel := uploadCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
 	downloadCommand := fileCommand.NewCommand("download", "Download a file from a filestore")
 	downloadProfile := downloadCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
 	downloadFile := downloadCommand.String("f", "file", &argparse.Options{Required: true, Help: "Path to file to download"})
-	downloadCascade := downloadCommand.String("c", "cascade", &argparse.Options{Required: true, Help: "Cascade filestore to download file from"})
-	downloadName := downloadCommand.String("n", "name", &argparse.Options{Required: true, Help: "Filename to download from cascade filestore"})
+	downloadWorkflow := downloadCommand.String("c", "workflow", &argparse.Options{Required: true, Help: "Workflow filestore to download file from"})
+	downloadName := downloadCommand.String("n", "name", &argparse.Options{Required: true, Help: "Filename to download from workflow filestore"})
 	downloadLogLevel := downloadCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
 	versionCommand := parser.NewCommand("version", "Get Scaffold versions")
@@ -139,13 +139,13 @@ func main() {
 
 	if uploadCommand.Happened() {
 		logger.SetLevel(*uploadLogLevel)
-		file.DoUpload(*uploadProfile, *uploadCascade, *uploadFile)
+		file.DoUpload(*uploadProfile, *uploadWorkflow, *uploadFile)
 		os.Exit(0)
 	}
 
 	if downloadCommand.Happened() {
 		logger.SetLevel(*downloadLogLevel)
-		file.DoDownload(*downloadProfile, *downloadCascade, *downloadName, *downloadFile)
+		file.DoDownload(*downloadProfile, *downloadWorkflow, *downloadName, *downloadFile)
 		os.Exit(0)
 	}
 

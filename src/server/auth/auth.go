@@ -3,10 +3,10 @@ package auth
 import (
 	"crypto/tls"
 	"net/http"
-	"scaffold/server/cascade"
 	"scaffold/server/config"
 	"scaffold/server/user"
 	"scaffold/server/utils"
+	"scaffold/server/workflow"
 	"strings"
 	"sync"
 	"time"
@@ -248,11 +248,11 @@ func JoinNode(ctx *gin.Context) {
 func GetAllGroups() ([]string, error) {
 	groups := []string{}
 
-	cascades, err := cascade.GetAllCascades()
+	workflows, err := workflow.GetAllWorkflows()
 	if err != nil {
 		return []string{}, err
 	} else {
-		for _, c := range cascades {
+		for _, c := range workflows {
 			for _, group := range c.Groups {
 				if !utils.Contains(groups, group) {
 					groups = append(groups, group)

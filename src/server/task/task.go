@@ -43,7 +43,7 @@ type Task struct {
 	Name        string            `json:"name" bson:"name" yaml:"name"`
 	Kind        string            `json:"kind" bson:"kind" yaml:"kind"`
 	Cron        string            `json:"cron" bson:"cron" yaml:"cron"`
-	Cascade     string            `json:"cascade" bson:"cascade" yaml:"cascade"`
+	Workflow    string            `json:"workflow" bson:"workflow" yaml:"workflow"`
 	DependsOn   TaskDependsOn     `json:"depends_on" bson:"depends_on" yaml:"depends_on"`
 	Image       string            `json:"image" bson:"image" yaml:"image"`
 	Run         string            `json:"run" bson:"run" yaml:"run"`
@@ -61,12 +61,12 @@ type Task struct {
 }
 
 func CreateTask(t *Task) error {
-	tt, err := GetTaskByNames(t.Cascade, t.Name)
+	tt, err := GetTaskByNames(t.Workflow, t.Name)
 	if err != nil {
 		return fmt.Errorf("error getting tasks: %s", err.Error())
 	}
 	if tt != nil {
-		return fmt.Errorf("task already exists with names %s, %s", t.Cascade, t.Name)
+		return fmt.Errorf("task already exists with names %s, %s", t.Workflow, t.Name)
 	}
 
 	if t.Kind == "" {
@@ -75,7 +75,7 @@ func CreateTask(t *Task) error {
 
 	s := state.State{
 		Task:     t.Name,
-		Cascade:  t.Cascade,
+		Workflow: t.Workflow,
 		Status:   constants.STATE_STATUS_NOT_STARTED,
 		Started:  "",
 		Finished: "",
@@ -92,7 +92,7 @@ func CreateTask(t *Task) error {
 
 	// sc := state.State{
 	// 	Task:     fmt.Sprintf("SCAFFOLD_CHECK-%s", t.Name),
-	// 	Cascade:  t.Cascade,
+	// 	Workflow:  t.Workflow,
 	// 	Status:   constants.STATE_STATUS_NOT_STARTED,
 	// 	Started:  "",
 	// 	Finished: "",
@@ -106,7 +106,7 @@ func CreateTask(t *Task) error {
 
 	// sp := state.State{
 	// 	Task:     fmt.Sprintf("SCAFFOLD_PREVIOUS-%s", t.Name),
-	// 	Cascade:  t.Cascade,
+	// 	Workflow:  t.Workflow,
 	// 	Status:   constants.STATE_STATUS_NOT_STARTED,
 	// 	Started:  "",
 	// 	Finished: "",
@@ -122,8 +122,8 @@ func CreateTask(t *Task) error {
 	return err
 }
 
-func DeleteTaskByNames(cascade, task string) error {
-	filter := bson.M{"cascade": cascade, "name": task}
+func DeleteTaskByNames(workflow, task string) error {
+	filter := bson.M{"workflow": workflow, "name": task}
 
 	collection := mongodb.Collections[constants.MONGODB_TASK_COLLECTION_NAME]
 	ctx := mongodb.Ctx
@@ -135,10 +135,10 @@ func DeleteTaskByNames(cascade, task string) error {
 	}
 
 	if result.DeletedCount != 1 {
-		return fmt.Errorf("no task found with names %s, %s", cascade, task)
+		return fmt.Errorf("no task found with names %s, %s", workflow, task)
 	}
 
-	if err := state.DeleteStateByNames(cascade, task); err != nil {
+	if err := state.DeleteStateByNames(workflow, task); err != nil {
 		return err
 	}
 
@@ -146,8 +146,8 @@ func DeleteTaskByNames(cascade, task string) error {
 
 }
 
-func DeleteTasksByCascade(cascade string) error {
-	filter := bson.M{"cascade": cascade}
+func DeleteTasksByWorkflow(workflow string) error {
+	filter := bson.M{"workflow": workflow}
 
 	collection := mongodb.Collections[constants.MONGODB_TASK_COLLECTION_NAME]
 	ctx := mongodb.Ctx
@@ -159,10 +159,10 @@ func DeleteTasksByCascade(cascade string) error {
 	}
 
 	if result.DeletedCount == 0 {
-		return fmt.Errorf("no tasks found with cascade %s", cascade)
+		return fmt.Errorf("no tasks found with workflow %s", workflow)
 	}
 
-	if err := state.DeleteStatesByCascade(cascade); err != nil {
+	if err := state.DeleteStatesByWorkflow(workflow); err != nil {
 		return err
 	}
 
@@ -178,8 +178,8 @@ func GetAllTasks() ([]*Task, error) {
 	return tasks, err
 }
 
-func GetTaskByNames(cascade, task string) (*Task, error) {
-	filter := bson.M{"cascade": cascade, "name": task}
+func GetTaskByNames(workflow, task string) (*Task, error) {
+	filter := bson.M{"workflow": workflow, "name": task}
 
 	tasks, err := FilterTasks(filter)
 
@@ -192,14 +192,14 @@ func GetTaskByNames(cascade, task string) (*Task, error) {
 	}
 
 	if len(tasks) > 1 {
-		return nil, fmt.Errorf("multiple tasks found with names %s, %s", cascade, task)
+		return nil, fmt.Errorf("multiple tasks found with names %s, %s", workflow, task)
 	}
 
 	return tasks[0], nil
 }
 
-func GetTasksByCascade(cascade string) ([]*Task, error) {
-	filter := bson.M{"cascade": cascade}
+func GetTasksByWorkflow(workflow string) ([]*Task, error) {
+	filter := bson.M{"workflow": workflow}
 
 	tasks, err := FilterTasks(filter)
 
@@ -210,11 +210,11 @@ func GetTasksByCascade(cascade string) ([]*Task, error) {
 	return tasks, nil
 }
 
-func UpdateTaskByNames(cascade, task string, t *Task) error {
-	filter := bson.M{"cascade": cascade, "name": task}
+func UpdateTaskByNames(workflow, task string, t *Task) error {
+	filter := bson.M{"workflow": workflow, "name": task}
 	currentTime := time.Now().UTC()
 	t.Updated = currentTime.Format("2006-01-02T15:04:05Z")
-	t.Cascade = cascade
+	t.Workflow = workflow
 
 	logger.Debugf("", "Updating task %v", *t)
 
@@ -231,7 +231,7 @@ func UpdateTaskByNames(cascade, task string, t *Task) error {
 
 	if result.ModifiedCount != 1 {
 		return CreateTask(t)
-		// return fmt.Errorf("no task found with names %s, %s", cascade, task)
+		// return fmt.Errorf("no task found with names %s, %s", workflow, task)
 	}
 
 	logger.Debugf("", "Update result: %v", result)

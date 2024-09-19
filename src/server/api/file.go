@@ -5,18 +5,18 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"scaffold/server/cascade"
 	"scaffold/server/datastore"
 	"scaffold/server/filestore"
 	"scaffold/server/input"
 	"scaffold/server/utils"
+	"scaffold/server/workflow"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 //	@summary					Download a file
-//	@description				Download a file from a cascade
+//	@description				Download a file from a workflow
 //	@tags						manager
 //	@tags						file
 //	@produce					application/text
@@ -28,12 +28,12 @@ import (
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/file/{cascade_name}/{file_name}/download [get]
+//	@router						/api/v1/file/{workflow_name}/{file_name}/download [get]
 func DownloadFile(ctx *gin.Context) {
 	name := ctx.Param("name")
 	fileName := ctx.Param("file")
 
-	c, err := cascade.GetCascadeByName(name)
+	c, err := workflow.GetWorkflowByName(name)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusNotFound)
 	}
@@ -71,7 +71,7 @@ func DownloadFile(ctx *gin.Context) {
 // 	name := ctx.Param("name")
 // 	fileName := ctx.Param("file")
 
-// 	c, err := cascade.GetCascadeByName(name)
+// 	c, err := workflow.GetWorkflowByName(name)
 // 	if err != nil {
 // 		utils.Error(err, ctx, http.StatusNotFound)
 // 	}
@@ -103,7 +103,7 @@ func DownloadFile(ctx *gin.Context) {
 // }
 
 //	@summary					Upload a file
-//	@description				Upload a file to a cascade
+//	@description				Upload a file to a workflow
 //	@tags						manager
 //	@tags						file
 //	@accept						multipart/form-data
@@ -121,7 +121,7 @@ func DownloadFile(ctx *gin.Context) {
 func UploadFile(ctx *gin.Context) {
 	name := ctx.Param("name")
 
-	c, err := cascade.GetCascadeByName(name)
+	c, err := workflow.GetWorkflowByName(name)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusNotFound)
 	}
@@ -158,7 +158,7 @@ func UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	ds, err := datastore.GetDataStoreByCascade(name)
+	ds, err := datastore.GetDataStoreByWorkflow(name)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
@@ -169,7 +169,7 @@ func UploadFile(ctx *gin.Context) {
 
 	inputs := []input.Input{}
 
-	if err := datastore.UpdateDataStoreByCascade(name, ds, inputs); err != nil {
+	if err := datastore.UpdateDataStoreByWorkflow(name, ds, inputs); err != nil {
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
 	}
@@ -179,7 +179,7 @@ func UploadFile(ctx *gin.Context) {
 }
 
 //	@summary					Get files
-//	@description				Get files by cascade
+//	@description				Get files by workflow
 //	@tags						manager
 //	@tags						file
 //	@produce					json
@@ -190,11 +190,11 @@ func UploadFile(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/file/{cascade_name} [get]
-func GetFilesByCascade(ctx *gin.Context) {
+//	@router						/api/v1/file/{workflow_name} [get]
+func GetFilesByWorkflow(ctx *gin.Context) {
 	name := ctx.Param("name")
 
-	c, err := cascade.GetCascadeByName(name)
+	c, err := workflow.GetWorkflowByName(name)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusNotFound)
 	}
@@ -214,7 +214,7 @@ func GetFilesByCascade(ctx *gin.Context) {
 	out := make([]filestore.ObjectMetadata, 0)
 
 	for _, obj := range objects {
-		if obj.Cascade == name {
+		if obj.Workflow == name {
 			out = append(out, obj)
 		}
 	}
@@ -223,7 +223,7 @@ func GetFilesByCascade(ctx *gin.Context) {
 }
 
 //	@summary					Get file
-//	@description				Get file by cascade and name
+//	@description				Get file by workflow and name
 //	@tags						manager
 //	@tags						file
 //	@produce					json
@@ -234,12 +234,12 @@ func GetFilesByCascade(ctx *gin.Context) {
 //	@in							header
 //	@name						Authorization
 //	@security					X-Scaffold-API
-//	@router						/api/v1/file/{cascade_name}/{file_name} [get]
+//	@router						/api/v1/file/{workflow_name}/{file_name} [get]
 func GetFileByNames(ctx *gin.Context) {
 	name := ctx.Param("name")
 	file := ctx.Param("file")
 
-	c, err := cascade.GetCascadeByName(name)
+	c, err := workflow.GetWorkflowByName(name)
 	if err != nil {
 		utils.Error(err, ctx, http.StatusNotFound)
 	}
@@ -262,8 +262,8 @@ func GetFileByNames(ctx *gin.Context) {
 		return
 	}
 
-	if obj.Cascade != name {
-		utils.Error(fmt.Errorf("cascade %s does not have file %s", name, file), ctx, http.StatusNotFound)
+	if obj.Workflow != name {
+		utils.Error(fmt.Errorf("workflow %s does not have file %s", name, file), ctx, http.StatusNotFound)
 		return
 	}
 
@@ -293,7 +293,7 @@ func GetAllFiles(ctx *gin.Context) {
 	out := make([]filestore.ObjectMetadata, 0)
 
 	for _, obj := range objects {
-		c, err := cascade.GetCascadeByName(obj.Cascade)
+		c, err := workflow.GetWorkflowByName(obj.Workflow)
 		if err != nil {
 			continue
 		}

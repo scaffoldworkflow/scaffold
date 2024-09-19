@@ -106,6 +106,12 @@ func DynamicAPIResponse(ctx *gin.Context, redirect string, status int, response 
 }
 
 func MergeDict(a, b map[string]string) map[string]string {
+	if a == nil {
+		a = make(map[string]string)
+	}
+	if b == nil {
+		return a
+	}
 	for key, val := range b {
 		a[key] = val
 	}

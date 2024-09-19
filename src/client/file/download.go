@@ -9,7 +9,7 @@ import (
 	"scaffold/client/logger"
 )
 
-func DoDownload(profile, cascade, name, outPath string) {
+func DoDownload(profile, workflow, name, outPath string) {
 	p := auth.ReadProfile(profile)
 	uri := fmt.Sprintf("%s://%s:%s", p.Protocol, p.Host, p.Port)
 
@@ -22,7 +22,7 @@ func DoDownload(profile, cascade, name, outPath string) {
 
 	// Get the data
 	httpClient := &http.Client{}
-	requestURL := fmt.Sprintf("%s/api/v1/file/%s/%s/download", uri, cascade, name)
+	requestURL := fmt.Sprintf("%s/api/v1/file/%s/%s/download", uri, workflow, name)
 	req, _ := http.NewRequest("GET", requestURL, nil)
 	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", p.APIToken))
 	req.Header.Set("Content-Type", "application/json")
@@ -42,5 +42,5 @@ func DoDownload(profile, cascade, name, outPath string) {
 		logger.Fatalf("", "Error writing file: %s", err.Error())
 	}
 
-	logger.Successf("", "Successfully downloaded %s from %s filestore to %s", name, cascade, outPath)
+	logger.Successf("", "Successfully downloaded %s from %s filestore to %s", name, workflow, outPath)
 }

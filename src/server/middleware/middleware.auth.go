@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"net/http"
-	"scaffold/server/cascade"
 	"scaffold/server/config"
 	"scaffold/server/user"
 	"scaffold/server/utils"
+	"scaffold/server/workflow"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -63,6 +63,56 @@ func EnsureLoggedIn() gin.HandlerFunc {
 	}
 }
 
+func EnsureLoggedInAPI() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var token string
+		var err error
+
+		baUsername, baPassword, hasAuth := c.Request.BasicAuth()
+		if hasAuth {
+			_, err := user.GetUserByUsername(baUsername)
+			if err != nil {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+			verified, err := user.VerifyUser(baUsername, baPassword)
+			if err != nil || !verified {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+			return
+		}
+
+		authString := c.Request.Header.Get("Authorization")
+		if authString == "" {
+			token, err = c.Cookie("scaffold_token")
+			if err != nil {
+				c.AbortWithStatus(http.StatusForbidden)
+				return
+			}
+		} else {
+			token = strings.Split(authString, " ")[1]
+		}
+		if token == config.Config.Node.PrimaryKey {
+			return
+		}
+
+		usr, _ := user.GetUserByAPIToken(token)
+		if usr != nil {
+			return
+		}
+
+		usr, _ = user.GetUserByLoginToken(token)
+		if usr == nil {
+			if authString == "" {
+				c.AbortWithStatus(http.StatusForbidden)
+				return
+			}
+			c.AbortWithStatus(http.StatusUnauthorized)
+		}
+	}
+}
+
 func EnsureNotLoggedIn() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var token string
@@ -96,13 +146,13 @@ func EnsureNotLoggedIn() gin.HandlerFunc {
 
 // This middleware ensures that a request will be aborted with an error
 // if the user is not logged in
-func EnsureCascadeGroup(paramName string) gin.HandlerFunc {
+func EnsureWorkflowGroup(paramName string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var token string
 		var err error
 		isUI := false
-		cascadeName := c.Param(paramName)
-		cs, _ := cascade.GetCascadeByName(cascadeName)
+		workflowName := c.Param(paramName)
+		cs, _ := workflow.GetWorkflowByName(workflowName)
 		if err != nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
@@ -114,7 +164,7 @@ func EnsureCascadeGroup(paramName string) gin.HandlerFunc {
 		if authString == "" {
 			token, err = c.Cookie("scaffold_token")
 			if err != nil {
-				c.Redirect(http.StatusUnauthorized, "401.html")
+				c.Redirect(http.StatusUnauthorized, "/ui/401")
 				return
 			}
 			isUI = true
@@ -139,7 +189,7 @@ func EnsureCascadeGroup(paramName string) gin.HandlerFunc {
 				}
 			}
 			if isUI {
-				c.Redirect(http.StatusUnauthorized, "401.html")
+				c.Redirect(http.StatusUnauthorized, "/ui/401")
 				return
 			}
 			c.AbortWithStatus(http.StatusUnauthorized)
@@ -156,13 +206,13 @@ func EnsureCascadeGroup(paramName string) gin.HandlerFunc {
 				}
 			}
 			if isUI {
-				c.Redirect(http.StatusUnauthorized, "401.html")
+				c.Redirect(http.StatusUnauthorized, "/ui/401")
 				return
 			}
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
 		if isUI {
-			c.Redirect(http.StatusUnauthorized, "401.html")
+			c.Redirect(http.StatusUnauthorized, "/ui/401")
 			return
 		}
 		c.AbortWithStatus(http.StatusUnauthorized)

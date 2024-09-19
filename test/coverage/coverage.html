@@ -7155,7 +7155,7 @@ func EnsureCascadeGroup(paramName string) gin.HandlerFunc <span class="cov5" tit
                 if authString == "" </span><span class="cov0" title="0">{
                         token, err = c.Cookie("scaffold_token")
                         if err != nil </span><span class="cov0" title="0">{
-                                c.Redirect(http.StatusUnauthorized, "401.html")
+                                c.Redirect(http.StatusUnauthorized, "/ui/401")
                                 return
                         }</span>
                         <span class="cov0" title="0">isUI = true</span>
@@ -7180,7 +7180,7 @@ func EnsureCascadeGroup(paramName string) gin.HandlerFunc <span class="cov5" tit
                                 }</span>
                         }
                         <span class="cov5" title="24">if isUI </span><span class="cov0" title="0">{
-                                c.Redirect(http.StatusUnauthorized, "401.html")
+                                c.Redirect(http.StatusUnauthorized, "/ui/401")
                                 return
                         }</span>
                         <span class="cov5" title="24">c.AbortWithStatus(http.StatusUnauthorized)</span>
@@ -7197,13 +7197,13 @@ func EnsureCascadeGroup(paramName string) gin.HandlerFunc <span class="cov5" tit
                                 }</span>
                         }
                         <span class="cov0" title="0">if isUI </span><span class="cov0" title="0">{
-                                c.Redirect(http.StatusUnauthorized, "401.html")
+                                c.Redirect(http.StatusUnauthorized, "/ui/401")
                                 return
                         }</span>
                         <span class="cov0" title="0">c.AbortWithStatus(http.StatusUnauthorized)</span>
                 }
                 <span class="cov5" title="24">if isUI </span><span class="cov0" title="0">{
-                        c.Redirect(http.StatusUnauthorized, "401.html")
+                        c.Redirect(http.StatusUnauthorized, "/ui/401")
                         return
                 }</span>
                 <span class="cov5" title="24">c.AbortWithStatus(http.StatusUnauthorized)</span>
@@ -7502,7 +7502,7 @@ func ShowCascadesPage(c *gin.Context) <span class="cov0" title="0">{
         u, _ := user.GetUserByLoginToken(token)
 
         if u == nil </span><span class="cov0" title="0">{
-                c.Redirect(http.StatusTemporaryRedirect, "401.html")
+                c.Redirect(http.StatusTemporaryRedirect, "/ui/401")
                 return
         }</span>
 
@@ -7540,14 +7540,14 @@ func ShowCascadePage(c *gin.Context) <span class="cov0" title="0">{
         u, _ := user.GetUserByLoginToken(token)
 
         if u == nil </span><span class="cov0" title="0">{
-                c.Redirect(http.StatusTemporaryRedirect, "401.html")
+                c.Redirect(http.StatusTemporaryRedirect, "/ui/401")
                 return
         }</span>
 
         <span class="cov0" title="0">name := c.Param("name")
         obj, err := cascade.GetCascadeByName(name)
         if err != nil </span><span class="cov0" title="0">{
-                c.Redirect(http.StatusTemporaryRedirect, "500.html")
+                c.Redirect(http.StatusTemporaryRedirect, "/ui/500")
                 return
         }</span>
 
@@ -7570,7 +7570,7 @@ func ShowCascadePage(c *gin.Context) <span class="cov0" title="0">{
         }
 
         <span class="cov0" title="0">if !isInGroup </span><span class="cov0" title="0">{
-                c.Redirect(http.StatusTemporaryRedirect, "401.html")
+                c.Redirect(http.StatusTemporaryRedirect, "/ui/401")
                 return
         }</span>
 
@@ -7582,7 +7582,7 @@ func ShowFilesPage(c *gin.Context) <span class="cov0" title="0">{
         u, _ := user.GetUserByLoginToken(token)
 
         if u == nil </span><span class="cov0" title="0">{
-                c.Redirect(http.StatusTemporaryRedirect, "401.html")
+                c.Redirect(http.StatusTemporaryRedirect, "/ui/401")
                 return
         }</span>
 
@@ -7590,7 +7590,7 @@ func ShowFilesPage(c *gin.Context) <span class="cov0" title="0">{
         fileMetadata, err := filestore.ListObjects()
         if err != nil </span><span class="cov0" title="0">{
                 logger.Errorf("", "Unable to get filestore objects: %s", err.Error())
-                utils.DynamicAPIResponse(c, "500.html", http.StatusInternalServerError, gin.H{})
+                utils.DynamicAPIResponse(c, "/ui/500", http.StatusInternalServerError, gin.H{})
         }</span>
 
         <span class="cov0" title="0">cascadeList := []string{}
@@ -7637,7 +7637,7 @@ func ShowUsersPage(c *gin.Context) <span class="cov0" title="0">{
         u, _ := user.GetUserByLoginToken(token)
 
         if u == nil </span><span class="cov0" title="0">{
-                c.Redirect(http.StatusTemporaryRedirect, "401.html")
+                c.Redirect(http.StatusTemporaryRedirect, "/ui/401")
                 return
         }</span>
 
@@ -7667,7 +7667,7 @@ func ShowUserPage(c *gin.Context) <span class="cov0" title="0">{
         username := c.Param("username")
         u, _ := user.GetUserByUsername(username)
         if u == nil </span><span class="cov0" title="0">{
-                c.HTML(http.StatusNotFound, "404.html", gin.H{})
+                c.HTML(http.StatusNotFound, "/ui/404", gin.H{})
         }</span>
 
         <span class="cov0" title="0">groupObj := make([]map[string]string, len(u.Groups))
@@ -8034,7 +8034,7 @@ func initializeRoutes() <span class="cov2" title="2">{
         router.GET("/", page.RedirectIndexPage)
 
         router.NoRoute(func(c *gin.Context) </span><span class="cov10" title="39">{
-                c.HTML(http.StatusNotFound, "404.html", gin.H{})
+                c.HTML(http.StatusNotFound, "/ui/404", gin.H{})
         }</span>)
 
         <span class="cov2" title="2">healthRoutes := router.Group("/health", middleware.CORSMiddleware())

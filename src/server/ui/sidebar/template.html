@@ -1,0 +1,30 @@
+<div class="drawer-side">
+  <label for="sidebar" aria-label="close sidebar" class="drawer-overlay"></label>
+  <ul class="menu min-h-full w-80 p-4 {{ .Classes }}"
+  {{ if ne .HXSwap "" }}
+  hx-swap="{{ .HXSwap }}"
+  {{ end }}
+  {{ if ne .HXGet "" }}
+  hx-get="{{ .HXGet }}"
+  {{ end }}
+  {{ if ne .HXPost "" }}
+  hx-post="{{ .HXPost }}"
+  {{ end }}
+  {{ if ne .HXPut "" }}
+  hx-put="{{ .HXPut }}"
+  {{ end }}
+  {{ if ne .HXTrigger "" }}
+  hx-trigger="{{ .HXTrigger }}"
+  {{ end }}
+  {{ if ne .HXTarget "" }}
+  hx-target="{{ .HXTarget }}"
+  {{ end }}
+  {{ if ne .Style "" }}
+  style="{{ .Style }}"
+  {{ end }}
+  >
+    {{ range .Components }}
+      <li>{{ .Render }}</li>
+    {{ end }}
+  </ul>
+</div>

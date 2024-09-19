@@ -7,13 +7,11 @@ import (
 	"net"
 	"net/http"
 	"scaffold/server/auth"
-	"scaffold/server/cascade"
 	"scaffold/server/config"
 	"scaffold/server/constants"
 	scron "scaffold/server/cron"
-	"scaffold/server/filestore"
 	"scaffold/server/health"
-	"scaffold/server/mongodb"
+	"scaffold/server/history"
 	"scaffold/server/msg"
 	"scaffold/server/proxy"
 	"scaffold/server/rabbitmq"
@@ -21,24 +19,32 @@ import (
 	"scaffold/server/task"
 	"scaffold/server/user"
 	"scaffold/server/utils"
+	"scaffold/server/workflow"
 	"time"
 
+	"github.com/google/uuid"
 	logger "github.com/jfcarter2358/go-logger"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/mux"
 )
 
 var toKill []string
 
-func Run() {
-	mongodb.InitCollections()
-	filestore.InitBucket()
+type UINode struct {
+	Status  string
+	Name    string
+	IP      string
+	Version string
+	Color   string
+	Text    string
+	Icon    string
+}
 
+func Run() {
 	// r := http.NewServeMux()
 	r := mux.NewRouter()
 	// mux.Handle("/ws", websocket.Handler(run))
-	r.HandleFunc("/{host}/{port}/{cascade}/{run}/{version}",
+	r.HandleFunc("/{host}/{port}/{workflow}/{run}/{version}",
 		func(w http.ResponseWriter, req *http.Request) {
 			proxy.NewProxy().ServeHTTP(w, req)
 		})
@@ -76,6 +82,12 @@ func Run() {
 
 	go healthCheck()
 
+	ws, err := workflow.GetAllWorkflows()
+	if err != nil {
+		panic(err)
+	}
+	workflow.SetCache(ws)
+
 	scron.Start()
 }
 
@@ -91,26 +103,34 @@ func QueueDataReceive(data []byte) error {
 	switch m.Status {
 	case constants.STATE_STATUS_SUCCESS:
 		logger.Debugf("", "Task %s has completed with status success", m.Task)
-		stateChange(m.Cascade, m.Task, constants.STATE_STATUS_SUCCESS, m.Context)
-		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_SUCCESS, m.Context)
-		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS, m.Context)
+		if err := history.AddStateToHistory(m.RunID, m.State); err != nil {
+			logger.Errorf("", "Error updating history: %s", err.Error())
+			return err
+		}
+		stateChange(m.Workflow, m.Task, constants.STATE_STATUS_SUCCESS, m.Context, m.RunID)
+		autoTrigger(m.Workflow, m.Task, constants.STATUS_TRIGGER_SUCCESS, m.Context, m.RunID)
+		autoTrigger(m.Workflow, m.Task, constants.STATUS_TRIGGER_ALWAYS, m.Context, m.RunID)
 	case constants.STATE_STATUS_ERROR:
 		logger.Debugf("", "Task %s has completed with status error", m.Task)
-		stateChange(m.Cascade, m.Task, constants.STATE_STATUS_ERROR, m.Context)
-		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ERROR, m.Context)
-		autoTrigger(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS, m.Context)
+		if err := history.AddStateToHistory(m.RunID, m.State); err != nil {
+			logger.Errorf("", "Error updating history: %s", err.Error())
+			return err
+		}
+		stateChange(m.Workflow, m.Task, constants.STATE_STATUS_ERROR, m.Context, m.RunID)
+		autoTrigger(m.Workflow, m.Task, constants.STATUS_TRIGGER_ERROR, m.Context, m.RunID)
+		autoTrigger(m.Workflow, m.Task, constants.STATUS_TRIGGER_ALWAYS, m.Context, m.RunID)
 	case constants.STATE_STATUS_KILLED:
 		logger.Debugf("", "Task %s has completed with status killed", m.Task)
-		id := fmt.Sprintf("%s-%s", m.Cascade, m.Task)
+		if err := history.AddStateToHistory(m.RunID, m.State); err != nil {
+			logger.Errorf("", "Error updating history: %s", err.Error())
+			return err
+		}
+		id := fmt.Sprintf("%s-%s", m.Workflow, m.Task)
 		toKill = utils.Remove(toKill, id)
 		if err := rabbitmq.KillPublish(map[string]string{"id": id}); err != nil {
 			logger.Errorf("", "Error publishing kill id: %s", err.Error())
 			return err
 		}
-		// if err := bulwark.BufferSet(bulwark.BufferClient, toKill); err != nil {
-		// 	logger.Errorf("", "Encountered error while updating buffer: %s", err.Error())
-		// 	return err
-		// }
 	}
 	return nil
 }
@@ -127,12 +147,12 @@ func BufferDataReceive(endpoint, data string) error {
 
 	// if m.Status == constants.STATE_STATUS_SUCCESS {
 	// 	logger.Debugf("", "Task %s has completed with success", m.Task)
-	// 	stateChange(m.Cascade, m.Task, constants.STATUS_TRIGGER_SUCCESS)
-	// 	stateChange(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS)
+	// 	stateChange(m.Workflow, m.Task, constants.STATUS_TRIGGER_SUCCESS)
+	// 	stateChange(m.Workflow, m.Task, constants.STATUS_TRIGGER_ALWAYS)
 	// } else if m.Status == constants.STATE_STATUS_ERROR {
 	// 	logger.Debugf("", "Task %s has completed with error", m.Task)
-	// 	stateChange(m.Cascade, m.Task, constants.STATUS_TRIGGER_ERROR)
-	// 	stateChange(m.Cascade, m.Task, constants.STATUS_TRIGGER_ALWAYS)
+	// 	stateChange(m.Workflow, m.Task, constants.STATUS_TRIGGER_ERROR)
+	// 	stateChange(m.Workflow, m.Task, constants.STATUS_TRIGGER_ALWAYS)
 	// }
 	return nil
 }
@@ -148,9 +168,9 @@ func healthCheck() {
 				for _, s := range ss {
 					switch s.Status {
 					case constants.STATE_STATUS_RUNNING:
-						DoKill(s.Cascade, s.Task)
+						DoKill(s.Workflow, s.Task)
 					case constants.STATE_STATUS_WAITING:
-						DoKill(s.Cascade, s.Task)
+						DoKill(s.Workflow, s.Task)
 					}
 				}
 			}
@@ -163,7 +183,7 @@ func healthCheck() {
 	}
 }
 
-func stateChange(cn, tn, status string, context map[string]string) error {
+func stateChange(cn, tn, status string, context map[string]string, runID string) error {
 	ss, err := state.GetStateByNames(cn, tn)
 	if err != nil {
 		logger.Errorf("", "Cannot get state for %s", cn)
@@ -173,7 +193,7 @@ func stateChange(cn, tn, status string, context map[string]string) error {
 	if err := state.UpdateStateByNames(cn, tn, ss); err != nil {
 		return err
 	}
-	ts, err := task.GetTasksByCascade(cn)
+	ts, err := task.GetTasksByWorkflow(cn)
 	if err != nil {
 		logger.Errorf("", "Cannot change state for %s", cn)
 		return err
@@ -203,7 +223,8 @@ func stateChange(cn, tn, status string, context map[string]string) error {
 					return err
 				}
 				if s.Status != constants.STATE_STATUS_ERROR && s.Status != constants.STATE_STATUS_SUCCESS {
-					return nil
+					// return nil
+					continue
 				}
 			}
 			for _, n := range t.DependsOn.Success {
@@ -222,11 +243,12 @@ func stateChange(cn, tn, status string, context map[string]string) error {
 					return err
 				}
 				if s.Status != constants.STATE_STATUS_SUCCESS {
-					return nil
+					// return nil
+					continue
 				}
 			}
 			if shouldExecute {
-				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context); err != nil {
+				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context, runID); err != nil {
 					return err
 				}
 			}
@@ -244,7 +266,8 @@ func stateChange(cn, tn, status string, context map[string]string) error {
 					return err
 				}
 				if s.Status != constants.STATE_STATUS_ERROR && s.Status != constants.STATE_STATUS_SUCCESS {
-					return nil
+					// return nil
+					continue
 				}
 			}
 			for _, n := range t.DependsOn.Error {
@@ -257,11 +280,12 @@ func stateChange(cn, tn, status string, context map[string]string) error {
 					return err
 				}
 				if s.Status != constants.STATE_STATUS_ERROR {
-					return nil
+					// return nil
+					continue
 				}
 			}
 			if shouldExecute {
-				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context); err != nil {
+				if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context, runID); err != nil {
 					return err
 				}
 			}
@@ -278,7 +302,7 @@ func stateChange(cn, tn, status string, context map[string]string) error {
 					if err := state.UpdateStateByNames(cn, t.Name, s); err != nil {
 						return err
 					}
-					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context); err != nil {
+					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context, runID); err != nil {
 						return err
 					}
 				}
@@ -293,7 +317,7 @@ func stateChange(cn, tn, status string, context map[string]string) error {
 					if err := state.UpdateStateByNames(cn, t.Name, s); err != nil {
 						return err
 					}
-					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context); err != nil {
+					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context, runID); err != nil {
 						return err
 					}
 				}
@@ -308,7 +332,7 @@ func stateChange(cn, tn, status string, context map[string]string) error {
 					if err := state.UpdateStateByNames(cn, t.Name, s); err != nil {
 						return err
 					}
-					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context); err != nil {
+					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context, runID); err != nil {
 						return err
 					}
 				}
@@ -349,9 +373,9 @@ func checkDeps(cn string, t *task.Task) (bool, error) {
 	return true, nil
 }
 
-func autoTrigger(cn, tn, status string, context map[string]string) error {
+func autoTrigger(cn, tn, status string, context map[string]string, runID string) error {
 	logger.Debugf("", "Doing auto trigger for %s %s with status %s", cn, tn, status)
-	ts, err := task.GetTasksByCascade(cn)
+	ts, err := task.GetTasksByWorkflow(cn)
 	if err != nil {
 		logger.Errorf("", "Cannot perform auto trigger for %s", cn)
 		return err
@@ -400,20 +424,32 @@ func autoTrigger(cn, tn, status string, context map[string]string) error {
 		}
 	}
 	for _, t := range toTrigger {
-		if err := DoTrigger(cn, t, context); err != nil {
+		if err := DoTrigger(cn, t, context, runID); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func DoTrigger(cn, tn string, context map[string]string) error {
-	c, err := cascade.GetCascadeByName(cn)
+func DoTrigger(wn, tn string, context map[string]string, runID string) error {
+	if runID == "" {
+		runID = uuid.New().String()
+		h := history.History{
+			RunID:    runID,
+			States:   make([]state.State, 0),
+			Workflow: wn,
+		}
+
+		if err := history.CreateHistory(&h); err != nil {
+			return err
+		}
+	}
+	c, err := workflow.GetWorkflowByName(wn)
 	if err != nil {
 		return err
 	}
 
-	t, err := task.GetTaskByNames(cn, tn)
+	t, err := task.GetTaskByNames(wn, tn)
 	if err != nil {
 		return err
 	}
@@ -423,7 +459,7 @@ func DoTrigger(cn, tn string, context map[string]string) error {
 	}
 
 	for _, s := range t.DependsOn.Success {
-		ss, err := state.GetStateByNames(cn, s)
+		ss, err := state.GetStateByNames(wn, s)
 		if err != nil {
 			return err
 		}
@@ -432,7 +468,7 @@ func DoTrigger(cn, tn string, context map[string]string) error {
 		}
 	}
 	for _, s := range t.DependsOn.Error {
-		ss, err := state.GetStateByNames(cn, s)
+		ss, err := state.GetStateByNames(wn, s)
 		if err != nil {
 			return err
 		}
@@ -440,36 +476,41 @@ func DoTrigger(cn, tn string, context map[string]string) error {
 			return nil
 		}
 	}
-	for _, s := range t.DependsOn.Success {
-		ss, err := state.GetStateByNames(cn, s)
-		if err != nil {
-			return err
-		}
-		if ss.Status == constants.STATE_STATUS_NOT_STARTED {
-			return nil
-		}
-	}
+	// for _, s := range t.DependsOn.Always {
+	// 	ss, err := state.GetStateByNames(cn, s)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	if ss.Status == constants.STATE_STATUS_NOT_STARTED {
+	// 		return nil
+	// 	}
+	// }
 
-	s, err := state.GetStateByNames(cn, tn)
+	s, err := state.GetStateByNames(wn, tn)
 	if err != nil {
 		return err
 	}
 	s.Status = constants.STATE_STATUS_WAITING
-	if err := state.UpdateStateByNames(cn, tn, s); err != nil {
+	if err := state.UpdateStateByNames(wn, tn, s); err != nil {
+		return err
+	}
+	if err := history.AddStateToHistory(runID, *s); err != nil {
+		logger.Errorf("", "Error updating history: %s", err.Error())
 		return err
 	}
 
-	if err := DoKill(cn, tn); err != nil {
-		return err
-	}
+	// if err := DoKill(cn, tn); err != nil {
+	// 	return err
+	// }
 
 	m := msg.TriggerMsg{
-		Task:    tn,
-		Cascade: cn,
-		Action:  constants.ACTION_TRIGGER,
-		Groups:  c.Groups,
-		Number:  t.RunNumber + 1,
-		Context: context,
+		Task:     tn,
+		Workflow: wn,
+		Action:   constants.ACTION_TRIGGER,
+		Groups:   c.Groups,
+		Number:   t.RunNumber + 1,
+		RunID:    runID,
+		Context:  context,
 	}
 
 	logger.Infof("", "Triggering run with message %v", m)
@@ -508,14 +549,14 @@ func DoKill(cn, tn string) error {
 }
 
 func InputChangeStateChange(name string, changed []string) error {
-	c, err := cascade.GetCascadeByName(name)
+	c, err := workflow.GetWorkflowByName(name)
 	if err != nil {
 		return err
 	}
 	for _, t := range c.Tasks {
 		for _, i := range changed {
 			if utils.Contains(utils.Keys(t.Inputs), i) {
-				stateChange(name, t.Name, constants.STATE_STATUS_NOT_STARTED, map[string]string{})
+				stateChange(name, t.Name, constants.STATE_STATUS_NOT_STARTED, map[string]string{}, "")
 				// state.CopyStatesByNames(name, t.Name, fmt.Sprintf("SCAFFOLD_PREVIOUS-%s", t.Name))
 				state.ClearStateByNames(name, t.Name, t.RunNumber)
 				break
@@ -525,16 +566,7 @@ func InputChangeStateChange(name string, changed []string) error {
 	return nil
 }
 
-//
-//	@Summary		Get status of all nodes
-//	@Description	Get status from all nodes
-//	@tags			manager
-//	@tags			health
-//	@accept			json
-//	@produce		json
-//	@Success		200	{object}	object
-//	@Router			/health/status [get]
-func GetStatus(ctx *gin.Context) {
+func GetStatus() (bool, []UINode) {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
 		log.Fatal(err)
@@ -543,23 +575,75 @@ func GetStatus(ctx *gin.Context) {
 	localAddress := conn.LocalAddr().(*net.UDPAddr)
 	ip := localAddress.IP.String()
 
-	nodes := make([]map[string]string, 0)
+	nodes := make([]UINode, 0)
 	managerStatus := "healthy"
 	if !health.IsHealthy {
 		managerStatus = "degraded"
 	}
-	nodes = append(nodes, map[string]string{"name": config.Config.Host, "ip": ip, "status": managerStatus, "version": constants.VERSION})
-	for _, node := range auth.Nodes {
+	toRemove := []string{}
+	downCount := 0
+	n := UINode{
+		Name:    config.Config.Host,
+		IP:      ip,
+		Status:  constants.NODE_HEALTHY,
+		Version: constants.VERSION,
+		Color:   constants.UI_HEALTH_COLORS[managerStatus],
+		Text:    constants.UI_HEALTH_TEXT[managerStatus],
+		Icon:    constants.UI_HEALTH_ICONS[managerStatus],
+	}
+	nodes = append(nodes, n)
+	for id, node := range auth.Nodes {
 		if node.Ping < config.Config.PingHealthyThreshold {
-			nodes = append(nodes, map[string]string{"name": node.Name, "ip": node.Host, "status": "healthy", "version": node.Version})
+			status := constants.NODE_HEALTHY
+			n := UINode{
+				Name:    node.Name,
+				IP:      node.Host,
+				Status:  constants.NODE_HEALTHY,
+				Version: node.Version,
+				Color:   constants.UI_HEALTH_COLORS[status],
+				Text:    constants.UI_HEALTH_TEXT[status],
+				Icon:    constants.UI_HEALTH_ICONS[status],
+			}
+			nodes = append(nodes, n)
 			continue
 		}
 		if node.Ping < config.Config.PingUnknownThreshold {
-			nodes = append(nodes, map[string]string{"name": node.Name, "ip": node.Host, "status": "unknown", "version": node.Version})
+			status := constants.NODE_UNKNOWN
+			n := UINode{
+				Name:    node.Name,
+				IP:      node.Host,
+				Status:  constants.NODE_HEALTHY,
+				Version: node.Version,
+				Color:   constants.UI_HEALTH_COLORS[status],
+				Text:    constants.UI_HEALTH_TEXT[status],
+				Icon:    constants.UI_HEALTH_ICONS[status],
+			}
+			nodes = append(nodes, n)
+			downCount += 1
 			continue
 		}
-		nodes = append(nodes, map[string]string{"name": node.Name, "ip": node.Host, "status": "unhealthy", "version": node.Version})
+		status := constants.NODE_UNHEALTHY
+		n := UINode{
+			Name:    node.Name,
+			IP:      node.Host,
+			Status:  constants.NODE_HEALTHY,
+			Version: node.Version,
+			Color:   constants.UI_HEALTH_COLORS[status],
+			Text:    constants.UI_HEALTH_TEXT[status],
+			Icon:    constants.UI_HEALTH_ICONS[status],
+		}
+		nodes = append(nodes, n)
+		if node.Ping > config.Config.PingDownThreshold {
+			toRemove = append(toRemove, id)
+		}
+		downCount += 1
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"nodes": nodes})
+	auth.NodeLock.Lock()
+	for _, id := range toRemove {
+		delete(auth.Nodes, id)
+	}
+	auth.NodeLock.Unlock()
+
+	return downCount == 0, nodes
 }

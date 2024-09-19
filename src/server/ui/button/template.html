@@ -1,0 +1,32 @@
+<button 
+class="btn {{ .Classes }}"
+{{ if ne .ID "" }}
+id="{{ .ID }}" 
+{{ end }}
+{{ if ne .OnClick "" }}
+onclick="{{ .OnClick }}"
+{{ end }}
+{{ if ne .HXSwap "" }}
+hx-swap="{{ .HXSwap }}"
+{{ end }}
+{{ if ne .HXGet "" }}
+hx-get="{{ .HXGet }}"
+{{ end }}
+{{ if ne .HXPost "" }}
+hx-post="{{ .HXPost }}"
+{{ end }}
+{{ if ne .HXPut "" }}
+hx-put="{{ .HXPut }}"
+{{ end }}
+{{ if ne .HXTrigger "" }}
+hx-trigger="{{ .HXTrigger }}"
+{{ end }}
+{{ if ne .HXTarget "" }}
+hx-target="{{ .HXTarget }}"
+{{ end }}
+{{ if ne .Style "" }}
+style="{{ .Style }}"
+{{ end }}
+>
+{{ .Title }}
+</button>

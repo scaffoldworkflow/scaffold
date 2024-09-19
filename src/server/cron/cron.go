@@ -2,17 +2,20 @@ package scron
 
 import (
 	// "scaffold/server/bulwark"
-	"scaffold/server/cascade"
+
 	"scaffold/server/constants"
+	"scaffold/server/history"
 	"scaffold/server/msg"
 	"scaffold/server/rabbitmq"
 	"scaffold/server/state"
 	"scaffold/server/task"
 	"scaffold/server/utils"
+	"scaffold/server/workflow"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	logger "github.com/jfcarter2358/go-logger"
 
 	"github.com/robfig/cron"
@@ -33,12 +36,12 @@ func checkTaskCrons() {
 
 	for _, t := range ts {
 		if t.Cron != "" && !t.Disabled {
-			c, err := cascade.GetCascadeByName(t.Cascade)
+			c, err := workflow.GetWorkflowByName(t.Workflow)
 			if err != nil {
-				logger.Errorf("", "Error getting cascade: %s", err.Error())
+				logger.Errorf("", "Error getting workflow: %s", err.Error())
 				continue
 			}
-			valid, err := task.VerifyDepends(t.Cascade, t.Name)
+			valid, err := task.VerifyDepends(t.Workflow, t.Name)
 			if err != nil {
 				logger.Errorf("", "Error verify tasks parent statuses: %s", err.Error())
 				continue
@@ -49,7 +52,7 @@ func checkTaskCrons() {
 			checkCron(currentTime, t.Cron, t.Name, t.RunNumber, c)
 		}
 		// if t.Check.Cron != "" && !t.Disabled {
-		// 	s, err := state.GetStateByNames(t.Cascade, t.Name)
+		// 	s, err := state.GetStateByNames(t.Workflow, t.Name)
 		// 	if err != nil {
 		// 		logger.Errorf("", "Error getting state: %s", err.Error())
 		// 		continue
@@ -57,7 +60,7 @@ func checkTaskCrons() {
 		// 	if s.Status != constants.STATE_STATUS_ERROR && s.Status != constants.STATE_STATUS_RUNNING {
 		// 		continue
 		// 	}
-		// 	valid, err := task.VerifyDepends(t.Cascade, t.Name)
+		// 	valid, err := task.VerifyDepends(t.Workflow, t.Name)
 		// 	if err != nil {
 		// 		logger.Errorf("", "Error verify tasks parent statuses: %s", err.Error())
 		// 		continue
@@ -65,9 +68,9 @@ func checkTaskCrons() {
 		// 	if !valid {
 		// 		continue
 		// 	}
-		// 	c, err := cascade.GetCascadeByName(t.Cascade)
+		// 	c, err := workflow.GetWorkflowByName(t.Workflow)
 		// 	if err != nil {
-		// 		logger.Errorf("", "Error getting cascade: %s", err.Error())
+		// 		logger.Errorf("", "Error getting workflow: %s", err.Error())
 		// 		continue
 		// 	}
 		// 	checkCron(currentTime, t.Cron, fmt.Sprintf("SCAFFOLD-CHECK_%s", t.Name), t.Check.RunNumber, c)
@@ -75,7 +78,7 @@ func checkTaskCrons() {
 	}
 }
 
-func checkCron(currentTime time.Time, crontab, name string, runNumber int, c *cascade.Cascade) {
+func checkCron(currentTime time.Time, crontab, name string, runNumber int, c *workflow.Workflow) {
 	second := currentTime.Second()
 	month := currentTime.Month()
 	day := currentTime.Day()
@@ -139,14 +142,28 @@ func checkCron(currentTime time.Time, crontab, name string, runNumber int, c *ca
 			logger.Errorf("", "Error getting cron run state: %s", err.Error())
 			return
 		}
+
+		runID := uuid.New().String()
+
 		m := msg.TriggerMsg{
-			Task:    name,
-			Cascade: c.Name,
-			Action:  constants.ACTION_TRIGGER,
-			Groups:  c.Groups,
-			Number:  runNumber + 1,
-			Context: s.Context,
+			Task:     name,
+			Workflow: c.Name,
+			Action:   constants.ACTION_TRIGGER,
+			Groups:   c.Groups,
+			Number:   runNumber + 1,
+			Context:  s.Context,
 		}
+		h := history.History{
+			RunID:    runID,
+			States:   make([]state.State, 0),
+			Workflow: c.Name,
+		}
+
+		if err := history.CreateHistory(&h); err != nil {
+			logger.Errorf("", "Error triggering cron run: %s", err.Error())
+			return
+		}
+
 		logger.Infof("", "Triggering run with message %v", m)
 		if err := rabbitmq.ManagerPublish(m); err != nil {
 			logger.Errorf("", "Error triggering cron run: %s", err.Error())

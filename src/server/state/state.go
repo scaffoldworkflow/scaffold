@@ -13,37 +13,38 @@ import (
 )
 
 type State struct {
-	Task     string                   `json:"task" bson:"task" yaml:"task"`
-	Cascade  string                   `json:"cascade" bson:"cascade" yaml:"cascade"`
-	Status   string                   `json:"status" bson:"status" yaml:"status"`
-	Started  string                   `json:"started" bson:"started" yaml:"started"`
-	Finished string                   `json:"finished" bson:"finished" yaml:"finished"`
-	Output   string                   `json:"output" bson:"output" yaml:"output"`
-	Display  []map[string]interface{} `json:"display" bson:"display" yaml:"display"`
-	Worker   string                   `json:"worker" bson:"worker" yaml:"worker"`
-	Number   int                      `json:"number" bson:"number" yaml:"number"`
-	Disabled bool                     `json:"disabled" bson:"disabled" yaml:"disabled"`
-	Killed   bool                     `json:"killed" bson:"killed" yaml:"killed"`
-	PID      int                      `json:"pid" bson:"pid" yaml:"pid"`
-	History  []string                 `json:"history" bson:"history" yaml:"history"`
-	Context  map[string]string        `json:"context" bson:"context" yaml:"context"`
+	Task           string                   `json:"task" bson:"task" yaml:"task"`
+	Workflow       string                   `json:"workflow" bson:"workflow" yaml:"workflow"`
+	Status         string                   `json:"status" bson:"status" yaml:"status"`
+	Started        string                   `json:"started" bson:"started" yaml:"started"`
+	Finished       string                   `json:"finished" bson:"finished" yaml:"finished"`
+	Output         string                   `json:"output" bson:"output" yaml:"output"`
+	OutputChecksum string                   `json:"output_checksum" bson:"output_checksum" yaml:"output_checksum"`
+	Display        []map[string]interface{} `json:"display" bson:"display" yaml:"display"`
+	Worker         string                   `json:"worker" bson:"worker" yaml:"worker"`
+	Number         int                      `json:"number" bson:"number" yaml:"number"`
+	Disabled       bool                     `json:"disabled" bson:"disabled" yaml:"disabled"`
+	Killed         bool                     `json:"killed" bson:"killed" yaml:"killed"`
+	PID            int                      `json:"pid" bson:"pid" yaml:"pid"`
+	History        []string                 `json:"history" bson:"history" yaml:"history"`
+	Context        map[string]string        `json:"context" bson:"context" yaml:"context"`
 }
 
 func CreateState(s *State) error {
-	ss, err := GetStateByNames(s.Cascade, s.Task)
+	ss, err := GetStateByNames(s.Workflow, s.Task)
 	if err != nil {
 		return fmt.Errorf("error getting states: %s", err.Error())
 	}
 	if ss != nil {
-		return fmt.Errorf("state already exists with names %s, %s", s.Cascade, s.Task)
+		return fmt.Errorf("state already exists with names %s, %s", s.Workflow, s.Task)
 	}
 
 	_, err = mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME].InsertOne(mongodb.Ctx, s)
 	return err
 }
 
-func DeleteStateByNames(cascade, task string) error {
-	filter := bson.M{"cascade": cascade, "task": task}
+func DeleteStateByNames(workflow, task string) error {
+	filter := bson.M{"workflow": workflow, "task": task}
 
 	collection := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME]
 	ctx := mongodb.Ctx
@@ -55,15 +56,15 @@ func DeleteStateByNames(cascade, task string) error {
 	}
 
 	if result.DeletedCount != 1 {
-		return fmt.Errorf("no state found with names %s, %s", cascade, task)
+		return fmt.Errorf("no state found with names %s, %s", workflow, task)
 	}
 
 	return nil
 
 }
 
-func DeleteStatesByCascade(cascade string) error {
-	filter := bson.M{"cascade": cascade}
+func DeleteStatesByWorkflow(workflow string) error {
+	filter := bson.M{"workflow": workflow}
 
 	collection := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME]
 	ctx := mongodb.Ctx
@@ -75,7 +76,7 @@ func DeleteStatesByCascade(cascade string) error {
 	}
 
 	if result.DeletedCount == 0 {
-		return fmt.Errorf("no states found with cascade %s", cascade)
+		return fmt.Errorf("no states found with workflow %s", workflow)
 	}
 
 	return nil
@@ -90,20 +91,20 @@ func GetAllStates() ([]*State, error) {
 	return states, err
 }
 
-func CopyStatesByNames(cascade, task1, task2 string) error {
-	filter1 := bson.M{"cascade": cascade, "task": task1}
+func CopyStatesByNames(workflow, task1, task2 string) error {
+	filter1 := bson.M{"workflow": workflow, "task": task1}
 	states, err := FilterStates(filter1)
 	if err != nil {
 		return err
 	}
 	if len(states) == 0 {
-		return fmt.Errorf("no state found with names %s, %s", cascade, task1)
+		return fmt.Errorf("no state found with names %s, %s", workflow, task1)
 	}
 	if len(states) > 1 {
-		return fmt.Errorf("multiple states found with names %s, %s", cascade, task1)
+		return fmt.Errorf("multiple states found with names %s, %s", workflow, task1)
 	}
 
-	filter2 := bson.M{"cascade": cascade, "task": task2}
+	filter2 := bson.M{"workflow": workflow, "task": task2}
 	collection := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME]
 	ctx := mongodb.Ctx
 	opts := options.Replace().SetUpsert(true)
@@ -113,8 +114,8 @@ func CopyStatesByNames(cascade, task1, task2 string) error {
 	return err
 }
 
-func GetStateByNames(cascade, task string) (*State, error) {
-	filter := bson.M{"cascade": cascade, "task": task}
+func GetStateByNames(workflow, task string) (*State, error) {
+	filter := bson.M{"workflow": workflow, "task": task}
 
 	states, err := FilterStates(filter)
 
@@ -127,14 +128,14 @@ func GetStateByNames(cascade, task string) (*State, error) {
 	}
 
 	if len(states) > 1 {
-		return nil, fmt.Errorf("multiple states found with names %s, %s", cascade, task)
+		return nil, fmt.Errorf("multiple states found with names %s, %s", workflow, task)
 	}
 
 	return states[0], nil
 }
 
-func GetStateByNamesNumber(cascade, task string, number int) (*State, error) {
-	filter := bson.M{"cascade": cascade, "task": task, "number": number}
+func GetStateByNamesAndRunID(workflow, task, runID string) (*State, error) {
+	filter := bson.M{"workflow": workflow, "task": task}
 
 	states, err := FilterStates(filter)
 
@@ -143,18 +144,38 @@ func GetStateByNamesNumber(cascade, task string, number int) (*State, error) {
 	}
 
 	if len(states) == 0 {
-		return nil, fmt.Errorf("no state found with names %s, %s", cascade, task)
+		return nil, nil
 	}
 
 	if len(states) > 1 {
-		return nil, fmt.Errorf("multiple states found with names %s, %s", cascade, task)
+		return nil, fmt.Errorf("multiple states found with names %s, %s", workflow, task)
 	}
 
 	return states[0], nil
 }
 
-func GetStatesByCascade(cascade string) ([]*State, error) {
-	filter := bson.M{"cascade": cascade}
+func GetStateByNamesNumber(workflow, task string, number int) (*State, error) {
+	filter := bson.M{"workflow": workflow, "task": task, "number": number}
+
+	states, err := FilterStates(filter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(states) == 0 {
+		return nil, fmt.Errorf("no state found with names %s, %s", workflow, task)
+	}
+
+	if len(states) > 1 {
+		return nil, fmt.Errorf("multiple states found with names %s, %s", workflow, task)
+	}
+
+	return states[0], nil
+}
+
+func GetStatesByWorkflow(workflow string) ([]*State, error) {
+	filter := bson.M{"workflow": workflow}
 
 	states, err := FilterStates(filter)
 
@@ -165,8 +186,11 @@ func GetStatesByCascade(cascade string) ([]*State, error) {
 	return states, nil
 }
 
-func UpdateStateByNames(cascade, task string, s *State) error {
-	filter := bson.M{"cascade": cascade, "task": task}
+func UpdateStateByNames(workflow, task string, s *State) error {
+	filter := bson.M{"workflow": workflow, "task": task}
+
+	// checksum := md5.Sum([]byte(s.Output))
+	// s.OutputChecksum = string(checksum[:])
 
 	collection := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME]
 	ctx := mongodb.Ctx
@@ -181,14 +205,14 @@ func UpdateStateByNames(cascade, task string, s *State) error {
 
 	if result.ModifiedCount != 1 {
 		return CreateState(s)
-		// return fmt.Errorf("no state found with names %s, %s", cascade, task)
+		// return fmt.Errorf("no state found with names %s, %s", workflow, task)
 	}
 
 	return nil
 }
 
-func UpdateStateKilledByNames(cascade, task string, killed bool) error {
-	filter := bson.M{"cascade": cascade, "task": task}
+func UpdateStateKilledByNames(workflow, task string, killed bool) error {
+	filter := bson.M{"workflow": workflow, "task": task}
 
 	collection := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME]
 	ctx := mongodb.Ctx
@@ -204,29 +228,35 @@ func UpdateStateKilledByNames(cascade, task string, killed bool) error {
 	}
 
 	if result.ModifiedCount != 1 {
-		// return fmt.Errorf("no state found with names %s, %s", cascade, task)
-		logger.Tracef("", "no state found with names %s, %s", cascade, task)
+		// return fmt.Errorf("no state found with names %s, %s", workflow, task)
+		logger.Tracef("", "no state found with names %s, %s", workflow, task)
 	}
 
 	return nil
 }
 
-func UpdateStateRunByNames(cascade, task string, s State) error {
+func UpdateStateRunByNames(workflow, task string, s State) error {
 
-	ss, err := GetStateByNames(cascade, task)
+	ss, err := GetStateByNames(workflow, task)
 	if err != nil {
 		return err
 	}
+
+	// checksum := md5.Sum([]byte(s.Output))
+	// s.OutputChecksum = string(checksum[:])
 
 	ss.Status = s.Status
 	ss.Started = s.Started
 	ss.Finished = s.Finished
 	ss.Output = s.Output
+	// ss.OutputChecksum = s.OutputChecksum
 	ss.Display = s.Display
 	ss.PID = s.PID
 
-	return UpdateStateByNames(cascade, task, ss)
-	// filter := bson.M{"cascade": cascade, "task": task}
+	logger.Tracef("", "Updating state by names")
+
+	return UpdateStateByNames(workflow, task, ss)
+	// filter := bson.M{"workflow": workflow, "task": task}
 
 	// collection := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME]
 	// ctx := mongodb.Ctx
@@ -247,30 +277,31 @@ func UpdateStateRunByNames(cascade, task string, s State) error {
 	// }
 
 	// if result.ModifiedCount != 1 {
-	// 	logger.Tracef("", "update state run by names %s/%s returned %d modified count", cascade, task, result.ModifiedCount)
+	// 	logger.Tracef("", "update state run by names %s/%s returned %d modified count", workflow, task, result.ModifiedCount)
 	// 	return CreateState(&s)
-	// 	// return fmt.Errorf("no state found with names %s, %s", cascade, task)
-	// 	// logger.Tracef("", "no state found with names %s, %s for update state run by names", cascade, task)
+	// 	// return fmt.Errorf("no state found with names %s, %s", workflow, task)
+	// 	// logger.Tracef("", "no state found with names %s, %s for update state run by names", workflow, task)
 	// }
 
 	// return nil
 }
 
-func ClearStateByNames(cascade, task string, runNumber int) error {
+func ClearStateByNames(workflow, task string, runNumber int) error {
 	s := &State{
-		Task:     task,
-		Cascade:  cascade,
-		Status:   constants.STATE_STATUS_NOT_STARTED,
-		Started:  "",
-		Finished: "",
-		Output:   "",
-		Number:   runNumber,
-		Worker:   "",
-		Display:  make([]map[string]interface{}, 0),
+		Task:           task,
+		Workflow:       workflow,
+		Status:         constants.STATE_STATUS_NOT_STARTED,
+		Started:        "",
+		Finished:       "",
+		Output:         "",
+		OutputChecksum: "",
+		Number:         runNumber,
+		Worker:         "",
+		Display:        make([]map[string]interface{}, 0),
 	}
 
-	if err := UpdateStateByNames(cascade, task, s); err != nil {
-		logger.Errorf("", "Cannot update state %s.%s: %s", cascade, task, err.Error())
+	if err := UpdateStateByNames(workflow, task, s); err != nil {
+		logger.Errorf("", "Cannot update state %s.%s: %s", workflow, task, err.Error())
 		return err
 	}
 
