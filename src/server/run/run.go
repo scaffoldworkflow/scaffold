@@ -156,16 +156,19 @@ func setupEnvLoad(rc *RunContext) (bool, error) {
 		}
 		logger.Warnf("", "Input value missing for %s", val)
 	}
-	for _, key := range rc.Run.Task.Load.Env {
-		contextVal, ok := rc.Run.Context[key]
-		var encoded string
-		if ok {
-			encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
-			envInput += fmt.Sprintf("%s;%s\n", key, encoded)
-			continue
-		}
-		logger.Warnf("", "ENV load value missing for %s", key)
+	// for _, key := range rc.Run.Task.Load.Env {
+	for key, val := range rc.Run.Context {
+		// contextVal, ok := rc.Run.Context[key]
+		// var encoded string
+		// if ok {
+		// encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
+		encoded := base64.StdEncoding.EncodeToString([]byte(val))
+		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
+		continue
+		// }
+		// logger.Warnf("", "ENV load value missing for %s", key)
 	}
+	// }
 	for key, val := range rc.Run.Task.Env {
 		encoded := base64.StdEncoding.EncodeToString([]byte(val))
 		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
