@@ -37,34 +37,34 @@ class DataStore:
 def delete_individual(name: str, base: str, auth: str, fail_on_error: bool=True) -> int:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.delete(f"{base}/api/v1/datastore/{name}", headers=headers, verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code
 
 def get_all(base: str, auth: str, fail_on_error: bool=True) -> tuple[int, any]:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.get(f"{base}/api/v1/datastore", headers=headers, verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code, response.json()
 
 def get_individual(name: str, base: str, auth: str, fail_on_error: bool=True) -> tuple[int, any]:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.get(f"{base}/api/v1/datastore/{name}", headers=headers, verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code, response.json()
 
 def create(data: DataStore, base: str, auth: str, fail_on_error: bool=True) -> int:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.post(f"{base}/api/v1/datastore", headers=headers, json=data, verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code
 
 def update(data: DataStore, base: str, auth: str, fail_on_error: bool=True) -> tuple[int, any]:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.put(f"{base}/api/v1/datastore/{data.name}", headers=headers, json=data, verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code, response.json()

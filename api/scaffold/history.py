@@ -4,7 +4,7 @@ import requests
 def get_individual(run_id: str, base: str, auth: str, fail_on_error: bool=True) -> tuple[int, any]:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.get(f"{base}/api/v1/history/{run_id}", headers=headers, verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code, response.json()
 

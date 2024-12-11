@@ -41,21 +41,21 @@ class Run:
 def kill(workflow: str, task: str, base: str, auth: str, fail_on_error: bool=True) -> int:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.delete(f"{base}/api/v1/run/{workflow}/{task}", headers=headers, verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code
 
 def status(run_id: str, base: str, auth: str, fail_on_error: bool=True) -> tuple[int, any]:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.get(f"{base}/api/v1/run/{run_id}", headers=headers, verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code, response.json()
 
 def create(data: Run, workflow: str, base: str, auth: str, fail_on_error: bool=True) -> int:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.post(f"{base}/api/v1/run/{workflow}/{data.task}", headers=headers, json=data.json(), verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code
 

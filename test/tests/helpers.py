@@ -1,4 +1,44 @@
 from typing import List, Dict, Union
+import scaffold.user, scaffold.workflow
+from config import *
+import uuid
+
+def user_setup() -> str:
+    test_id = str(uuid.uuid4())
+
+    u = scaffold.user.User()
+    u.loadf(USER_FIXTURE_PATH)
+    u.username = test_id
+
+    scaffold.user.create(u, SCAFFOLD_BASE, SCAFFOLD_AUTH)
+
+    return test_id
+
+def user_teardown(test_id: str) -> None:
+    scaffold.user.delete_individual(test_id, SCAFFOLD_BASE, SCAFFOLD_AUTH)
+
+def workflow_setup() -> str:
+    test_id = user_setup()
+
+    w = scaffold.workflow.Workflow()
+    w.loadf(WORKFLOW_FIXTURE_PATH)
+    w.name = test_id
+
+    scaffold.workflow.create(w, SCAFFOLD_BASE, SCAFFOLD_AUTH)
+
+    return test_id
+
+def workflow_teardown(test_id: str) -> None:
+    scaffold.workflow.delete_individual(test_id, SCAFFOLD_BASE, SCAFFOLD_AUTH)
+
+    user_teardown(test_id)
+
+# def setup_users():
+#     for username in ["bar", "foo", "read-only", "no-group"]:
+#         u = scaffold.user.User()
+#         u.loadf(f'../fixtures/{username}.json')
+#         status = scaffold.user.create(u, SCAFFOLD_BASE, SCAFFOLD_PRIMARY_KEY, fail_on_error=False)
+#         assert status < 400
 
 def get_letter_locations(contents: str, padding: str = " ") -> List[int]:
     """Gets the locations of starting letters of words in a string

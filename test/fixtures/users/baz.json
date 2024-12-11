@@ -1,0 +1,15 @@
+{
+    "username": "baz",
+    "password": "baz",
+    "given_name": "baz",
+    "family_name": "baz",
+    "email": "baz@baz.com",
+    "groups": [
+        "baz"
+    ],
+    "roles": [
+        "read",
+        "write",
+        "admin"
+    ]
+}

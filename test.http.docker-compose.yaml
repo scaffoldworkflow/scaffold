@@ -9,6 +9,7 @@ services:
     restart: always
     ports:
       - "127.0.0.1:2997:2997"
+      - "127.0.0.1:19999:19999"
     environment:
       SCAFFOLD_KILL_SERVER_PORT: "19999"
       SCAFFOLD_RUN_MODE: "test"
@@ -54,6 +55,7 @@ services:
     restart: always
     ports:
       - "127.0.0.1:2998:2998"
+      - "127.0.0.1:29999:29999"
     environment:
       SCAFFOLD_KILL_SERVER_PORT: "29999"
       SCAFFOLD_RUN_MODE: "test"

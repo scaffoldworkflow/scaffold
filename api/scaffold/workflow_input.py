@@ -37,35 +37,35 @@ class WorkflowInput:
 def delete_workflow(workflow: str, base: str, auth: str, fail_on_error: bool=True) -> int:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.delete(f"{base}/api/v1/input/{workflow}", headers=headers, verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code
 
 def delete_name(workflow: str, name: str, base: str, auth: str, fail_on_error: bool=True) -> int:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.delete(f"{base}/api/v1/input/{workflow}/{name}", headers=headers, verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code
 
 def all(base: str, auth: str, fail_on_error: bool=True) -> tuple[int, any]:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.get(f"{base}/api/v1/input", headers=headers, verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code, response.json()
 
 def get_workflow(workflow: str, base: str, auth: str, fail_on_error: bool=True) -> tuple[int, any]:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.get(f"{base}/api/v1/input/{workflow}", headers=headers, verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code, response.json()
 
 def get_name(workflow: str, name: str, base: str, auth: str, fail_on_error: bool=True) -> tuple[int, any]:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.get(f"{base}/api/v1/input/{workflow}/{name}", headers=headers, verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code, response.json()
 
@@ -74,7 +74,7 @@ def create(base: str, auth: str, fail_on_error: bool=True, data: WorkflowInput=N
         raise ValueError("No input passed in")
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.post(f"{base}/api/v1/input", headers=headers, json=data.json(), verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code
 
@@ -83,13 +83,13 @@ def update(workflow: str, name: str, base: str, auth: str, fail_on_error: bool=T
         raise ValueError("No input passed in")
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.put(f"{base}/api/v1/input/{workflow}/{name}", headers=headers, json=data.json(), verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code, response.json()
 
 def update_dependent_tasks(name: str, changed_inputs: list[str], base: str, auth: str, fail_on_error: bool=True) -> tuple[int, any]:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.post(f"{base}/api/v1/input/{name}/update", headers=headers, json=changed_inputs, verify=False)
-    if response.status_code < 400 and fail_on_error:
+    if response.status_code >= 400 and fail_on_error:
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code, response.json()
