@@ -61,6 +61,18 @@ func RevokeAPIToken(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
 }
 
+//	@summary					Ping manager
+//	@description				Ping manager to reset node age
+//	@tags						manager
+//	@tags						health
+//	@success					200
+//	@failure					500
+//	@failure					401
+//	@securityDefinitions.apiKey	token
+//	@in							header
+//	@name						Authorization
+//	@security					X-Scaffold-API
+//	@router						/health/ping/{name} [post]
 func Ping(c *gin.Context) {
 	name := c.Param("name")
 	auth.NodeLock.Lock()

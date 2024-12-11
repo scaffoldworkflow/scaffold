@@ -25,10 +25,10 @@ import (
 //	@description				Instruct a manager to kill a run
 //	@tags						manager
 //	@tags						run
-//	@success					200 {object} object
-//	@failure					500 {object} object
-//	@failure					401 {object} object
-//	@produce 					json
+//	@success					200	{object}	object
+//	@failure					500	{object}	object
+//	@failure					401	{object}	object
+//	@produce					json
 //	@securityDefinitions.apiKey	token
 //	@in							header
 //	@name						Authorization
@@ -37,31 +37,6 @@ import (
 func ManagerKillRun(ctx *gin.Context) {
 	cn := ctx.Param("workflow")
 	tn := ctx.Param("task")
-	// nn, err := strconv.Atoi(ctx.Param("number"))
-	// if err != nil {
-	// 	utils.Error(err, ctx, http.StatusInternalServerError)
-	// }
-
-	// logger.Debugf("", "Looking for %s/%s.%d", cn, tn, nn)
-	// s, err := state.GetStateByNamesNumber(cn, tn, nn)
-	// if err != nil {
-	// 	utils.Error(err, ctx, http.StatusInternalServerError)
-	// }
-
-	// nd := auth.Nodes[s.Worker]
-
-	// httpClient := http.Client{}
-	// requestURL := fmt.Sprintf("%s://%s:%d/api/v1/kill/%s/%s/%d", nd.Protocol, nd.Host, nd.Port, cn, tn, nn)
-	// req, _ := http.NewRequest("DELETE", requestURL, nil)
-	// req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", config.Config.Node.PrimaryKey))
-	// resp, err := httpClient.Do(req)
-	// if err != nil {
-	// 	utils.Error(err, ctx, http.StatusInternalServerError)
-	// }
-	// if resp.StatusCode >= 400 {
-	// 	utils.Error(fmt.Errorf("received kill status code %d", resp.StatusCode), ctx, resp.StatusCode)
-	// 	return
-	// }
 
 	logger.Infof("", "Triggering run kill for %s.%s", cn, tn)
 	manager.DoKill(cn, tn)
@@ -121,9 +96,9 @@ func KillRun(ctx *gin.Context) {
 //	@description				Create a run from a workflow and task
 //	@tags						manager
 //	@tags						run
-//	@success					201			{object}	object
-//	@failure					500			{object}	object
-//	@failure					401			{object}	object
+//	@success					200	{object}	object
+//	@failure					500	{object}	object
+//	@failure					401	{object}	object
 //	@securityDefinitions.apiKey	token
 //	@in							header
 //	@name						Authorization
@@ -180,8 +155,64 @@ func CreateRun(ctx *gin.Context) {
 	}
 
 	logger.Infof("", "Creating run with message %v", m)
-	// bulwark.QueuePush(bulwark.WorkerClient, m)
 	rabbitmq.ManagerPublish(m)
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
+}
+
+//	@summary					Get run status
+//	@description				Get status of a run by ID
+//	@tags						manager
+//	@tags						run
+//	@success					200	{object}	object
+//	@failure					500	{object}	object
+//	@failure					401	{object}	object
+//	@securityDefinitions.apiKey	token
+//	@in							header
+//	@name						Authorization
+//	@security					X-Scaffold-API
+//	@router						/api/v1/run/{run_id} [get]
+func GetRunStatus(ctx *gin.Context) {
+	runID := ctx.Param("runID")
+	h, err := history.GetHistoryByRunID(runID)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+	running := false
+	errored := false
+	waiting := false
+	killed := false
+	success := false
+
+	s := h.States[len(h.States)-1]
+	t := s.Task
+
+	ss, err := state.GetStateByNames(h.Workflow, t)
+	if err != nil {
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	switch ss.Status {
+	case constants.STATE_STATUS_RUNNING:
+		running = true
+	case constants.STATE_STATUS_ERROR:
+		errored = true
+	case constants.STATE_STATUS_WAITING, constants.STATE_STATUS_NOT_STARTED:
+		waiting = true
+	case constants.STATE_STATUS_KILLED:
+		killed = true
+	case constants.STATE_STATUS_SUCCESS:
+		success = true
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"running": running,
+		"errored": errored,
+		"waiting": waiting,
+		"killed":  killed,
+		"success": success,
+		"task":    t,
+	})
 }

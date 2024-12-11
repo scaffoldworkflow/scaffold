@@ -25,221 +25,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/workflow": {
-            "get": {
-                "security": [
-                    {
-                        "X-Scaffold-API": []
-                    }
-                ],
-                "description": "Get all workflows",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "manager",
-                    "workflow"
-                ],
-                "summary": "Get all workflows",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/workflow.Workflow"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "X-Scaffold-API": []
-                    }
-                ],
-                "description": "Create a workflow from a JSON object",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "manager",
-                    "workflow"
-                ],
-                "summary": "Create a workflow",
-                "parameters": [
-                    {
-                        "description": "Workflow Data",
-                        "name": "workflow",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/workflow.Workflow"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/workflow/{workflow_name}": {
-            "get": {
-                "security": [
-                    {
-                        "X-Scaffold-API": []
-                    }
-                ],
-                "description": "Get a workflow by its name",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "manager",
-                    "workflow"
-                ],
-                "summary": "Get a workflow",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/workflow.Workflow"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "X-Scaffold-API": []
-                    }
-                ],
-                "description": "Update a workflow from a JSON object",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "manager",
-                    "workflow"
-                ],
-                "summary": "Update a workflow",
-                "parameters": [
-                    {
-                        "description": "Workflow Data",
-                        "name": "workflow",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/workflow.Workflow"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "X-Scaffold-API": []
-                    }
-                ],
-                "description": "Delete a workflow by its name",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "manager",
-                    "workflow"
-                ],
-                "summary": "Delete a workflow",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/datastore": {
             "get": {
                 "security": [
@@ -496,6 +281,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/file/{datastore_name}": {
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Upload a file to a workflow",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "file"
+                ],
+                "summary": "Upload a file",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/api/v1/file/{workflow_name}": {
             "get": {
                 "security": [
@@ -607,40 +430,40 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/file/{datastore_name}": {
-            "post": {
+        "/api/v1/history/{run_id}": {
+            "get": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Upload a file to a workflow",
-                "consumes": [
-                    "multipart/form-data"
-                ],
+                "description": "Get a run history by a run ID",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "manager",
-                    "file"
+                    "history"
                 ],
-                "summary": "Upload a file",
+                "summary": "Get a history",
                 "responses": {
                     "200": {
-                        "description": "OK"
-                    },
-                    "400": {
-                        "description": "Bad Request"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/history.History"
+                        }
                     },
                     "401": {
-                        "description": "Unauthorized"
-                    },
-                    "404": {
-                        "description": "Not Found"
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
                     },
                     "500": {
-                        "description": "Internal Server Error"
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
                     }
                 }
             }
@@ -717,6 +540,44 @@ const docTemplate = `{
                 "responses": {
                     "201": {
                         "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/input/{input_name}": {
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Delete a input by its name and its workflow",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "input"
+                ],
+                "summary": "Delete a input",
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "object"
                         }
@@ -939,44 +800,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/input/{input_name}": {
-            "delete": {
-                "security": [
-                    {
-                        "X-Scaffold-API": []
-                    }
-                ],
-                "description": "Delete a input by its name and its workflow",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "manager",
-                    "input"
-                ],
-                "summary": "Delete a input",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/kill/{workflow_name}/{task_name}": {
             "delete": {
                 "security": [
@@ -1003,29 +826,24 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/run/containers": {
+        "/api/v1/run/{run_id}": {
             "get": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "List all containers",
-                "produces": [
-                    "application/json"
-                ],
+                "description": "Get status of a run by ID",
                 "tags": [
-                    "worker"
+                    "manager",
+                    "run"
                 ],
-                "summary": "Get all containers",
+                "summary": "Get run status",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "type": "object"
                         }
                     },
                     "401": {
@@ -1057,8 +875,8 @@ const docTemplate = `{
                 ],
                 "summary": "Create a run",
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "object"
                         }
@@ -1499,6 +1317,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/task/{task_name}": {
+            "delete": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Delete a task by its name and its workflow",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "task"
+                ],
+                "summary": "Delete a task",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/task/{workflow_name}": {
             "get": {
                 "security": [
@@ -1680,44 +1536,6 @@ const docTemplate = `{
                 "responses": {
                     "201": {
                         "description": "Created",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/task/{task_name}": {
-            "delete": {
-                "security": [
-                    {
-                        "X-Scaffold-API": []
-                    }
-                ],
-                "description": "Delete a task by its name and its workflow",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "manager",
-                    "task"
-                ],
-                "summary": "Delete a task",
-                "responses": {
-                    "200": {
-                        "description": "OK",
                         "schema": {
                             "type": "object"
                         }
@@ -1957,97 +1775,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/webhook": {
-            "get": {
-                "security": [
-                    {
-                        "X-Scaffold-API": []
-                    }
-                ],
-                "description": "Get all webhooks",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "manager",
-                    "webhook"
-                ],
-                "summary": "Get all webhooks",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/state.State"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "X-Scaffold-API": []
-                    }
-                ],
-                "description": "Create a webhook from a JSON object",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "manager",
-                    "webhook"
-                ],
-                "summary": "Create a webhook",
-                "parameters": [
-                    {
-                        "description": "Webhook Data",
-                        "name": "webhook",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/webhook.Webhook"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/webhook/{workflow_name}/{webhook_id}": {
             "post": {
                 "security": [
@@ -2100,27 +1827,118 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/webhook/{webhook_id}": {
+        "/api/v1/workflow": {
             "get": {
                 "security": [
                     {
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Get a webhook by its ID",
+                "description": "Get all workflows",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "manager",
-                    "webhook"
+                    "workflow"
                 ],
-                "summary": "Get a webhook",
+                "summary": "Get all workflows",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/webhook.Webhook"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/workflow.Workflow"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Create a workflow from a JSON object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "workflow"
+                ],
+                "summary": "Create a workflow",
+                "parameters": [
+                    {
+                        "description": "Workflow Data",
+                        "name": "workflow",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/workflow.Workflow"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/workflow/{workflow_name}": {
+            "get": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Get a workflow by its name",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "manager",
+                    "workflow"
+                ],
+                "summary": "Get a workflow",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/workflow.Workflow"
                         }
                     },
                     "401": {
@@ -2143,7 +1961,7 @@ const docTemplate = `{
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Update a webhook from a JSON object",
+                "description": "Update a workflow from a JSON object",
                 "consumes": [
                     "application/json"
                 ],
@@ -2152,17 +1970,17 @@ const docTemplate = `{
                 ],
                 "tags": [
                     "manager",
-                    "webhook"
+                    "workflow"
                 ],
-                "summary": "Update a webhook",
+                "summary": "Update a workflow",
                 "parameters": [
                     {
-                        "description": "State Data",
-                        "name": "state",
+                        "description": "Workflow Data",
+                        "name": "workflow",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/state.State"
+                            "$ref": "#/definitions/workflow.Workflow"
                         }
                     }
                 ],
@@ -2193,15 +2011,15 @@ const docTemplate = `{
                         "X-Scaffold-API": []
                     }
                 ],
-                "description": "Delete a webhook by its ID",
+                "description": "Delete a workflow by its name",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "manager",
-                    "webhook"
+                    "workflow"
                 ],
-                "summary": "Delete a webhook",
+                "summary": "Delete a workflow",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2341,6 +2159,32 @@ const docTemplate = `{
                 }
             }
         },
+        "/health/ping/{name}": {
+            "post": {
+                "security": [
+                    {
+                        "X-Scaffold-API": []
+                    }
+                ],
+                "description": "Ping manager to reset node age",
+                "tags": [
+                    "manager",
+                    "health"
+                ],
+                "summary": "Ping manager",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/health/ready": {
             "get": {
                 "description": "Get node readiness",
@@ -2359,74 +2203,9 @@ const docTemplate = `{
                     }
                 }
             }
-        },
-        "/health/status": {
-            "get": {
-                "description": "Get status from all nodes",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "manager",
-                    "health"
-                ],
-                "summary": "Get status of all nodes",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
-        "workflow.Workflow": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "type": "string"
-                },
-                "groups": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "inputs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/input.Input"
-                    }
-                },
-                "links": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "tasks": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/task.Task"
-                    }
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "version": {
-                    "type": "string"
-                }
-            }
-        },
         "datastore.DataStore": {
             "type": "object",
             "properties": {
@@ -2456,13 +2235,36 @@ const docTemplate = `{
         "filestore.ObjectMetadata": {
             "type": "object",
             "properties": {
-                "workflow": {
-                    "type": "string"
-                },
                 "modified": {
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "workflow": {
+                    "type": "string"
+                }
+            }
+        },
+        "history.History": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "run_id": {
+                    "type": "string"
+                },
+                "states": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/state.State"
+                    }
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "workflow": {
                     "type": "string"
                 }
             }
@@ -2470,9 +2272,6 @@ const docTemplate = `{
         "input.Input": {
             "type": "object",
             "properties": {
-                "workflow": {
-                    "type": "string"
-                },
                 "default": {
                     "type": "string"
                 },
@@ -2484,14 +2283,20 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "string"
+                },
+                "workflow": {
+                    "type": "string"
                 }
             }
         },
         "state.State": {
             "type": "object",
             "properties": {
-                "workflow": {
-                    "type": "string"
+                "context": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "disabled": {
                     "type": "boolean"
@@ -2521,6 +2326,9 @@ const docTemplate = `{
                 "output": {
                     "type": "string"
                 },
+                "output_checksum": {
+                    "type": "string"
+                },
                 "pid": {
                     "type": "integer"
                 },
@@ -2535,6 +2343,9 @@ const docTemplate = `{
                 },
                 "worker": {
                     "type": "string"
+                },
+                "workflow": {
+                    "type": "string"
                 }
             }
         },
@@ -2543,9 +2354,6 @@ const docTemplate = `{
             "properties": {
                 "auto_execute": {
                     "type": "boolean"
-                },
-                "workflow": {
-                    "type": "string"
                 },
                 "container_login_command": {
                     "description": "Check                 TaskCheck         ` + "`" + `json:\"check\" bson:\"check\" yaml:\"check\"` + "`" + `",
@@ -2597,6 +2405,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/task.TaskLoadStore"
                 },
                 "updated": {
+                    "type": "string"
+                },
+                "workflow": {
                     "type": "string"
                 }
             }
@@ -2720,16 +2531,43 @@ const docTemplate = `{
                 }
             }
         },
-        "webhook.Webhook": {
+        "workflow.Workflow": {
             "type": "object",
             "properties": {
-                "workflow": {
+                "created": {
                     "type": "string"
                 },
-                "entrypoint": {
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "inputs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/input.Input"
+                    }
+                },
+                "links": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
                     "type": "string"
                 },
-                "id": {
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/task.Task"
+                    }
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "version": {
                     "type": "string"
                 }
             }

@@ -1,31 +1,4 @@
 definitions:
-  workflow.Workflow:
-    properties:
-      created:
-        type: string
-      groups:
-        items:
-          type: string
-        type: array
-      inputs:
-        items:
-          $ref: '#/definitions/input.Input'
-        type: array
-      links:
-        additionalProperties:
-          type: string
-        type: object
-      name:
-        type: string
-      tasks:
-        items:
-          $ref: '#/definitions/task.Task'
-        type: array
-      updated:
-        type: string
-      version:
-        type: string
-    type: object
   datastore.DataStore:
     properties:
       created:
@@ -45,17 +18,30 @@ definitions:
     type: object
   filestore.ObjectMetadata:
     properties:
-      workflow:
-        type: string
       modified:
         type: string
       name:
         type: string
+      workflow:
+        type: string
+    type: object
+  history.History:
+    properties:
+      created:
+        type: string
+      run_id:
+        type: string
+      states:
+        items:
+          $ref: '#/definitions/state.State'
+        type: array
+      updated:
+        type: string
+      workflow:
+        type: string
     type: object
   input.Input:
     properties:
-      workflow:
-        type: string
       default:
         type: string
       description:
@@ -64,11 +50,15 @@ definitions:
         type: string
       type:
         type: string
+      workflow:
+        type: string
     type: object
   state.State:
     properties:
-      workflow:
-        type: string
+      context:
+        additionalProperties:
+          type: string
+        type: object
       disabled:
         type: boolean
       display:
@@ -88,6 +78,8 @@ definitions:
         type: integer
       output:
         type: string
+      output_checksum:
+        type: string
       pid:
         type: integer
       started:
@@ -98,13 +90,13 @@ definitions:
         type: string
       worker:
         type: string
+      workflow:
+        type: string
     type: object
   task.Task:
     properties:
       auto_execute:
         type: boolean
-      workflow:
-        type: string
       container_login_command:
         description: Check                 TaskCheck         `json:"check" bson:"check"
           yaml:"check"`
@@ -140,6 +132,8 @@ definitions:
       store:
         $ref: '#/definitions/task.TaskLoadStore'
       updated:
+        type: string
+      workflow:
         type: string
     type: object
   task.TaskDependsOn:
@@ -220,13 +214,31 @@ definitions:
       username:
         type: string
     type: object
-  webhook.Webhook:
+  workflow.Workflow:
     properties:
-      workflow:
+      created:
         type: string
-      entrypoint:
+      groups:
+        items:
+          type: string
+        type: array
+      inputs:
+        items:
+          $ref: '#/definitions/input.Input'
+        type: array
+      links:
+        additionalProperties:
+          type: string
+        type: object
+      name:
         type: string
-      id:
+      tasks:
+        items:
+          $ref: '#/definitions/task.Task'
+        type: array
+      updated:
+        type: string
+      version:
         type: string
     type: object
 info:
@@ -242,143 +254,6 @@ info:
   title: Scaffold Swagger API
   version: "2.0"
 paths:
-  /api/v1/workflow:
-    get:
-      description: Get all workflows
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/workflow.Workflow'
-            type: array
-        "401":
-          description: Unauthorized
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            type: object
-      security:
-      - X-Scaffold-API: []
-      summary: Get all workflows
-      tags:
-      - manager
-      - workflow
-    post:
-      consumes:
-      - application/json
-      description: Create a workflow from a JSON object
-      parameters:
-      - description: Workflow Data
-        in: body
-        name: workflow
-        required: true
-        schema:
-          $ref: '#/definitions/workflow.Workflow'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            type: object
-      security:
-      - X-Scaffold-API: []
-      summary: Create a workflow
-      tags:
-      - manager
-      - workflow
-  /api/v1/workflow/{workflow_name}:
-    delete:
-      description: Delete a workflow by its name
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            type: object
-      security:
-      - X-Scaffold-API: []
-      summary: Delete a workflow
-      tags:
-      - manager
-      - workflow
-    get:
-      description: Get a workflow by its name
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/workflow.Workflow'
-        "401":
-          description: Unauthorized
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            type: object
-      security:
-      - X-Scaffold-API: []
-      summary: Get a workflow
-      tags:
-      - manager
-      - workflow
-    put:
-      consumes:
-      - application/json
-      description: Update a workflow from a JSON object
-      parameters:
-      - description: Workflow Data
-        in: body
-        name: workflow
-        required: true
-        schema:
-          $ref: '#/definitions/workflow.Workflow'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            type: object
-      security:
-      - X-Scaffold-API: []
-      summary: Update a workflow
-      tags:
-      - manager
-      - workflow
   /api/v1/datastore:
     get:
       description: Get all datastores
@@ -542,6 +417,30 @@ paths:
       tags:
       - manager
       - file
+  /api/v1/file/{datastore_name}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a file to a workflow
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - X-Scaffold-API: []
+      summary: Upload a file
+      tags:
+      - manager
+      - file
   /api/v1/file/{workflow_name}:
     get:
       description: Get files by workflow
@@ -612,30 +511,30 @@ paths:
       tags:
       - manager
       - file
-  /api/v1/file/{datastore_name}:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Upload a file to a workflow
+  /api/v1/history/{run_id}:
+    get:
+      description: Get a run history by a run ID
       produces:
       - application/json
       responses:
         "200":
           description: OK
-        "400":
-          description: Bad Request
+          schema:
+            $ref: '#/definitions/history.History'
         "401":
           description: Unauthorized
-        "404":
-          description: Not Found
+          schema:
+            type: object
         "500":
           description: Internal Server Error
+          schema:
+            type: object
       security:
       - X-Scaffold-API: []
-      summary: Upload a file
+      summary: Get a history
       tags:
       - manager
-      - file
+      - history
   /api/v1/input:
     get:
       description: Get all inputs
@@ -691,6 +590,30 @@ paths:
       security:
       - X-Scaffold-API: []
       summary: Create a input
+      tags:
+      - manager
+      - input
+  /api/v1/input/{input_name}:
+    delete:
+      description: Delete a input by its name and its workflow
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Delete a input
       tags:
       - manager
       - input
@@ -823,30 +746,6 @@ paths:
       tags:
       - manager
       - input
-  /api/v1/input/{input_name}:
-    delete:
-      description: Delete a input by its name and its workflow
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            type: object
-      security:
-      - X-Scaffold-API: []
-      summary: Delete a input
-      tags:
-      - manager
-      - input
   /api/v1/kill/{workflow_name}/{task_name}:
     delete:
       description: Kill a run on a worker
@@ -863,12 +762,34 @@ paths:
       tags:
       - worker
       - run
+  /api/v1/run/{run_id}:
+    get:
+      description: Get status of a run by ID
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Get run status
+      tags:
+      - manager
+      - run
   /api/v1/run/{workflow_name}/{task_name}:
     post:
       description: Create a run from a workflow and task
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
             type: object
         "401":
@@ -909,31 +830,6 @@ paths:
       tags:
       - manager
       - run
-  /api/v1/run/containers:
-    get:
-      description: List all containers
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              type: string
-            type: array
-        "401":
-          description: Unauthorized
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            type: object
-      security:
-      - X-Scaffold-API: []
-      summary: Get all containers
-      tags:
-      - worker
   /api/v1/state:
     get:
       description: Get all states
@@ -1178,6 +1074,30 @@ paths:
       tags:
       - manager
       - task
+  /api/v1/task/{task_name}:
+    delete:
+      description: Delete a task by its name and its workflow
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Delete a task
+      tags:
+      - manager
+      - task
   /api/v1/task/{workflow_name}:
     delete:
       description: Delete tasks by their workflow
@@ -1302,30 +1222,6 @@ paths:
       security:
       - X-Scaffold-API: []
       summary: Update a task
-      tags:
-      - manager
-      - task
-  /api/v1/task/{task_name}:
-    delete:
-      description: Delete a task by its name and its workflow
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            type: object
-      security:
-      - X-Scaffold-API: []
-      summary: Delete a task
       tags:
       - manager
       - task
@@ -1469,64 +1365,6 @@ paths:
       tags:
       - manager
       - user
-  /api/v1/webhook:
-    get:
-      description: Get all webhooks
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/state.State'
-            type: array
-        "401":
-          description: Unauthorized
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            type: object
-      security:
-      - X-Scaffold-API: []
-      summary: Get all webhooks
-      tags:
-      - manager
-      - webhook
-    post:
-      consumes:
-      - application/json
-      description: Create a webhook from a JSON object
-      parameters:
-      - description: Webhook Data
-        in: body
-        name: webhook
-        required: true
-        schema:
-          $ref: '#/definitions/webhook.Webhook'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            type: object
-      security:
-      - X-Scaffold-API: []
-      summary: Create a webhook
-      tags:
-      - manager
-      - webhook
   /api/v1/webhook/{workflow_name}/{webhook_id}:
     post:
       consumes:
@@ -1560,39 +1398,18 @@ paths:
       tags:
       - manager
       - webhook
-  /api/v1/webhook/{webhook_id}:
-    delete:
-      description: Delete a webhook by its ID
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            type: object
-      security:
-      - X-Scaffold-API: []
-      summary: Delete a webhook
-      tags:
-      - manager
-      - webhook
+  /api/v1/workflow:
     get:
-      description: Get a webhook by its ID
+      description: Get all workflows
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/webhook.Webhook'
+            items:
+              $ref: '#/definitions/workflow.Workflow'
+            type: array
         "401":
           description: Unauthorized
           schema:
@@ -1603,21 +1420,21 @@ paths:
             type: object
       security:
       - X-Scaffold-API: []
-      summary: Get a webhook
+      summary: Get all workflows
       tags:
       - manager
-      - webhook
-    put:
+      - workflow
+    post:
       consumes:
       - application/json
-      description: Update a webhook from a JSON object
+      description: Create a workflow from a JSON object
       parameters:
-      - description: State Data
+      - description: Workflow Data
         in: body
-        name: state
+        name: workflow
         required: true
         schema:
-          $ref: '#/definitions/state.State'
+          $ref: '#/definitions/workflow.Workflow'
       produces:
       - application/json
       responses:
@@ -1635,10 +1452,89 @@ paths:
             type: object
       security:
       - X-Scaffold-API: []
-      summary: Update a webhook
+      summary: Create a workflow
       tags:
       - manager
-      - webhook
+      - workflow
+  /api/v1/workflow/{workflow_name}:
+    delete:
+      description: Delete a workflow by its name
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Delete a workflow
+      tags:
+      - manager
+      - workflow
+    get:
+      description: Get a workflow by its name
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/workflow.Workflow'
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Get a workflow
+      tags:
+      - manager
+      - workflow
+    put:
+      consumes:
+      - application/json
+      description: Update a workflow from a JSON object
+      parameters:
+      - description: Workflow Data
+        in: body
+        name: workflow
+        required: true
+        schema:
+          $ref: '#/definitions/workflow.Workflow'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - X-Scaffold-API: []
+      summary: Update a workflow
+      tags:
+      - manager
+      - workflow
   /auth/token/{username}/{token_name}:
     delete:
       description: Revoke an API token for a user
@@ -1715,6 +1611,22 @@ paths:
       - manager
       - worker
       - health
+  /health/ping/{name}:
+    post:
+      description: Ping manager to reset node age
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      security:
+      - X-Scaffold-API: []
+      summary: Ping manager
+      tags:
+      - manager
+      - health
   /health/ready:
     get:
       description: Get node readiness
@@ -1727,21 +1639,5 @@ paths:
       tags:
       - manager
       - worker
-      - health
-  /health/status:
-    get:
-      consumes:
-      - application/json
-      description: Get status from all nodes
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-      summary: Get status of all nodes
-      tags:
-      - manager
       - health
 swagger: "2.0"

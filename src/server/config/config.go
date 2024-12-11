@@ -47,6 +47,8 @@ type ConfigObject struct {
 	PingDownThreshold        int             `json:"ping_down_threshold" env:"PING_DOWN_THRESHOLD"`
 	CheckInterval            int             `json:"check_interval" env:"CHECK_INTERVAL"`
 	RestartPeriod            int             `json:"restart_period" env:"RESTART_PERIOD"`
+	RunPruneCron             string          `json:"run_prune_cron" env:"RUN_PRUNE_CRON"`
+	RunPruneDuration         int             `json:"run_prune_duration" env:"RUN_PRUNE_DURATION"`
 }
 
 type FileStoreObject struct {
@@ -93,12 +95,15 @@ type NodeObject struct {
 
 var Config ConfigObject
 
+// Load configuration from either a local JSON file or via ENV variables
+// ENV variables will override settings in the JSON file
 func LoadConfig() {
 	configPath := os.Getenv(ENV_PREFIX + "CONFIG_PATH")
 	if configPath == "" {
 		configPath = DEFAULT_CONFIG_PATH
 	}
 
+	// Default configuration
 	Config = ConfigObject{
 		Host:              "",
 		Port:              -1,
@@ -152,9 +157,12 @@ func LoadConfig() {
 		PingUnknownThreshold:     6,
 		PingDownThreshold:        9,
 		CheckInterval:            2000,
-		RestartPeriod:            86400, // 24 hours
+		RestartPeriod:            86400,         // 24 hours
+		RunPruneCron:             "0 0 * * * *", // every day at midnight
+		RunPruneDuration:         24,            // 24 hour run lifetime
 	}
 
+	// Load JSON if exists
 	jsonFile, err := os.Open(configPath)
 	if err == nil {
 		log.Printf("Successfully Opened %v", configPath)
@@ -167,6 +175,8 @@ func LoadConfig() {
 	v := reflect.ValueOf(Config)
 	t := reflect.TypeOf(Config)
 
+	// Go through config object fields and check for ENV variable existence/populate
+	//   configuration with the present values
 	for i := 0; i < v.NumField(); i++ {
 		field, found := t.FieldByName(v.Type().Field(i).Name)
 		if !found {
@@ -235,12 +245,12 @@ func LoadConfig() {
 		}
 	}
 
-	// defer the closing of our jsonFile so that we can parse it later on
 	defer jsonFile.Close()
 
 	breakConfigFields()
 }
 
+// get object field by name
 func getAttr(obj interface{}, fieldName string) reflect.Value {
 	pointToStruct := reflect.ValueOf(obj) // addressable
 	curStruct := pointToStruct.Elem()
@@ -254,6 +264,7 @@ func getAttr(obj interface{}, fieldName string) reflect.Value {
 	return curField
 }
 
+// Break the DB config and base URL into separate fields for ease of use later
 func breakConfigFields() {
 	baseURL, err := url.Parse(Config.BaseURL)
 	if err != nil {
@@ -274,8 +285,15 @@ func breakConfigFields() {
 	Config.Protocol = baseProtocol
 
 	mongoURL, err := url.Parse(Config.DBConnectionString)
+	if err != nil {
+		panic(err)
+	}
 
 	mongoHost, mongoPortString, err := net.SplitHostPort(baseURL.Host)
+	if err != nil {
+		panic(err)
+	}
+
 	mongoPort, err := strconv.Atoi(mongoPortString)
 	if err != nil {
 		panic(err)

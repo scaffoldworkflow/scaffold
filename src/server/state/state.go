@@ -36,7 +36,7 @@ func CreateState(s *State) error {
 		return fmt.Errorf("error getting states: %s", err.Error())
 	}
 	if ss != nil {
-		return fmt.Errorf("state already exists with names %s, %s", s.Workflow, s.Task)
+		return nil
 	}
 
 	_, err = mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME].InsertOne(mongodb.Ctx, s)
@@ -189,9 +189,6 @@ func GetStatesByWorkflow(workflow string) ([]*State, error) {
 func UpdateStateByNames(workflow, task string, s *State) error {
 	filter := bson.M{"workflow": workflow, "task": task}
 
-	// checksum := md5.Sum([]byte(s.Output))
-	// s.OutputChecksum = string(checksum[:])
-
 	collection := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME]
 	ctx := mongodb.Ctx
 
@@ -203,9 +200,8 @@ func UpdateStateByNames(workflow, task string, s *State) error {
 		return err
 	}
 
-	if result.ModifiedCount != 1 {
+	if result.ModifiedCount == 0 {
 		return CreateState(s)
-		// return fmt.Errorf("no state found with names %s, %s", workflow, task)
 	}
 
 	return nil
@@ -228,7 +224,6 @@ func UpdateStateKilledByNames(workflow, task string, killed bool) error {
 	}
 
 	if result.ModifiedCount != 1 {
-		// return fmt.Errorf("no state found with names %s, %s", workflow, task)
 		logger.Tracef("", "no state found with names %s, %s", workflow, task)
 	}
 
@@ -256,34 +251,6 @@ func UpdateStateRunByNames(workflow, task string, s State) error {
 	logger.Tracef("", "Updating state by names")
 
 	return UpdateStateByNames(workflow, task, ss)
-	// filter := bson.M{"workflow": workflow, "task": task}
-
-	// collection := mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME]
-	// ctx := mongodb.Ctx
-
-	// update := bson.D{
-	// 	{"$set", bson.D{{"status", s.Status}}},
-	// 	{"$set", bson.D{{"started", s.Started}}},
-	// 	{"$set", bson.D{{"finished", s.Finished}}},
-	// 	{"$set", bson.D{{"output", s.Output}}},
-	// 	{"$set", bson.D{{"display", s.Display}}},
-	// 	{"$set", bson.D{{"pid", s.PID}}},
-	// }
-
-	// result, err := collection.UpdateOne(ctx, filter, update)
-
-	// if err != nil {
-	// 	return err
-	// }
-
-	// if result.ModifiedCount != 1 {
-	// 	logger.Tracef("", "update state run by names %s/%s returned %d modified count", workflow, task, result.ModifiedCount)
-	// 	return CreateState(&s)
-	// 	// return fmt.Errorf("no state found with names %s, %s", workflow, task)
-	// 	// logger.Tracef("", "no state found with names %s, %s for update state run by names", workflow, task)
-	// }
-
-	// return nil
 }
 
 func ClearStateByNames(workflow, task string, runNumber int) error {

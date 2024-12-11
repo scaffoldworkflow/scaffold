@@ -2,6 +2,7 @@ package history
 
 import (
 	"fmt"
+	"scaffold/server/config"
 	"scaffold/server/constants"
 	"scaffold/server/state"
 	"time"
@@ -20,6 +21,27 @@ type History struct {
 	Workflow string        `json:"workflow" bson:"workflow" yaml:"workflow"`
 	Created  string        `json:"created" bson:"created" yaml:"created"`
 	Updated  string        `json:"updated" bson:"updated" yaml:"updated"`
+}
+
+func PruneHistories() {
+	now := time.Now()
+	histories, err := GetAllHistories()
+	if err != nil {
+		logger.Errorf("", "Cannot get histories: %s", err.Error())
+		return
+	}
+	for _, h := range histories {
+		t, err := time.Parse(h.Updated, "2006-01-02 15:04:05")
+		if err != nil {
+			logger.Errorf("", "Cannot parse history updated timestamp of %s: %s", h.Updated, err.Error())
+		}
+		diff := now.Sub(t)
+		if diff.Hours() > float64(config.Config.RunPruneDuration) {
+			if err := DeleteHistoryByRunID(h.RunID); err != nil {
+				logger.Errorf("", "Cannot delete history with run ID %s: %s", h.RunID, err.Error())
+			}
+		}
+	}
 }
 
 func AddStateToHistory(runID string, s state.State) error {

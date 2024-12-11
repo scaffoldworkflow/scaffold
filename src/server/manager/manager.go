@@ -223,7 +223,6 @@ func stateChange(cn, tn, status string, context map[string]string, runID string)
 					return err
 				}
 				if s.Status != constants.STATE_STATUS_ERROR && s.Status != constants.STATE_STATUS_SUCCESS {
-					// return nil
 					continue
 				}
 			}
@@ -242,8 +241,10 @@ func stateChange(cn, tn, status string, context map[string]string, runID string)
 				if err != nil {
 					return err
 				}
+				if s == nil {
+					continue
+				}
 				if s.Status != constants.STATE_STATUS_SUCCESS {
-					// return nil
 					continue
 				}
 			}
@@ -256,31 +257,49 @@ func stateChange(cn, tn, status string, context map[string]string, runID string)
 	case constants.STATE_STATUS_ERROR:
 		for _, t := range ts {
 			shouldExecute := false
+			sss, err := state.GetStateByNames(cn, t.Name)
+			if err != nil {
+				return err
+			}
 			for _, n := range t.DependsOn.Always {
-				if n == tn && t.AutoExecute {
-					shouldExecute = true
-					continue
+
+				if n == tn {
+					sss.Context = utils.MergeDict(sss.Context, context)
+					if err := state.UpdateStateByNames(cn, t.Name, sss); err != nil {
+						return err
+					}
+					if t.AutoExecute {
+						shouldExecute = true
+						continue
+					}
 				}
 				s, err := state.GetStateByNames(cn, n)
 				if err != nil {
 					return err
 				}
 				if s.Status != constants.STATE_STATUS_ERROR && s.Status != constants.STATE_STATUS_SUCCESS {
-					// return nil
 					continue
 				}
 			}
 			for _, n := range t.DependsOn.Error {
-				if n == tn && t.AutoExecute {
-					shouldExecute = true
-					continue
+				if n == tn {
+					sss.Context = utils.MergeDict(sss.Context, context)
+					if err := state.UpdateStateByNames(cn, t.Name, sss); err != nil {
+						return err
+					}
+					if t.AutoExecute {
+						shouldExecute = true
+						continue
+					}
 				}
 				s, err := state.GetStateByNames(cn, n)
 				if err != nil {
 					return err
 				}
+				if s == nil {
+					continue
+				}
 				if s.Status != constants.STATE_STATUS_ERROR {
-					// return nil
 					continue
 				}
 			}

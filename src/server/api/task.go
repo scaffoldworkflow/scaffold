@@ -247,9 +247,9 @@ func UpdateTaskByNames(ctx *gin.Context) {
 //	@description				Update a task from a JSON object
 //	@tags						manager
 //	@tags						task
-//	@success					201		{object}	object
-//	@failure					500		{object}	object
-//	@failure					401		{object}	object
+//	@success					201	{object}	object
+//	@failure					500	{object}	object
+//	@failure					401	{object}	object
 //	@securityDefinitions.apiKey	token
 //	@in							header
 //	@name						Authorization

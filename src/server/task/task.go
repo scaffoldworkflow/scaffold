@@ -87,36 +87,8 @@ func CreateTask(t *Task) error {
 		Context:  map[string]string{},
 	}
 	if err := state.CreateState(&s); err != nil {
-		return err
+		logger.Warnf("", "Error creating state for task: %s", err.Error())
 	}
-
-	// sc := state.State{
-	// 	Task:     fmt.Sprintf("SCAFFOLD_CHECK-%s", t.Name),
-	// 	Workflow:  t.Workflow,
-	// 	Status:   constants.STATE_STATUS_NOT_STARTED,
-	// 	Started:  "",
-	// 	Finished: "",
-	// 	Output:   "",
-	// 	Number:   t.RunNumber,
-	// 	Display:  make([]map[string]interface{}, 0),
-	// }
-	// if err := state.CreateState(&sc); err != nil {
-	// 	return err
-	// }
-
-	// sp := state.State{
-	// 	Task:     fmt.Sprintf("SCAFFOLD_PREVIOUS-%s", t.Name),
-	// 	Workflow:  t.Workflow,
-	// 	Status:   constants.STATE_STATUS_NOT_STARTED,
-	// 	Started:  "",
-	// 	Finished: "",
-	// 	Output:   "",
-	// 	Number:   0,
-	// 	Display:  make([]map[string]interface{}, 0),
-	// }
-	// if err := state.CreateState(&sp); err != nil {
-	// 	return err
-	// }
 
 	_, err = mongodb.Collections[constants.MONGODB_TASK_COLLECTION_NAME].InsertOne(mongodb.Ctx, t)
 	return err
@@ -138,10 +110,6 @@ func DeleteTaskByNames(workflow, task string) error {
 		return fmt.Errorf("no task found with names %s, %s", workflow, task)
 	}
 
-	if err := state.DeleteStateByNames(workflow, task); err != nil {
-		return err
-	}
-
 	return nil
 
 }
@@ -160,10 +128,6 @@ func DeleteTasksByWorkflow(workflow string) error {
 
 	if result.DeletedCount == 0 {
 		return fmt.Errorf("no tasks found with workflow %s", workflow)
-	}
-
-	if err := state.DeleteStatesByWorkflow(workflow); err != nil {
-		return err
 	}
 
 	return nil

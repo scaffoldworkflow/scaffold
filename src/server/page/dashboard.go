@@ -5,21 +5,22 @@ import (
 	"net/http"
 	"scaffold/server/constants"
 	"scaffold/server/state"
-	"scaffold/server/ui"
-	"scaffold/server/ui/breadcrumb"
-	"scaffold/server/ui/elements/br"
-	"scaffold/server/ui/elements/div"
-	"scaffold/server/ui/elements/link"
-	"scaffold/server/ui/page"
-	"scaffold/server/ui/sidebar"
-	"scaffold/server/ui/table"
-	"scaffold/server/ui/table/cell"
-	"scaffold/server/ui/table/header"
-	"scaffold/server/ui/topbar"
 	"scaffold/server/user"
 	"scaffold/server/workflow"
 	"sort"
 	"strings"
+
+	"github.com/jfcarter2358/ui"
+	"github.com/jfcarter2358/ui/breadcrumb"
+	"github.com/jfcarter2358/ui/elements/br"
+	"github.com/jfcarter2358/ui/elements/div"
+	"github.com/jfcarter2358/ui/elements/link"
+	"github.com/jfcarter2358/ui/page"
+	"github.com/jfcarter2358/ui/sidebar"
+	"github.com/jfcarter2358/ui/table"
+	"github.com/jfcarter2358/ui/table/cell"
+	"github.com/jfcarter2358/ui/table/header"
+	"github.com/jfcarter2358/ui/topbar"
 
 	_ "embed"
 
@@ -97,7 +98,7 @@ func dashboardBuildPage(ctx *gin.Context) []byte {
 		Components: []ui.Component{
 			topbar.Topbar{
 				Title:   "Scaffold",
-				Classes: "scaffold-green",
+				Classes: "ui-green",
 				Buttons: []ui.Component{
 					link.Link{
 						Title:   "Logout",
@@ -112,7 +113,7 @@ func dashboardBuildPage(ctx *gin.Context) []byte {
 				Classes: "theme-light rounded-md",
 				Components: []ui.Component{
 					div.Div{
-						Classes: "scaffold-green rounded-md",
+						Classes: "ui-green rounded-md",
 						Components: []ui.Component{
 							breadcrumb.Breadcrumb{
 								Components: []ui.Component{
@@ -129,11 +130,11 @@ func dashboardBuildPage(ctx *gin.Context) []byte {
 						HTMLString: `<input id="search" class="w3-input w3-round search-bar theme-light" type="text"
                             name="search" placeholder="Search Workflows"
                             style="margin-top:8px;margin-bottom:8px;margin-left:1%;width:98%" hx-get="/htmx/dashboard/search"
-                            hx-trigger="keyup changed delay:250ms" hx-target="#workflows-table-div" />`,
+                            hx-trigger="keyup changed delay:250ms" hx-target="#dashboard-table-div" />`,
 					},
 					div.Div{
 						ID:        "dashboard-table-div",
-						HXTrigger: "load, every 1s",
+						HXTrigger: "load",
 						HXGet:     "/htmx/dashboard/table",
 					},
 				},
@@ -153,7 +154,7 @@ func dashboardBuildPage(ctx *gin.Context) []byte {
 
 func dashboardBuildTable(ws []workflow.Workflow, ctx *gin.Context) []byte {
 	sort.Slice(ws, func(i, j int) bool {
-		return ws[i].Name < ws[j].Name
+		return ws[i].Created < ws[j].Created
 	})
 
 	t := table.Table{
@@ -175,7 +176,7 @@ func dashboardBuildTable(ws []workflow.Workflow, ctx *gin.Context) []byte {
 		Rows:          make([][]cell.Cell, 0),
 		Classes:       "theme-light",
 		Style:         "width:100%;",
-		HeaderClasses: "rounded-md scaffold-green",
+		HeaderClasses: "rounded-md ui-green",
 	}
 
 	token, _ := ctx.Cookie("scaffold_token")
@@ -242,12 +243,12 @@ func dashboardBuildTable(ws []workflow.Workflow, ctx *gin.Context) []byte {
 			},
 			{
 				Contents: fmt.Sprintf(`
-				<div class="scaffold-charcoal" style="width:%d%%;height:20px;display:inline-block;margin-top:8px;margin-left:-4px;"></div>
-				<div class="scaffold-yellow" style="width:%d%%;height:20px;display:inline-block;margin-top:8px;margin-left:-4px;"></div>
-				<div class="scaffold-blue" style="width:%d%%;height:20px;display:inline-block;margin-top:8px;margin-left:-4px;"></div>
-				<div class="scaffold-green" style="width:%d%%;height:20px;display:inline-block;margin-top:8px;margin-left:-4px;"></div>
-				<div class="scaffold-red" style="width:%d%%;height:20px;display:inline-block;margin-top:8px;margin-left:-4px;"></div>
-				<div class="scaffold-orange" style="width:%d%%;height:20px;display:inline-block;margin-top:8px;margin-left:-4px;"></div>
+				<div class="ui-charcoal" style="width:%d%%;height:20px;display:inline-block;margin-top:8px;margin-left:-4px;"></div>
+				<div class="ui-yellow" style="width:%d%%;height:20px;display:inline-block;margin-top:8px;margin-left:-4px;"></div>
+				<div class="ui-blue" style="width:%d%%;height:20px;display:inline-block;margin-top:8px;margin-left:-4px;"></div>
+				<div class="ui-green" style="width:%d%%;height:20px;display:inline-block;margin-top:8px;margin-left:-4px;"></div>
+				<div class="ui-red" style="width:%d%%;height:20px;display:inline-block;margin-top:8px;margin-left:-4px;"></div>
+				<div class="ui-orange" style="width:%d%%;height:20px;display:inline-block;margin-top:8px;margin-left:-4px;"></div>
 				`, percentNotStarted, percentWaiting, percentRunning, percentSuccess, percentError, percentKilled),
 			},
 			{

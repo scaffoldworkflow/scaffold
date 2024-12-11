@@ -3,6 +3,7 @@ package scron
 import (
 	// "scaffold/server/bulwark"
 
+	"scaffold/server/config"
 	"scaffold/server/constants"
 	"scaffold/server/history"
 	"scaffold/server/msg"
@@ -21,12 +22,15 @@ import (
 	"github.com/robfig/cron"
 )
 
+// Start our cron manager to check for task crons every minute
 func Start() {
 	c := cron.New()
 	c.AddFunc("* * * * * *", checkTaskCrons)
+	c.AddFunc(config.Config.RunPruneCron, history.PruneHistories)
 	go c.Start()
 }
 
+// Get all tasks and check if they should be run according to their crontab
 func checkTaskCrons() {
 	ts, err := task.GetAllTasks()
 	if err != nil {
@@ -51,33 +55,10 @@ func checkTaskCrons() {
 			}
 			checkCron(currentTime, t.Cron, t.Name, t.RunNumber, c)
 		}
-		// if t.Check.Cron != "" && !t.Disabled {
-		// 	s, err := state.GetStateByNames(t.Workflow, t.Name)
-		// 	if err != nil {
-		// 		logger.Errorf("", "Error getting state: %s", err.Error())
-		// 		continue
-		// 	}
-		// 	if s.Status != constants.STATE_STATUS_ERROR && s.Status != constants.STATE_STATUS_RUNNING {
-		// 		continue
-		// 	}
-		// 	valid, err := task.VerifyDepends(t.Workflow, t.Name)
-		// 	if err != nil {
-		// 		logger.Errorf("", "Error verify tasks parent statuses: %s", err.Error())
-		// 		continue
-		// 	}
-		// 	if !valid {
-		// 		continue
-		// 	}
-		// 	c, err := workflow.GetWorkflowByName(t.Workflow)
-		// 	if err != nil {
-		// 		logger.Errorf("", "Error getting workflow: %s", err.Error())
-		// 		continue
-		// 	}
-		// 	checkCron(currentTime, t.Cron, fmt.Sprintf("SCAFFOLD-CHECK_%s", t.Name), t.Check.RunNumber, c)
-		// }
 	}
 }
 
+// check if a crontab meets the current time and should be run
 func checkCron(currentTime time.Time, crontab, name string, runNumber int, c *workflow.Workflow) {
 	second := currentTime.Second()
 	month := currentTime.Month()
@@ -143,6 +124,7 @@ func checkCron(currentTime time.Time, crontab, name string, runNumber int, c *wo
 			return
 		}
 
+		// Trigger a new run if valid
 		runID := uuid.New().String()
 
 		m := msg.TriggerMsg{
@@ -171,6 +153,7 @@ func checkCron(currentTime time.Time, crontab, name string, runNumber int, c *wo
 	}
 }
 
+// Breakdown the part of the crontab and compare its interval with the current value
 func checkCronValue(t, start, end int, x string) bool {
 	step := 1
 	vals := []int{}

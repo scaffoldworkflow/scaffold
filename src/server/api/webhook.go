@@ -91,5 +91,5 @@ func TriggerWebhookByID(ctx *gin.Context) {
 	logger.Infof("", "Creating run with message %v", m)
 	rabbitmq.ManagerPublish(m)
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
+	ctx.JSON(http.StatusOK, gin.H{"message": "OK", "run_id": runID})
 }

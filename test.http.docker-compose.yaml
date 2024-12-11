@@ -1,36 +1,35 @@
-version: "3.9"
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:8080:8080"
   scaffold-manager:
     image: "scaffold:test"
+    restart: always
     ports:
       - "127.0.0.1:2997:2997"
-      - "127.0.0.1:8080:8080"
-      - "127.0.0.1:19999:19999"
     environment:
       SCAFFOLD_KILL_SERVER_PORT: "19999"
       SCAFFOLD_RUN_MODE: "test"
-      SCAFFOLD_SLEEP: "10"
-      SCAFFOLD_HOST: "scaffold-manager"
-      SCAFFOLD_WS_PORT: "8080"
+      SCAFFOLD_BASE_URL: http://scaffold-manager:2997
       SCAFFOLD_LOG_LEVEL: "INFO"
-      SCAFFOLD_PROTOCOL: "http"
-      SCAFFOLD_DB: |
+      SCAFFOLD_LOG_FORMAT: "console"
+      SCAFFOLD_SLEEP: "30"
+      SCAFFOLD_ADMIN: |
         {
-          "username": "MyCoolMongoDBUsername",
-          "password": "MyCoolMongoDBPassword",
-          "name": "scaffold",
-          "host": "mongodb",
-          "port": 27017,
-          "protocol": "http"
+          "username": "admin",
+          "password": "admin"
         }
+      SCAFFOLD_DB_CONNECTION_STRING: "mongodb://MyCoolMongoDBUsername:MyCoolMongoDBPassword@mongodb:27017/scaffold"
       SCAFFOLD_NODE: |
         {
           "type": "manager",
           "manager_host": "scaffold-manager",
           "manager_port": 2997,
-          "manager_protocol": "http",
           "join_key": "MyCoolJoinKey12345",
-          "primary_key": "MyCoolPrimaryKey12345"
+          "primary_key": "MyCoolPrimaryKey12345",
+          "manager_protocol": "http"
         }
       SCAFFOLD_FILESTORE: |
         {
@@ -40,44 +39,43 @@ services:
           "port": 9090,
           "bucket": "scaffold",
           "region": "default-region",
-          "protocol": "http"
+          "protocol": "http",
+          "type": "s3"
         }
+      RUN_PRUNE_CRON: "*/5 * * * * *"
+      RUN_PRUNE_DURATION: "1"
     depends_on:
       - "mongodb"
       - "minio"
+      - rabbitmq
     tty: true
   scaffold-worker:
     image: "scaffold:test"
+    restart: always
     ports:
       - "127.0.0.1:2998:2998"
-      - "127.0.0.1:8081:8081"
-      - "127.0.0.1:29999:29999"
     environment:
       SCAFFOLD_KILL_SERVER_PORT: "29999"
       SCAFFOLD_RUN_MODE: "test"
-      SCAFFOLD_PORT: "2998"
-      SCAFFOLD_HOST: "scaffold-worker"
-      SCAFFOLD_LOG_LEVEL: "INFO"
+      SCAFFOLD_BASE_URL: http://scaffold-worker:2998
       SCAFFOLD_WS_PORT: "8081"
-      SCAFFOLD_SLEEP: "20"
-      SCAFFOLD_PROTOCOL: "http"
-      SCAFFOLD_DB: |
+      SCAFFOLD_LOG_LEVEL: "TRACE"
+      SCAFFOLD_LOG_FORMAT: "console"
+      SCAFFOLD_ADMIN: |
         {
-          "username": "MyCoolMongoDBUsername",
-          "password": "MyCoolMongoDBPassword",
-          "name": "scaffold",
-          "host": "mongodb",
-          "port": 27017,
-          "protocol": "http"
+          "username": "admin",
+          "password": "admin"
         }
+      SCAFFOLD_SLEEP: "30"
+      SCAFFOLD_DB_CONNECTION_STRING: "mongodb://MyCoolMongoDBUsername:MyCoolMongoDBPassword@mongodb:27017/scaffold"
       SCAFFOLD_NODE: |
         {
           "type": "worker",
           "manager_host": "scaffold-manager",
           "manager_port": 2997,
-          "manager_protocol": "http",
           "join_key": "MyCoolJoinKey12345",
-          "primary_key": "MyCoolPrimaryKey12345"
+          "primary_key": "MyCoolPrimaryKey12345",
+          "manager_protocol": "http"
         }
       SCAFFOLD_FILESTORE: |
         {
@@ -87,8 +85,10 @@ services:
           "port": 9090,
           "bucket": "scaffold",
           "region": "default-region",
-          "protocol": "http"
+          "protocol": "http",
+          "type": "s3"
         }
+      SCAFFOLD_RESTART_PERIOD: 10
     depends_on:
       - "scaffold-manager"
     security_opt:

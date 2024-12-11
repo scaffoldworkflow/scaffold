@@ -19,6 +19,10 @@ import (
 	"github.com/akamensky/argparse"
 )
 
+/*
+NOTE:
+This code is pretty awful, I really need to clean it up significantly
+*/
 func main() {
 	// config.LoadConfig()
 	// logger.SetLevel(config.Config.LogLevel)
@@ -73,13 +77,13 @@ func main() {
 	uploadCommand := fileCommand.NewCommand("upload", "Upload a file to a filestore")
 	uploadProfile := uploadCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
 	uploadFile := uploadCommand.String("f", "file", &argparse.Options{Required: true, Help: "Path to file to upload"})
-	uploadWorkflow := uploadCommand.String("c", "workflow", &argparse.Options{Required: true, Help: "Workflow filestore to upload file to"})
+	uploadWorkflow := uploadCommand.String("w", "workflow", &argparse.Options{Required: true, Help: "Workflow filestore to upload file to"})
 	uploadLogLevel := uploadCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
 	downloadCommand := fileCommand.NewCommand("download", "Download a file from a filestore")
 	downloadProfile := downloadCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
 	downloadFile := downloadCommand.String("f", "file", &argparse.Options{Required: true, Help: "Path to file to download"})
-	downloadWorkflow := downloadCommand.String("c", "workflow", &argparse.Options{Required: true, Help: "Workflow filestore to download file from"})
+	downloadWorkflow := downloadCommand.String("w", "workflow", &argparse.Options{Required: true, Help: "Workflow filestore to download file from"})
 	downloadName := downloadCommand.String("n", "name", &argparse.Options{Required: true, Help: "Filename to download from workflow filestore"})
 	downloadLogLevel := downloadCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 

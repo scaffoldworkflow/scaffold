@@ -36,7 +36,6 @@ build-docker:
   help: Build Scaffold Docker image
   cmd: |
     stud set-server-version
-    # wsc compile
     docker build -t scaffold --no-cache -f src/server/Dockerfile .
 push-docker:
   help: Build Scaffold Docker image
@@ -48,15 +47,12 @@ build-docker-test:
   help: Build Scaffold test Docker image
   cmd: |
     stud set-server-version
-    wsc compile
     docker build -t scaffold:test -f src/server/test.Dockerfile .
 publish:
   help: Publish Scaffold image
   cmd: |
     stud set-server-version
     
-    wsc compile
-
     platform_string = ','.join(platforms)
     version = ?(cat src/server/VERSION).strip()
 

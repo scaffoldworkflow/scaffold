@@ -5,17 +5,18 @@ import (
 	"net/http"
 	"scaffold/server/constants"
 	"scaffold/server/history"
-	"scaffold/server/ui"
-	"scaffold/server/ui/breadcrumb"
-	"scaffold/server/ui/elements/br"
-	"scaffold/server/ui/elements/div"
-	"scaffold/server/ui/elements/link"
-	"scaffold/server/ui/elements/pre"
-	"scaffold/server/ui/page"
-	"scaffold/server/ui/sidebar"
-	"scaffold/server/ui/timeline"
-	"scaffold/server/ui/timeline/item"
-	"scaffold/server/ui/topbar"
+
+	"github.com/jfcarter2358/ui"
+	"github.com/jfcarter2358/ui/breadcrumb"
+	"github.com/jfcarter2358/ui/elements/br"
+	"github.com/jfcarter2358/ui/elements/div"
+	"github.com/jfcarter2358/ui/elements/link"
+	"github.com/jfcarter2358/ui/elements/pre"
+	"github.com/jfcarter2358/ui/page"
+	"github.com/jfcarter2358/ui/sidebar"
+	"github.com/jfcarter2358/ui/timeline"
+	"github.com/jfcarter2358/ui/timeline/item"
+	"github.com/jfcarter2358/ui/topbar"
 
 	_ "embed"
 
@@ -108,7 +109,7 @@ func historyBuildPage(ctx *gin.Context) []byte {
 		Components: []ui.Component{
 			topbar.Topbar{
 				Title:   "Scaffold",
-				Classes: "scaffold-green",
+				Classes: "ui-green",
 				Buttons: []ui.Component{
 					link.Link{
 						Title:   "Logout",
@@ -123,7 +124,7 @@ func historyBuildPage(ctx *gin.Context) []byte {
 				Classes: "theme-light rounded-md",
 				Components: []ui.Component{
 					div.Div{
-						Classes: "scaffold-green rounded-md",
+						Classes: "ui-green rounded-md",
 						Components: []ui.Component{
 							breadcrumb.Breadcrumb{
 								Components: []ui.Component{
@@ -184,36 +185,36 @@ func historyBuildTimeline(h history.History, runID string, ctx *gin.Context) []b
 			IconClasses: func(status string) string {
 				switch status {
 				case constants.STATE_STATUS_RUNNING:
-					return "fa-solid fa-spinner fa-pause scaffold-text-blue"
+					return "fa-solid fa-spinner fa-pause ui-text-blue"
 				case constants.STATE_STATUS_ERROR:
-					return "fa-solid fa-circle-xmark scaffold-text-red"
+					return "fa-solid fa-circle-xmark ui-text-red"
 				case constants.STATE_STATUS_KILLED:
-					return "fa-solid fa-skull scaffold-text-orange"
+					return "fa-solid fa-skull ui-text-orange"
 				case constants.STATE_STATUS_NOT_STARTED:
-					return "fa-regular fa-circle scaffold-text-charcoal"
+					return "fa-regular fa-circle ui-text-charcoal"
 				case constants.STATE_STATUS_WAITING:
-					return "fa-solid fa-clock scaffold-text-yellow"
+					return "fa-solid fa-clock ui-text-yellow"
 				case constants.STATE_STATUS_SUCCESS:
-					return "fa-solid fa-circle-check scaffold-text-green"
+					return "fa-solid fa-circle-check ui-text-green"
 				}
-				return "fa-solid fa-circle-question scaffold-text-charcoal"
+				return "fa-solid fa-circle-question ui-text-charcoal"
 			}(s.Status),
 			LineColor: func(status string) string {
 				switch status {
 				case constants.STATE_STATUS_RUNNING:
-					return "scaffold-blue"
+					return "ui-blue"
 				case constants.STATE_STATUS_ERROR:
-					return "scaffold-red"
+					return "ui-red"
 				case constants.STATE_STATUS_KILLED:
-					return "scaffold-orange"
+					return "ui-orange"
 				case constants.STATE_STATUS_NOT_STARTED:
-					return "scaffold-charcoal"
+					return "ui-charcoal"
 				case constants.STATE_STATUS_WAITING:
-					return "scaffold-yellow"
+					return "ui-yellow"
 				case constants.STATE_STATUS_SUCCESS:
-					return "scaffold-green"
+					return "ui-green"
 				}
-				return "scaffold-charcoal"
+				return "ui-charcoal"
 			}(s.Status),
 			HXTrigger: "click",
 			HXGet:     fmt.Sprintf("/htmx/runs/timeline/%s/status/%s", runID, s.Task),
