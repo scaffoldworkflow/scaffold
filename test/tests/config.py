@@ -8,5 +8,8 @@ SCAFFOLD_BASE="http://localhost:2997"
 SCAFFOLD_AUTH="MyCoolPrimaryKey12345"
 SCAFFOLD_CLI="../../dist/linux/amd64/scaffold"
 
-USER_FIXTURE_PATH = "../fixtures/users/baz.json"
+USER_FIXTURE_PATH = "../fixtures/users/foo.json"
 WORKFLOW_FIXTURE_PATH = "../fixtures/workflows/foo.json"
+
+TASK_WORKFLOW = "foo"
+STATE_WORKFLOW = "foo"

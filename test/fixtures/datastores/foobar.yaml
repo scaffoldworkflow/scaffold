@@ -1,7 +1,0 @@
-name: foobar
-env:
-  hello: world
-files:
-  - foobar
-created:
-updated:

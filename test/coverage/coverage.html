@@ -71,7 +71,7 @@
 				
 				<option value="file7">scaffold/server/api/run.go (0.0%)</option>
 				
-				<option value="file8">scaffold/server/api/state.go (0.0%)</option>
+				<option value="file8">scaffold/server/api/state.go (9.6%)</option>
 				
 				<option value="file9">scaffold/server/api/task.go (0.0%)</option>
 				
@@ -101,7 +101,7 @@
 				
 				<option value="file22">scaffold/server/manager/manager.go (7.9%)</option>
 				
-				<option value="file23">scaffold/server/middleware/middleware.auth.go (21.8%)</option>
+				<option value="file23">scaffold/server/middleware/middleware.auth.go (15.6%)</option>
 				
 				<option value="file24">scaffold/server/middleware/middleware.cors.go (77.8%)</option>
 				
@@ -115,7 +115,7 @@
 				
 				<option value="file29">scaffold/server/page/history.go (0.0%)</option>
 				
-				<option value="file30">scaffold/server/page/login.go (66.7%)</option>
+				<option value="file30">scaffold/server/page/login.go (0.0%)</option>
 				
 				<option value="file31">scaffold/server/page/page.go (0.0%)</option>
 				
@@ -243,14 +243,14 @@ func RevokeAPIToken(ctx *gin.Context) <span class="cov0" title="0">{
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /health/ping/{name} [post]
-func Ping(c *gin.Context) <span class="cov10" title="34">{
+func Ping(c *gin.Context) <span class="cov10" title="33">{
         name := c.Param("name")
         auth.NodeLock.Lock()
-        if n, ok := auth.Nodes[name]; ok </span><span class="cov10" title="34">{
+        if n, ok := auth.Nodes[name]; ok </span><span class="cov10" title="33">{
                 n.Ping = 0
                 auth.Nodes[name] = n
         }</span>
-        <span class="cov10" title="34">auth.NodeLock.Unlock()
+        <span class="cov10" title="33">auth.NodeLock.Unlock()
 
         c.Status(http.StatusOK)</span>
 }
@@ -816,7 +816,7 @@ import (
         logger "github.com/jfcarter2358/go-logger"
 )
 
-func validateUserGroup(ctx *gin.Context, groups []string) bool <span class="cov10" title="6">{
+func validateUserGroup(ctx *gin.Context, groups []string) bool <span class="cov10" title="10">{
         var token string
         var err error
         var usr *user.User
@@ -828,7 +828,7 @@ func validateUserGroup(ctx *gin.Context, groups []string) bool <span class="cov1
         }</span>
 
         // Check if we have an auth header
-        <span class="cov10" title="6">authString := ctx.Request.Header.Get("Authorization")
+        <span class="cov10" title="10">authString := ctx.Request.Header.Get("Authorization")
         if authString == "" </span><span class="cov0" title="0">{
                 // Check if the request is coming from a logged in UI user
                 token, err = ctx.Cookie("scaffold_token")
@@ -841,12 +841,12 @@ func validateUserGroup(ctx *gin.Context, groups []string) bool <span class="cov1
                         logger.Tracef("", "No user exists with login token")
                         return false
                 }</span>
-        } else<span class="cov10" title="6"> {
+        } else<span class="cov10" title="10"> {
                 logger.Tracef("", "Auth header detected")
                 token = strings.Split(authString, " ")[1]
 
                 // Is the request coming from a node itself?
-                if token == config.Config.Node.PrimaryKey </span><span class="cov10" title="6">{
+                if token == config.Config.Node.PrimaryKey </span><span class="cov10" title="10">{
                         logger.Tracef("", "Primary key detected")
                         return true
                 }</span>
@@ -1569,7 +1569,7 @@ func GetAllStates(ctx *gin.Context) <span class="cov0" title="0">{
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/state/{workflow_name}/{state_name} [get]
-func GetStateByNames(ctx *gin.Context) <span class="cov0" title="0">{
+func GetStateByNames(ctx *gin.Context) <span class="cov8" title="1">{
         cn := ctx.Param("workflow")
         tn := ctx.Param("task")
 
@@ -1580,7 +1580,7 @@ func GetStateByNames(ctx *gin.Context) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">if s == nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if s == nil </span><span class="cov8" title="1">{
                 ctx.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("State %s/%s does not exist", cn, tn)})
                 return
         }</span>
@@ -1964,21 +1964,21 @@ import (
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/user [post]
-func CreateUser(ctx *gin.Context) <span class="cov10" title="10">{
+func CreateUser(ctx *gin.Context) <span class="cov10" title="14">{
         var u user.User
         if err := ctx.ShouldBindJSON(&amp;u); err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
                 return
         }</span>
 
-        <span class="cov10" title="10">err := user.CreateUser(&amp;u)
+        <span class="cov10" title="14">err := user.CreateUser(&amp;u)
 
         if err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
                 return
         }</span>
 
-        <span class="cov10" title="10">ctx.JSON(http.StatusCreated, gin.H{"message": "Created"})</span>
+        <span class="cov10" title="14">ctx.JSON(http.StatusCreated, gin.H{"message": "Created"})</span>
 }
 
 //        @summary                                        Delete a user
@@ -1994,7 +1994,7 @@ func CreateUser(ctx *gin.Context) <span class="cov10" title="10">{
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/user/{username} [delete]
-func DeleteUserByUsername(ctx *gin.Context) <span class="cov9" title="9">{
+func DeleteUserByUsername(ctx *gin.Context) <span class="cov8" title="9">{
         username := ctx.Param("username")
 
         err := user.DeleteUserByUsername(username)
@@ -2004,7 +2004,7 @@ func DeleteUserByUsername(ctx *gin.Context) <span class="cov9" title="9">{
                 return
         }</span>
 
-        <span class="cov9" title="9">ctx.JSON(http.StatusOK, gin.H{"message": "OK"})</span>
+        <span class="cov8" title="9">ctx.JSON(http.StatusOK, gin.H{"message": "OK"})</span>
 }
 
 //        @summary                                        Get all users
@@ -2053,7 +2053,7 @@ func GetAllUsers(ctx *gin.Context) <span class="cov1" title="1">{
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/user/{username} [get]
-func GetUserByUsername(ctx *gin.Context) <span class="cov5" title="3">{
+func GetUserByUsername(ctx *gin.Context) <span class="cov4" title="3">{
         username := ctx.Param("username")
 
         u, err := user.GetUserByUsername(username)
@@ -2063,12 +2063,12 @@ func GetUserByUsername(ctx *gin.Context) <span class="cov5" title="3">{
                 return
         }</span>
 
-        <span class="cov5" title="3">if u == nil </span><span class="cov0" title="0">{
+        <span class="cov4" title="3">if u == nil </span><span class="cov0" title="0">{
                 ctx.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("User %s does not exist", username)})
                 return
         }</span>
 
-        <span class="cov5" title="3">ctx.JSON(http.StatusOK, *u)</span>
+        <span class="cov4" title="3">ctx.JSON(http.StatusOK, *u)</span>
 }
 
 //        @summary                                        Update a user
@@ -2249,27 +2249,27 @@ import (
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/workflow [post]
-func CreateWorkflow(ctx *gin.Context) <span class="cov10" title="5">{
+func CreateWorkflow(ctx *gin.Context) <span class="cov10" title="9">{
         var c workflow.Workflow
         if err := ctx.ShouldBindJSON(&amp;c); err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
                 return
         }</span>
 
-        <span class="cov10" title="5">if c.Groups != nil </span><span class="cov10" title="5">{
+        <span class="cov10" title="9">if c.Groups != nil </span><span class="cov10" title="9">{
                 if !validateUserGroup(ctx, c.Groups) </span><span class="cov0" title="0">{
                         utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusForbidden)
                 }</span>
         }
 
-        <span class="cov10" title="5">err := workflow.CreateWorkflow(&amp;c)
+        <span class="cov10" title="9">err := workflow.CreateWorkflow(&amp;c)
 
         if err != nil </span><span class="cov0" title="0">{
                 utils.Error(err, ctx, http.StatusInternalServerError)
                 return
         }</span>
 
-        <span class="cov10" title="5">ctx.JSON(http.StatusCreated, gin.H{"message": "Created"})</span>
+        <span class="cov10" title="9">ctx.JSON(http.StatusCreated, gin.H{"message": "Created"})</span>
 }
 
 //        @summary                                        Delete a workflow
@@ -2285,7 +2285,7 @@ func CreateWorkflow(ctx *gin.Context) <span class="cov10" title="5">{
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/workflow/{workflow_name} [delete]
-func DeleteWorkflowByName(ctx *gin.Context) <span class="cov10" title="5">{
+func DeleteWorkflowByName(ctx *gin.Context) <span class="cov7" title="5">{
         name := ctx.Param("name")
 
         err := workflow.DeleteWorkflowByName(name)
@@ -2295,7 +2295,7 @@ func DeleteWorkflowByName(ctx *gin.Context) <span class="cov10" title="5">{
                 return
         }</span>
 
-        <span class="cov10" title="5">ctx.JSON(http.StatusOK, gin.H{"message": "OK"})</span>
+        <span class="cov7" title="5">ctx.JSON(http.StatusOK, gin.H{"message": "OK"})</span>
 }
 
 //        @summary                                        Get all workflows
@@ -2352,7 +2352,7 @@ func GetAllWorkflows(ctx *gin.Context) <span class="cov1" title="1">{
 //        @name                                                Authorization
 //        @security                                        X-Scaffold-API
 //        @router                                                /api/v1/workflow/{workflow_name} [get]
-func GetWorkflowByName(ctx *gin.Context) <span class="cov7" title="3">{
+func GetWorkflowByName(ctx *gin.Context) <span class="cov5" title="3">{
         name := ctx.Param("name")
 
         c, err := workflow.GetWorkflowByName(name)
@@ -2362,12 +2362,12 @@ func GetWorkflowByName(ctx *gin.Context) <span class="cov7" title="3">{
                 return
         }</span>
 
-        <span class="cov7" title="3">if c == nil </span><span class="cov0" title="0">{
+        <span class="cov5" title="3">if c == nil </span><span class="cov0" title="0">{
                 ctx.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("Workflow %s does not exist", name)})
                 return
         }</span>
 
-        <span class="cov7" title="3">ctx.JSON(http.StatusOK, *c)</span>
+        <span class="cov5" title="3">ctx.JSON(http.StatusOK, *c)</span>
 }
 
 //        @summary                                        Update a workflow
@@ -3062,7 +3062,7 @@ func checkTaskCrons() <span class="cov10" title="33">{
         }</span>
         <span class="cov10" title="33">currentTime := time.Now()
 
-        for _, t := range ts </span><span class="cov5" title="6">{
+        for _, t := range ts </span><span class="cov9" title="30">{
                 if t.Cron != "" &amp;&amp; !t.Disabled </span><span class="cov0" title="0">{
                         c, err := workflow.GetWorkflowByName(t.Workflow)
                         if err != nil </span><span class="cov0" title="0">{
@@ -3246,7 +3246,7 @@ type DataStore struct {
 }
 
 // Create datastore object
-func CreateDataStore(d *DataStore) error <span class="cov10" title="6">{
+func CreateDataStore(d *DataStore) error <span class="cov10" title="10">{
         currentTime := time.Now().UTC()
         d.Created = currentTime.Format("2006-01-02T15:04:05Z")
         d.Updated = currentTime.Format("2006-01-02T15:04:05Z")
@@ -3255,16 +3255,16 @@ func CreateDataStore(d *DataStore) error <span class="cov10" title="6">{
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("error getting datastores: %s", err.Error())
         }</span>
-        <span class="cov10" title="6">if dd != nil </span><span class="cov0" title="0">{
+        <span class="cov10" title="10">if dd != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("datastore already exists with name %s", d.Name)
         }</span>
 
-        <span class="cov10" title="6">_, err = mongodb.Collections[constants.MONGODB_DATASTORE_COLLECTION_NAME].InsertOne(mongodb.Ctx, d)
+        <span class="cov10" title="10">_, err = mongodb.Collections[constants.MONGODB_DATASTORE_COLLECTION_NAME].InsertOne(mongodb.Ctx, d)
         return err</span>
 }
 
 // Delete a datastore according to the associated workflow
-func DeleteDataStoreByWorkflow(name string) error <span class="cov10" title="6">{
+func DeleteDataStoreByWorkflow(name string) error <span class="cov8" title="6">{
         filter := bson.M{"name": name}
 
         collection := mongodb.Collections[constants.MONGODB_DATASTORE_COLLECTION_NAME]
@@ -3276,11 +3276,11 @@ func DeleteDataStoreByWorkflow(name string) error <span class="cov10" title="6">
                 return err
         }</span>
 
-        <span class="cov10" title="6">if result.DeletedCount != 1 </span><span class="cov0" title="0">{
+        <span class="cov8" title="6">if result.DeletedCount != 1 </span><span class="cov0" title="0">{
                 return fmt.Errorf("no datastore found with name %s", name)
         }</span>
 
-        <span class="cov10" title="6">return nil</span>
+        <span class="cov8" title="6">return nil</span>
 
 }
 
@@ -3294,7 +3294,7 @@ func GetAllDataStores() ([]*DataStore, error) <span class="cov0" title="0">{
 }</span>
 
 // Get a datastore by its associated workflow
-func GetDataStoreByWorkflow(name string) (*DataStore, error) <span class="cov10" title="6">{
+func GetDataStoreByWorkflow(name string) (*DataStore, error) <span class="cov10" title="10">{
         filter := bson.M{"name": name}
 
         datastores, err := FilterDataStores(filter)
@@ -3303,7 +3303,7 @@ func GetDataStoreByWorkflow(name string) (*DataStore, error) <span class="cov10"
                 return nil, err
         }</span>
 
-        <span class="cov10" title="6">if len(datastores) == 0 </span><span class="cov10" title="6">{
+        <span class="cov10" title="10">if len(datastores) == 0 </span><span class="cov10" title="10">{
                 return nil, nil
         }</span>
 
@@ -3368,7 +3368,7 @@ func UpdateDataStoreByWorkflow(name string, d *DataStore, is []input.Input) erro
 }
 
 // Filter the MongoDB response from a query
-func FilterDataStores(filter interface{}) ([]*DataStore, error) <span class="cov10" title="6">{
+func FilterDataStores(filter interface{}) ([]*DataStore, error) <span class="cov10" title="10">{
         // A slice of tasks for storing the decoded documents
         var datastores []*DataStore
 
@@ -3380,7 +3380,7 @@ func FilterDataStores(filter interface{}) ([]*DataStore, error) <span class="cov
                 return datastores, err
         }</span>
 
-        <span class="cov10" title="6">for cur.Next(ctx) </span><span class="cov0" title="0">{
+        <span class="cov10" title="10">for cur.Next(ctx) </span><span class="cov0" title="0">{
                 var d DataStore
                 err := cur.Decode(&amp;d)
                 if err != nil </span><span class="cov0" title="0">{
@@ -3390,12 +3390,12 @@ func FilterDataStores(filter interface{}) ([]*DataStore, error) <span class="cov
                 <span class="cov0" title="0">datastores = append(datastores, &amp;d)</span>
         }
 
-        <span class="cov10" title="6">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
+        <span class="cov10" title="10">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
                 return datastores, err
         }</span>
 
         // once exhausted, close the cursor
-        <span class="cov10" title="6">cur.Close(ctx)
+        <span class="cov10" title="10">cur.Close(ctx)
 
         return datastores, nil</span>
 }
@@ -6564,16 +6564,16 @@ type Input struct {
         Type        string `json:"type" bson:"type" yaml:"type"`
 }
 
-func CreateInput(i *Input) error <span class="cov10" title="12">{
+func CreateInput(i *Input) error <span class="cov10" title="20">{
         ii, err := GetInputByNames(i.Workflow, i.Name)
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("error getting inputs: %s", err.Error())
         }</span>
-        <span class="cov10" title="12">if ii != nil </span><span class="cov0" title="0">{
+        <span class="cov10" title="20">if ii != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("input already exists with names %s, %s", i.Workflow, i.Name)
         }</span>
 
-        <span class="cov10" title="12">_, err = mongodb.Collections[constants.MONGODB_INPUT_COLLECTION_NAME].InsertOne(mongodb.Ctx, i)
+        <span class="cov10" title="20">_, err = mongodb.Collections[constants.MONGODB_INPUT_COLLECTION_NAME].InsertOne(mongodb.Ctx, i)
         return err</span>
 }
 
@@ -6597,7 +6597,7 @@ func DeleteInputByNames(workflow, name string) error <span class="cov0" title="0
 
 }
 
-func DeleteInputsByWorkflow(workflow string) error <span class="cov7" title="6">{
+func DeleteInputsByWorkflow(workflow string) error <span class="cov6" title="6">{
         filter := bson.M{"workflow": workflow}
 
         collection := mongodb.Collections[constants.MONGODB_INPUT_COLLECTION_NAME]
@@ -6609,11 +6609,11 @@ func DeleteInputsByWorkflow(workflow string) error <span class="cov7" title="6">
                 return err
         }</span>
 
-        <span class="cov7" title="6">if result.DeletedCount == 0 </span><span class="cov0" title="0">{
+        <span class="cov6" title="6">if result.DeletedCount == 0 </span><span class="cov0" title="0">{
                 return fmt.Errorf("no inputs found with workflow %s", workflow)
         }</span>
 
-        <span class="cov7" title="6">return nil</span>
+        <span class="cov6" title="6">return nil</span>
 
 }
 
@@ -6625,7 +6625,7 @@ func GetAllInputs() ([]*Input, error) <span class="cov0" title="0">{
         return inputs, err
 }</span>
 
-func GetInputByNames(workflow, name string) (*Input, error) <span class="cov10" title="12">{
+func GetInputByNames(workflow, name string) (*Input, error) <span class="cov10" title="20">{
         filter := bson.M{"workflow": workflow, "name": name}
 
         inputs, err := FilterInputs(filter)
@@ -6634,7 +6634,7 @@ func GetInputByNames(workflow, name string) (*Input, error) <span class="cov10" 
                 return nil, err
         }</span>
 
-        <span class="cov10" title="12">if len(inputs) == 0 </span><span class="cov10" title="12">{
+        <span class="cov10" title="20">if len(inputs) == 0 </span><span class="cov10" title="20">{
                 return nil, nil
         }</span>
 
@@ -6679,7 +6679,7 @@ func UpdateInputByNames(workflow, name string, i *Input) error <span class="cov0
         <span class="cov0" title="0">return nil</span>
 }
 
-func FilterInputs(filter interface{}) ([]*Input, error) <span class="cov10" title="12">{
+func FilterInputs(filter interface{}) ([]*Input, error) <span class="cov10" title="20">{
         // A slice of inputs for storing the decoded documents
         var inputs []*Input
 
@@ -6691,7 +6691,7 @@ func FilterInputs(filter interface{}) ([]*Input, error) <span class="cov10" titl
                 return inputs, err
         }</span>
 
-        <span class="cov10" title="12">for cur.Next(ctx) </span><span class="cov0" title="0">{
+        <span class="cov10" title="20">for cur.Next(ctx) </span><span class="cov0" title="0">{
                 var s Input
                 err := cur.Decode(&amp;s)
                 if err != nil </span><span class="cov0" title="0">{
@@ -6701,12 +6701,12 @@ func FilterInputs(filter interface{}) ([]*Input, error) <span class="cov10" titl
                 <span class="cov0" title="0">inputs = append(inputs, &amp;s)</span>
         }
 
-        <span class="cov10" title="12">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
+        <span class="cov10" title="20">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
                 return inputs, err
         }</span>
 
         // once exhausted, close the cursor
-        <span class="cov10" title="12">cur.Close(ctx)
+        <span class="cov10" title="20">cur.Close(ctx)
 
         return inputs, nil</span>
 }
@@ -6970,14 +6970,14 @@ func BufferDataReceive(endpoint, data string) error <span class="cov0" title="0"
 }</span>
 
 func healthCheck() <span class="cov1" title="1">{
-        for </span><span class="cov8" title="34">{
-                for key, n := range auth.Nodes </span><span class="cov10" title="66">{
-                        if n.Ping &gt; config.Config.HeartbeatBackoff </span><span class="cov6" title="12">{
+        for </span><span class="cov8" title="33">{
+                for key, n := range auth.Nodes </span><span class="cov10" title="64">{
+                        if n.Ping &gt; config.Config.HeartbeatBackoff </span><span class="cov6" title="11">{
                                 ss, err := state.GetStatesByWorker(n.Name)
                                 if err != nil </span><span class="cov0" title="0">{
                                         logger.Errorf("", "Unable to get states by worker: %s", n.Name)
                                 }</span>
-                                <span class="cov6" title="12">for _, s := range ss </span><span class="cov0" title="0">{
+                                <span class="cov6" title="11">for _, s := range ss </span><span class="cov0" title="0">{
                                         switch s.Status </span>{
                                         case constants.STATE_STATUS_RUNNING:<span class="cov0" title="0">
                                                 DoKill(s.Workflow, s.Task)</span>
@@ -6986,12 +6986,12 @@ func healthCheck() <span class="cov1" title="1">{
                                         }
                                 }
                         }
-                        <span class="cov10" title="66">n.Ping += 1
+                        <span class="cov10" title="64">n.Ping += 1
                         auth.NodeLock.Lock()
                         auth.Nodes[key] = n
                         auth.NodeLock.Unlock()</span>
                 }
-                <span class="cov8" title="34">time.Sleep(time.Duration(config.Config.HeartbeatInterval) * time.Millisecond)</span>
+                <span class="cov8" title="33">time.Sleep(time.Duration(config.Config.HeartbeatInterval) * time.Millisecond)</span>
         }
 }
 
@@ -7496,7 +7496,7 @@ import (
 // This middleware ensures that a request will be aborted with an error
 // if the user is not logged in
 func EnsureLoggedIn() gin.HandlerFunc <span class="cov9" title="60">{
-        return func(c *gin.Context) </span><span class="cov10" title="75">{
+        return func(c *gin.Context) </span><span class="cov10" title="81">{
                 var token string
                 var err error
 
@@ -7515,17 +7515,17 @@ func EnsureLoggedIn() gin.HandlerFunc <span class="cov9" title="60">{
                         <span class="cov0" title="0">return</span>
                 }
 
-                <span class="cov10" title="75">authString := c.Request.Header.Get("Authorization")
-                if authString == "" </span><span class="cov2" title="2">{
+                <span class="cov10" title="81">authString := c.Request.Header.Get("Authorization")
+                if authString == "" </span><span class="cov0" title="0">{
                         token, err = c.Cookie("scaffold_token")
-                        if err != nil </span><span class="cov2" title="2">{
+                        if err != nil </span><span class="cov0" title="0">{
                                 c.Redirect(307, "/ui/login")
                                 return
                         }</span>
-                } else<span class="cov9" title="73"> {
+                } else<span class="cov10" title="81"> {
                         token = strings.Split(authString, " ")[1]
                 }</span>
-                <span class="cov9" title="73">if token == config.Config.Node.PrimaryKey </span><span class="cov9" title="73">{
+                <span class="cov10" title="81">if token == config.Config.Node.PrimaryKey </span><span class="cov10" title="81">{
                         return
                 }</span>
 
@@ -7596,14 +7596,14 @@ func EnsureLoggedInAPI() gin.HandlerFunc <span class="cov1" title="1">{
 }
 
 func EnsureNotLoggedIn() gin.HandlerFunc <span class="cov5" title="8">{
-        return func(c *gin.Context) </span><span class="cov2" title="2">{
+        return func(c *gin.Context) </span><span class="cov0" title="0">{
                 var token string
                 var err error
 
                 authString := c.Request.Header.Get("Authorization")
-                if authString == "" </span><span class="cov2" title="2">{
+                if authString == "" </span><span class="cov0" title="0">{
                         token, err = c.Cookie("scaffold_token")
-                        if err != nil </span><span class="cov2" title="2">{
+                        if err != nil </span><span class="cov0" title="0">{
                                 return
                         }</span>
                 } else<span class="cov0" title="0"> {
@@ -7628,8 +7628,8 @@ func EnsureNotLoggedIn() gin.HandlerFunc <span class="cov5" title="8">{
 
 // This middleware ensures that a request will be aborted with an error
 // if the user is not logged in
-func EnsureWorkflowGroup(paramName string) gin.HandlerFunc <span class="cov8" title="30">{
-        return func(c *gin.Context) </span><span class="cov5" title="9">{
+func EnsureWorkflowGroup(paramName string) gin.HandlerFunc <span class="cov7" title="30">{
+        return func(c *gin.Context) </span><span class="cov5" title="10">{
                 var token string
                 var err error
                 isUI := false
@@ -7638,7 +7638,7 @@ func EnsureWorkflowGroup(paramName string) gin.HandlerFunc <span class="cov8" ti
                 if err != nil </span><span class="cov0" title="0">{
                         c.AbortWithStatus(http.StatusUnauthorized)
                 }</span>
-                <span class="cov5" title="9">if cs == nil </span><span class="cov0" title="0">{
+                <span class="cov5" title="10">if cs == nil </span><span class="cov1" title="1">{
                         return
                 }</span>
 
@@ -7803,15 +7803,15 @@ func EnsureGroupsAllowed(groups []string) gin.HandlerFunc <span class="cov0" tit
         }
 }
 
-func EnsureRolesAllowed(roles []string) gin.HandlerFunc <span class="cov9" title="47">{
-        return func(c *gin.Context) </span><span class="cov8" title="41">{
+func EnsureRolesAllowed(roles []string) gin.HandlerFunc <span class="cov8" title="47">{
+        return func(c *gin.Context) </span><span class="cov8" title="48">{
                 var usr *user.User
                 var err error
 
                 authString := c.Request.Header.Get("Authorization")
-                if authString == "" </span><span class="cov2" title="2">{
+                if authString == "" </span><span class="cov0" title="0">{
                         token, err := c.Cookie("scaffold_token")
-                        if err != nil </span><span class="cov2" title="2">{
+                        if err != nil </span><span class="cov0" title="0">{
                                 c.AbortWithStatus(http.StatusUnauthorized)
                                 return
                         }</span>
@@ -7820,9 +7820,9 @@ func EnsureRolesAllowed(roles []string) gin.HandlerFunc <span class="cov9" title
                                 c.AbortWithStatus(http.StatusUnauthorized)
                                 return
                         }</span>
-                } else<span class="cov8" title="39"> {
+                } else<span class="cov8" title="48"> {
                         token := strings.Split(authString, " ")[1]
-                        if token == config.Config.Node.PrimaryKey </span><span class="cov8" title="39">{
+                        if token == config.Config.Node.PrimaryKey </span><span class="cov8" title="48">{
                                 return
                         }</span>
                         <span class="cov0" title="0">usr, err = user.GetUserByAPIToken(token)
@@ -7867,7 +7867,7 @@ import (
 )
 
 func CORSMiddleware() gin.HandlerFunc <span class="cov4" title="7">{
-        return func(c *gin.Context) </span><span class="cov10" title="80">{
+        return func(c *gin.Context) </span><span class="cov10" title="84">{
                 c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
                 c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
                 c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Scaffold-API")
@@ -7878,7 +7878,7 @@ func CORSMiddleware() gin.HandlerFunc <span class="cov4" title="7">{
                         return
                 }</span>
 
-                <span class="cov9" title="79">c.Next()</span>
+                <span class="cov10" title="84">c.Next()</span>
         }
 }
 </pre>
@@ -8923,12 +8923,12 @@ import (
         logger "github.com/jfcarter2358/go-logger"
 )
 
-func LoginPageEndpoint(ctx *gin.Context) <span class="cov10" title="2">{
+func LoginPageEndpoint(ctx *gin.Context) <span class="cov0" title="0">{
         markdown := loginBuildPage("", ctx)
         ctx.Data(http.StatusOK, "text/html; charset=utf-8", markdown)
 }</span>
 
-func loginBuildPage(errorMessage string, ctx *gin.Context) []byte <span class="cov10" title="2">{
+func loginBuildPage(errorMessage string, ctx *gin.Context) []byte <span class="cov0" title="0">{
         p := page.Page{
                 ID: "page",
                 Components: []ui.Component{
@@ -8986,7 +8986,7 @@ func loginBuildPage(errorMessage string, ctx *gin.Context) []byte <span class="c
                 ctx.AbortWithStatus(http.StatusInternalServerError)
                 return []byte{}
         }</span>
-        <span class="cov10" title="2">return []byte(html)</span>
+        <span class="cov0" title="0">return []byte(html)</span>
 }
 </pre>
 		
@@ -12143,16 +12143,16 @@ type State struct {
         Context        map[string]string        `json:"context" bson:"context" yaml:"context"`
 }
 
-func CreateState(s *State) error <span class="cov9" title="36">{
+func CreateState(s *State) error <span class="cov9" title="60">{
         ss, err := GetStateByNames(s.Workflow, s.Task)
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("error getting states: %s", err.Error())
         }</span>
-        <span class="cov9" title="36">if ss != nil </span><span class="cov5" title="6">{
+        <span class="cov9" title="60">if ss != nil </span><span class="cov4" title="6">{
                 return nil
         }</span>
 
-        <span class="cov8" title="30">_, err = mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME].InsertOne(mongodb.Ctx, s)
+        <span class="cov9" title="54">_, err = mongodb.Collections[constants.MONGODB_STATE_COLLECTION_NAME].InsertOne(mongodb.Ctx, s)
         return err</span>
 }
 
@@ -12227,7 +12227,7 @@ func CopyStatesByNames(workflow, task1, task2 string) error <span class="cov0" t
         return err</span>
 }
 
-func GetStateByNames(workflow, task string) (*State, error) <span class="cov9" title="36">{
+func GetStateByNames(workflow, task string) (*State, error) <span class="cov9" title="61">{
         filter := bson.M{"workflow": workflow, "task": task}
 
         states, err := FilterStates(filter)
@@ -12236,15 +12236,15 @@ func GetStateByNames(workflow, task string) (*State, error) <span class="cov9" t
                 return nil, err
         }</span>
 
-        <span class="cov9" title="36">if len(states) == 0 </span><span class="cov8" title="30">{
+        <span class="cov9" title="61">if len(states) == 0 </span><span class="cov9" title="55">{
                 return nil, nil
         }</span>
 
-        <span class="cov5" title="6">if len(states) &gt; 1 </span><span class="cov0" title="0">{
+        <span class="cov4" title="6">if len(states) &gt; 1 </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("multiple states found with names %s, %s", workflow, task)
         }</span>
 
-        <span class="cov5" title="6">return states[0], nil</span>
+        <span class="cov4" title="6">return states[0], nil</span>
 }
 
 func GetStateByNamesAndRunID(workflow, task, runID string) (*State, error) <span class="cov0" title="0">{
@@ -12388,7 +12388,7 @@ func ClearStateByNames(workflow, task string, runNumber int) error <span class="
         <span class="cov0" title="0">return nil</span>
 }
 
-func GetStatesByWorker(worker string) ([]*State, error) <span class="cov6" title="12">{
+func GetStatesByWorker(worker string) ([]*State, error) <span class="cov6" title="11">{
         filter := bson.M{"worker": worker}
 
         states, err := FilterStates(filter)
@@ -12397,10 +12397,10 @@ func GetStatesByWorker(worker string) ([]*State, error) <span class="cov6" title
                 return nil, err
         }</span>
 
-        <span class="cov6" title="12">return states, nil</span>
+        <span class="cov6" title="11">return states, nil</span>
 }
 
-func FilterStates(filter interface{}) ([]*State, error) <span class="cov10" title="48">{
+func FilterStates(filter interface{}) ([]*State, error) <span class="cov10" title="72">{
         // A slice of tasks for storing the decoded documents
         var states []*State
 
@@ -12412,22 +12412,22 @@ func FilterStates(filter interface{}) ([]*State, error) <span class="cov10" titl
                 return states, err
         }</span>
 
-        <span class="cov10" title="48">for cur.Next(ctx) </span><span class="cov5" title="6">{
+        <span class="cov10" title="72">for cur.Next(ctx) </span><span class="cov4" title="6">{
                 var s State
                 err := cur.Decode(&amp;s)
                 if err != nil </span><span class="cov0" title="0">{
                         return states, err
                 }</span>
 
-                <span class="cov5" title="6">states = append(states, &amp;s)</span>
+                <span class="cov4" title="6">states = append(states, &amp;s)</span>
         }
 
-        <span class="cov10" title="48">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
+        <span class="cov10" title="72">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
                 return states, err
         }</span>
 
         // once exhausted, close the cursor
-        <span class="cov10" title="48">cur.Close(ctx)
+        <span class="cov10" title="72">cur.Close(ctx)
 
         return states, nil</span>
 }
@@ -12495,20 +12495,20 @@ type Task struct {
         ContainerLoginCommand string `json:"container_login_command" bson:"container_login_command" yaml:"container_login_command"`
 }
 
-func CreateTask(t *Task) error <span class="cov8" title="36">{
+func CreateTask(t *Task) error <span class="cov9" title="60">{
         tt, err := GetTaskByNames(t.Workflow, t.Name)
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("error getting tasks: %s", err.Error())
         }</span>
-        <span class="cov8" title="36">if tt != nil </span><span class="cov0" title="0">{
+        <span class="cov9" title="60">if tt != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("task already exists with names %s, %s", t.Workflow, t.Name)
         }</span>
 
-        <span class="cov8" title="36">if t.Kind == "" </span><span class="cov8" title="36">{
+        <span class="cov9" title="60">if t.Kind == "" </span><span class="cov9" title="60">{
                 t.Kind = constants.TASK_KIND_LOCAL
         }</span>
 
-        <span class="cov8" title="36">s := state.State{
+        <span class="cov9" title="60">s := state.State{
                 Task:     t.Name,
                 Workflow: t.Workflow,
                 Status:   constants.STATE_STATUS_NOT_STARTED,
@@ -12525,7 +12525,7 @@ func CreateTask(t *Task) error <span class="cov8" title="36">{
                 logger.Warnf("", "Error creating state for task: %s", err.Error())
         }</span>
 
-        <span class="cov8" title="36">_, err = mongodb.Collections[constants.MONGODB_TASK_COLLECTION_NAME].InsertOne(mongodb.Ctx, t)
+        <span class="cov9" title="60">_, err = mongodb.Collections[constants.MONGODB_TASK_COLLECTION_NAME].InsertOne(mongodb.Ctx, t)
         return err</span>
 }
 
@@ -12569,7 +12569,7 @@ func DeleteTasksByWorkflow(workflow string) error <span class="cov4" title="6">{
 
 }
 
-func GetAllTasks() ([]*Task, error) <span class="cov8" title="33">{
+func GetAllTasks() ([]*Task, error) <span class="cov7" title="33">{
         filter := bson.D{{}}
 
         tasks, err := FilterTasks(filter)
@@ -12577,7 +12577,7 @@ func GetAllTasks() ([]*Task, error) <span class="cov8" title="33">{
         return tasks, err
 }</span>
 
-func GetTaskByNames(workflow, task string) (*Task, error) <span class="cov8" title="36">{
+func GetTaskByNames(workflow, task string) (*Task, error) <span class="cov9" title="60">{
         filter := bson.M{"workflow": workflow, "name": task}
 
         tasks, err := FilterTasks(filter)
@@ -12586,7 +12586,7 @@ func GetTaskByNames(workflow, task string) (*Task, error) <span class="cov8" tit
                 return nil, err
         }</span>
 
-        <span class="cov8" title="36">if len(tasks) == 0 </span><span class="cov8" title="36">{
+        <span class="cov9" title="60">if len(tasks) == 0 </span><span class="cov9" title="60">{
                 return nil, nil
         }</span>
 
@@ -12638,7 +12638,7 @@ func UpdateTaskByNames(workflow, task string, t *Task) error <span class="cov0" 
         return nil</span>
 }
 
-func FilterTasks(filter interface{}) ([]*Task, error) <span class="cov10" title="69">{
+func FilterTasks(filter interface{}) ([]*Task, error) <span class="cov10" title="93">{
         // A slice of tasks for storing the decoded documents
         var tasks []*Task
 
@@ -12650,22 +12650,22 @@ func FilterTasks(filter interface{}) ([]*Task, error) <span class="cov10" title=
                 return tasks, err
         }</span>
 
-        <span class="cov10" title="69">for cur.Next(ctx) </span><span class="cov4" title="6">{
+        <span class="cov10" title="93">for cur.Next(ctx) </span><span class="cov7" title="30">{
                 var s Task
                 err := cur.Decode(&amp;s)
                 if err != nil </span><span class="cov0" title="0">{
                         return tasks, err
                 }</span>
 
-                <span class="cov4" title="6">tasks = append(tasks, &amp;s)</span>
+                <span class="cov7" title="30">tasks = append(tasks, &amp;s)</span>
         }
 
-        <span class="cov10" title="69">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
+        <span class="cov10" title="93">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
                 return tasks, err
         }</span>
 
         // once exhausted, close the cursor
-        <span class="cov10" title="69">cur.Close(ctx)
+        <span class="cov10" title="93">cur.Close(ctx)
 
         return tasks, nil</span>
 }
@@ -12737,7 +12737,7 @@ type APIToken struct {
         Created string `json:"created" bson:"created" yaml:"created"`
 }
 
-func CreateUser(u *User) error <span class="cov7" title="11">{
+func CreateUser(u *User) error <span class="cov7" title="15">{
         currentTime := time.Now().UTC()
         u.Created = currentTime.Format("2006-01-02T15:04:05Z")
         u.Updated = currentTime.Format("2006-01-02T15:04:05Z")
@@ -12746,16 +12746,16 @@ func CreateUser(u *User) error <span class="cov7" title="11">{
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("error getting users: %s", err.Error())
         }</span>
-        <span class="cov7" title="11">if uu != nil </span><span class="cov0" title="0">{
+        <span class="cov7" title="15">if uu != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("user already exists with username %s", u.Username)
         }</span>
 
-        <span class="cov7" title="11">password, err := HashAndSalt([]byte(u.Password))
+        <span class="cov7" title="15">password, err := HashAndSalt([]byte(u.Password))
         if err != nil </span><span class="cov0" title="0">{
                 return err
         }</span>
 
-        <span class="cov7" title="11">u.Password = password
+        <span class="cov7" title="15">u.Password = password
 
         _, err = mongodb.Collections[constants.MONGODB_USER_COLLECTION_NAME].InsertOne(mongodb.Ctx, u)
         return err</span>
@@ -12781,7 +12781,7 @@ func DeleteUserByUsername(username string) error <span class="cov6" title="9">{
 
 }
 
-func GetAllUsers() ([]*User, error) <span class="cov8" title="17">{
+func GetAllUsers() ([]*User, error) <span class="cov8" title="21">{
         filter := bson.D{{}}
 
         users, err := FilterUsers(filter)
@@ -12789,7 +12789,7 @@ func GetAllUsers() ([]*User, error) <span class="cov8" title="17">{
         return users, err
 }</span>
 
-func GetUserByUsername(username string) (*User, error) <span class="cov8" title="16">{
+func GetUserByUsername(username string) (*User, error) <span class="cov8" title="20">{
         filter := bson.M{"username": username}
 
         allUsers, err := GetAllUsers()
@@ -12797,7 +12797,7 @@ func GetUserByUsername(username string) (*User, error) <span class="cov8" title=
                 logger.Errorf("", "Unable to get all users")
                 return nil, err
         }</span>
-        <span class="cov8" title="16">logger.Debugf("", "All users: %v", allUsers)
+        <span class="cov8" title="20">logger.Debugf("", "All users: %v", allUsers)
 
         logger.Debugf("", "Searching for username %s with filter %v", username, filter)
 
@@ -12809,7 +12809,7 @@ func GetUserByUsername(username string) (*User, error) <span class="cov8" title=
                 return nil, err
         }</span>
 
-        <span class="cov8" title="16">if len(users) == 0 </span><span class="cov7" title="12">{
+        <span class="cov8" title="20">if len(users) == 0 </span><span class="cov7" title="16">{
                 return nil, nil
         }</span>
 
@@ -13007,7 +13007,7 @@ func UpdateUserByUsername(username string, u *User) error <span class="cov1" tit
         <span class="cov1" title="1">return nil</span>
 }
 
-func FilterUsers(filter interface{}) ([]*User, error) <span class="cov10" title="33">{
+func FilterUsers(filter interface{}) ([]*User, error) <span class="cov10" title="41">{
         // A slice of tasks for storing the decoded documents
         var users []*User
 
@@ -13019,23 +13019,23 @@ func FilterUsers(filter interface{}) ([]*User, error) <span class="cov10" title=
                 return users, err
         }</span>
 
-        <span class="cov10" title="33">for cur.Next(ctx) </span><span class="cov9" title="24">{
+        <span class="cov10" title="41">for cur.Next(ctx) </span><span class="cov9" title="38">{
                 var u User
                 err := cur.Decode(&amp;u)
                 if err != nil </span><span class="cov0" title="0">{
                         return users, err
                 }</span>
-                <span class="cov9" title="24">logger.Tracef("", "Found user: %s", u.Username)
+                <span class="cov9" title="38">logger.Tracef("", "Found user: %s", u.Username)
 
                 users = append(users, &amp;u)</span>
         }
 
-        <span class="cov10" title="33">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
+        <span class="cov10" title="41">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
                 return users, err
         }</span>
 
         // once exhausted, close the cursor
-        <span class="cov10" title="33">cur.Close(ctx)
+        <span class="cov10" title="41">cur.Close(ctx)
 
         return users, nil</span>
 }
@@ -13073,12 +13073,12 @@ func VerifyAdmin() error <span class="cov1" title="1">{
         <span class="cov1" title="1">return err</span>
 }
 
-func HashAndSalt(pwd []byte) (string, error) <span class="cov7" title="11">{
+func HashAndSalt(pwd []byte) (string, error) <span class="cov7" title="15">{
         hash, err := bcrypt.GenerateFromPassword(pwd, bcrypt.MinCost)
         if err != nil </span><span class="cov0" title="0">{
                 return "", nil
         }</span>
-        <span class="cov7" title="11">return string(hash), nil</span>
+        <span class="cov7" title="15">return string(hash), nil</span>
 }
 
 func VerifyUser(username, password string) (bool, error) <span class="cov0" title="0">{
@@ -13498,14 +13498,14 @@ func SetCache(ws []*Workflow) <span class="cov1" title="1">{
         }</span>
 }
 
-func AddCache(w Workflow) <span class="cov5" title="6">{
+func AddCache(w Workflow) <span class="cov6" title="10">{
         cache.Lock.Lock()
         defer cache.Lock.Unlock()
 
         cache.Workflows[w.Name] = w
 }</span>
 
-func DeleteCache(name string) <span class="cov5" title="6">{
+func DeleteCache(name string) <span class="cov4" title="6">{
         cache.Lock.Lock()
         defer cache.Lock.Unlock()
 
@@ -13529,7 +13529,7 @@ func GetCacheSingle(name string) Workflow <span class="cov0" title="0">{
         <span class="cov0" title="0">return Workflow{}</span>
 }
 
-func CreateWorkflow(w *Workflow) error <span class="cov5" title="6">{
+func CreateWorkflow(w *Workflow) error <span class="cov6" title="10">{
         currentTime := time.Now().UTC()
         w.Created = currentTime.Format("2006-01-02T15:04:05Z")
         w.Updated = currentTime.Format("2006-01-02T15:04:05Z")
@@ -13538,17 +13538,17 @@ func CreateWorkflow(w *Workflow) error <span class="cov5" title="6">{
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("error getting workflows: %s", err.Error())
         }</span>
-        <span class="cov5" title="6">if ww != nil </span><span class="cov0" title="0">{
+        <span class="cov6" title="10">if ww != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("workflow already exists with name %s", w.Name)
         }</span>
 
-        <span class="cov5" title="6">_, err = mongodb.Collections[constants.MONGODB_WORKFLOW_COLLECTION_NAME].InsertOne(mongodb.Ctx, w)
+        <span class="cov6" title="10">_, err = mongodb.Collections[constants.MONGODB_WORKFLOW_COLLECTION_NAME].InsertOne(mongodb.Ctx, w)
 
         if err != nil </span><span class="cov0" title="0">{
                 return err
         }</span>
 
-        <span class="cov5" title="6">for _, t := range w.Tasks </span><span class="cov10" title="36">{
+        <span class="cov6" title="10">for _, t := range w.Tasks </span><span class="cov10" title="60">{
                 t.Workflow = w.Name
                 t.RunNumber = 0
                 if err := task.CreateTask(&amp;t); err != nil </span><span class="cov0" title="0">{
@@ -13556,14 +13556,14 @@ func CreateWorkflow(w *Workflow) error <span class="cov5" title="6">{
                 }</span>
         }
 
-        <span class="cov5" title="6">for _, i := range w.Inputs </span><span class="cov7" title="12">{
+        <span class="cov6" title="10">for _, i := range w.Inputs </span><span class="cov7" title="20">{
                 i.Workflow = w.Name
                 if err := input.CreateInput(&amp;i); err != nil </span><span class="cov0" title="0">{
                         return err
                 }</span>
         }
 
-        <span class="cov5" title="6">d := &amp;datastore.DataStore{
+        <span class="cov6" title="10">d := &amp;datastore.DataStore{
                 Name:    w.Name,
                 Env:     make(map[string]string),
                 Files:   make([]string, 0),
@@ -13571,19 +13571,19 @@ func CreateWorkflow(w *Workflow) error <span class="cov5" title="6">{
                 Updated: w.Updated,
         }
 
-        for _, val := range w.Inputs </span><span class="cov7" title="12">{
+        for _, val := range w.Inputs </span><span class="cov7" title="20">{
                 d.Env[val.Name] = val.Default
         }</span>
 
-        <span class="cov5" title="6">err = datastore.CreateDataStore(d)
+        <span class="cov6" title="10">err = datastore.CreateDataStore(d)
 
-        if err == nil </span><span class="cov5" title="6">{
+        if err == nil </span><span class="cov6" title="10">{
                 AddCache(*w)
         }</span>
-        <span class="cov5" title="6">return err</span>
+        <span class="cov6" title="10">return err</span>
 }
 
-func DeleteWorkflowByName(name string) error <span class="cov5" title="6">{
+func DeleteWorkflowByName(name string) error <span class="cov4" title="6">{
         filter := bson.M{"name": name}
 
         collection := mongodb.Collections[constants.MONGODB_WORKFLOW_COLLECTION_NAME]
@@ -13595,21 +13595,21 @@ func DeleteWorkflowByName(name string) error <span class="cov5" title="6">{
                 return err
         }</span>
 
-        <span class="cov5" title="6">DeleteCache(name)
+        <span class="cov4" title="6">DeleteCache(name)
 
         if result.DeletedCount != 1 </span><span class="cov0" title="0">{
                 return fmt.Errorf("unable to delete workflow %s, doesn't exist", name)
         }</span>
 
-        <span class="cov5" title="6">if err := task.DeleteTasksByWorkflow(name); err != nil </span><span class="cov0" title="0">{
+        <span class="cov4" title="6">if err := task.DeleteTasksByWorkflow(name); err != nil </span><span class="cov0" title="0">{
                 return err
         }</span>
 
-        <span class="cov5" title="6">if err := input.DeleteInputsByWorkflow(name); err != nil </span><span class="cov0" title="0">{
+        <span class="cov4" title="6">if err := input.DeleteInputsByWorkflow(name); err != nil </span><span class="cov0" title="0">{
                 return err
         }</span>
 
-        <span class="cov5" title="6">err = datastore.DeleteDataStoreByWorkflow(name)
+        <span class="cov4" title="6">err = datastore.DeleteDataStoreByWorkflow(name)
 
         return err</span>
 
@@ -13623,7 +13623,7 @@ func GetAllWorkflows() ([]*Workflow, error) <span class="cov2" title="2">{
         return workflows, err
 }</span>
 
-func GetWorkflowByName(name string) (*Workflow, error) <span class="cov8" title="18">{
+func GetWorkflowByName(name string) (*Workflow, error) <span class="cov7" title="23">{
         filter := bson.M{"name": name}
 
         workflows, err := FilterWorkflows(filter)
@@ -13633,15 +13633,15 @@ func GetWorkflowByName(name string) (*Workflow, error) <span class="cov8" title=
                 return nil, err
         }</span>
 
-        <span class="cov8" title="18">if len(workflows) == 0 </span><span class="cov5" title="6">{
+        <span class="cov7" title="23">if len(workflows) == 0 </span><span class="cov6" title="11">{
                 return nil, nil
         }</span>
 
-        <span class="cov7" title="12">if len(workflows) &gt; 1 </span><span class="cov0" title="0">{
+        <span class="cov6" title="12">if len(workflows) &gt; 1 </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("multiple workflows found with name %s", name)
         }</span>
 
-        <span class="cov7" title="12">return workflows[0], nil</span>
+        <span class="cov6" title="12">return workflows[0], nil</span>
 }
 
 func UpdateWorkflowByName(name string, w *Workflow) error <span class="cov1" title="1">{
@@ -13747,7 +13747,7 @@ func UpdateWorkflowByName(name string, w *Workflow) error <span class="cov1" tit
         <span class="cov1" title="1">return CreateWorkflow(w)</span>
 }
 
-func FilterWorkflows(filter interface{}) ([]*Workflow, error) <span class="cov8" title="20">{
+func FilterWorkflows(filter interface{}) ([]*Workflow, error) <span class="cov8" title="25">{
         // A slice of tasks for storing the decoded documents
         var workflows []*Workflow
 
@@ -13759,22 +13759,22 @@ func FilterWorkflows(filter interface{}) ([]*Workflow, error) <span class="cov8"
                 return workflows, err
         }</span>
 
-        <span class="cov8" title="20">for cur.Next(ctx) </span><span class="cov7" title="13">{
+        <span class="cov8" title="25">for cur.Next(ctx) </span><span class="cov6" title="13">{
                 var c Workflow
                 err := cur.Decode(&amp;c)
                 if err != nil </span><span class="cov0" title="0">{
                         return workflows, err
                 }</span>
 
-                <span class="cov7" title="13">workflows = append(workflows, &amp;c)</span>
+                <span class="cov6" title="13">workflows = append(workflows, &amp;c)</span>
         }
 
-        <span class="cov8" title="20">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="25">if err := cur.Err(); err != nil </span><span class="cov0" title="0">{
                 return workflows, err
         }</span>
 
         // once exhausted, close the cursor
-        <span class="cov8" title="20">cur.Close(ctx)
+        <span class="cov8" title="25">cur.Close(ctx)
 
         return workflows, nil</span>
 }

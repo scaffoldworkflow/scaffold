@@ -226,10 +226,6 @@ definitions:
         items:
           $ref: '#/definitions/input.Input'
         type: array
-      links:
-        additionalProperties:
-          type: string
-        type: object
       name:
         type: string
       tasks:

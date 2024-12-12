@@ -10,7 +10,6 @@ class Workflow:
         'created': '',
         'updated': '',
         'groups': [],
-        'links': {},
     }
     def __init__(self):
         for key, val in self.keys.items():

@@ -2549,12 +2549,6 @@ const docTemplate = `{
                         "$ref": "#/definitions/input.Input"
                     }
                 },
-                "links": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
                 "name": {
                     "type": "string"
                 },

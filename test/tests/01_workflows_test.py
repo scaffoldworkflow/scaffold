@@ -1,10 +1,8 @@
 import pytest
 import requests
 from config import *
-import random
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import scaffold.workflow
-import uuid
 import time
 import helpers
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)

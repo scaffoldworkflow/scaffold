@@ -15,10 +15,6 @@
       "default": "Hello, "
     }
   ],
-  "links": {
-    "website": "https://johnfcarter.tech",
-    "google": "https://google.com"
-  },
   "groups": [
     "foo"
   ],

@@ -1,14 +1,14 @@
 .variables:
   architectures:
     - amd64
-    - arm64
-  docker_org: jfcarter2358
+    # - arm64
+  docker_org: scaffoldworkflow
   oses:
-    - darwin
-    - freebsd
+    # - darwin
+    # - freebsd
     - linux
-    - openbsd
-    - windows
+    # - openbsd
+    # - windows
   platforms:
     - linux/amd64
     - linux/arm64

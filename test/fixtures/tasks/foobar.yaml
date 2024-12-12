@@ -1,6 +1,0 @@
-name: foobar
-cascade: foobar
-image: foobar
-run: echo "hello world" 
-run_number: 0
-auto_execute: false

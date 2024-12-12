@@ -1,11 +1,6 @@
 services:
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:8080:8080"
   scaffold-manager:
-    image: "scaffold"
+    image: "scaffoldworkflow/scaffold"
     restart: always
     ports:
       - "127.0.0.1:2997:2997"
@@ -91,49 +86,11 @@ services:
       - seccomp:unconfined
     privileged: true
     tty: true
-  scaffold-worker-2:
-    image: "scaffold"
-    restart: always
+  rabbitmq:
+    image: rabbitmq:3-management
     ports:
-      - "127.0.0.1:2999:2999"
-    environment:
-      SCAFFOLD_BASE_URL: http://scaffold-worker-2:2999
-      SCAFFOLD_LOG_LEVEL: "TRACE"
-      SCAFFOLD_LOG_FORMAT: "console"
-      SCAFFOLD_ADMIN: |
-        {
-          "username": "admin",
-          "password": "admin"
-        }
-      SCAFFOLD_SLEEP: "20"
-      SCAFFOLD_DB_CONNECTION_STRING: "mongodb://MyCoolMongoDBUsername:MyCoolMongoDBPassword@mongodb:27017/scaffold"
-      SCAFFOLD_NODE: |
-        {
-          "type": "worker",
-          "manager_host": "scaffold-manager",
-          "manager_port": 2997,
-          "join_key": "MyCoolJoinKey12345",
-          "primary_key": "MyCoolPrimaryKey12345",
-          "manager_protocol": "http"
-        }
-      SCAFFOLD_FILESTORE: |
-        {
-          "access_key": "MyCoolMinIOAccessKey",
-          "secret_key": "MyCoolMinIOSecretKey",
-          "host": "minio",
-          "port": 9090,
-          "bucket": "scaffold",
-          "region": "default-region",
-          "protocol": "http",
-          "type": "s3"
-        }
-      SCAFFOLD_RESTART_PERIOD: 120
-    depends_on:
-      - "scaffold-manager"
-    security_opt:
-      - seccomp:unconfined
-    privileged: true
-    tty: true
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:8080:8080"
   mongodb:
     image: centos/mongodb-36-centos7:1
     ports:

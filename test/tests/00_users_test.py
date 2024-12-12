@@ -1,7 +1,6 @@
 import pytest
 import requests
 from config import *
-import random
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import scaffold.user
 import uuid

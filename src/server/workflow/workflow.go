@@ -17,14 +17,13 @@ import (
 )
 
 type Workflow struct {
-	Version string            `json:"version" bson:"version" yaml:"version"`
-	Name    string            `json:"name" bson:"name" yaml:"name"`
-	Inputs  []input.Input     `json:"inputs" bson:"inputs" yaml:"inputs"`
-	Tasks   []task.Task       `json:"tasks" bson:"tasks" yaml:"tasks"`
-	Created string            `json:"created" bson:"created" yaml:"created"`
-	Updated string            `json:"updated" bson:"updated" yaml:"updated"`
-	Groups  []string          `json:"groups" bson:"groups" yaml:"groups"`
-	Links   map[string]string `json:"links" bson:"links" yaml:"links"`
+	Version string        `json:"version" bson:"version" yaml:"version"`
+	Name    string        `json:"name" bson:"name" yaml:"name"`
+	Inputs  []input.Input `json:"inputs" bson:"inputs" yaml:"inputs"`
+	Tasks   []task.Task   `json:"tasks" bson:"tasks" yaml:"tasks"`
+	Created string        `json:"created" bson:"created" yaml:"created"`
+	Updated string        `json:"updated" bson:"updated" yaml:"updated"`
+	Groups  []string      `json:"groups" bson:"groups" yaml:"groups"`
 }
 
 type cacheObj struct {
