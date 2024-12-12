@@ -43,6 +43,8 @@ push-docker:
     version = ?(cat src/server/VERSION).strip()
     docker tag scaffold {docker_org}/scaffold:{version}
     docker push {docker_org}/scaffold:{version}
+    docker tag scaffold {docker_org}/scaffold:latest
+    docker push {docker_org}/scaffold:latest
 build-docker-test:
   help: Build Scaffold test Docker image
   cmd: |
@@ -56,14 +58,9 @@ publish:
     platform_string = ','.join(platforms)
     version = ?(cat src/server/VERSION).strip()
 
-    print(f"Running build command: docker buildx build --platform {platform_string} -t {docker_org}/scaffold:build -f helpers/Dockerfile.build --push .")
-    docker buildx build --platform {platform_string} -t {docker_org}/scaffold:build -f helpers/Dockerfile.build --push .
-
-    print(f"Running build command: docker buildx build --platform {platform_string} -t {docker_org}/scaffold:run -f helpers/Dockerfile.run --push .")
-    docker buildx build --platform {platform_string} -t {docker_org}/scaffold:run -f helpers/Dockerfile.run --push .
-
     print(f"Running build command: docker buildx build --platform {platform_string} -t {docker_org}/scaffold:{version} -f src/server/Dockerfile --push .")
     docker buildx build --platform {platform_string} -t {docker_org}/scaffold:{version} -f src/server/Dockerfile --push .
+    docker buildx build --platform {platform_string} -t {docker_org}/scaffold:latest -f src/server/Dockerfile --push .
 
     print('Done!')
 build-cli:

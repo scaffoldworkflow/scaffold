@@ -81,7 +81,7 @@ So we have one task, but it just stores our message it doesn't really do anythin
 
 ```yaml
 version: v1
-name: hello_world_2
+name: hello_world
 groups:
 - foo
 inputs:

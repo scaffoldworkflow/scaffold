@@ -60,7 +60,7 @@ def delete_individual(workflow: str, name: str, base: str, auth: str, fail_on_er
         raise ValueError(f"Post request responded with {response.status_code}")
     return response.status_code
 
-def all(base: str, auth: str, fail_on_error: bool=True) -> tuple[int, any]:
+def get_all(base: str, auth: str, fail_on_error: bool=True) -> tuple[int, any]:
     headers = {"Authorization" : f'X-Scaffold-API {auth}' }
     response = requests.get(f"{base}/api/v1/task", headers=headers, verify=False)
     if response.status_code >= 400 and fail_on_error:

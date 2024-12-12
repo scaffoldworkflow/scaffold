@@ -43,7 +43,7 @@ Scaffold Remote Version: 0.4.1
 Now configure access to Scaffold:
 
 ```sh
-sc configure --username admin --password admin
+scaffold configure --username admin --password admin
 ```
 
 and you should be ready for your first workflow
