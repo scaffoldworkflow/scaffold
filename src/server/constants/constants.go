@@ -9,7 +9,7 @@ const STATE_STATUS_WAITING = "waiting"
 const STATE_STATUS_NOT_STARTED = "not_started"
 const STATE_STATUS_KILLED = "killed"
 
-const MONGODB_CASCADE_COLLECTION_NAME = "workflow"
+const MONGODB_WORKFLOW_COLLECTION_NAME = "workflow"
 const MONGODB_DATASTORE_COLLECTION_NAME = "datastore"
 const MONGODB_STATE_COLLECTION_NAME = "state"
 const MONGODB_USER_COLLECTION_NAME = "user"
@@ -56,6 +56,10 @@ const NODE_WARN = "warn"
 const NODE_ERROR = "error"
 const NODE_DEPLOYING = "deploying"
 const NODE_NOT_DEPLOYED = "not-deployed"
+const NODE_KILLED = "killed"
+const NODE_WAITING = "waiting"
+const NODE_SUCCESS = "success"
+const NODE_RUNNING = "running"
 
 var UI_HEALTH_ICONS = map[string]string{
 	NODE_HEALTHY:   "fa-circle-check",
@@ -65,10 +69,10 @@ var UI_HEALTH_ICONS = map[string]string{
 }
 
 var UI_HEALTH_COLORS = map[string]string{
-	NODE_HEALTHY:   "scaffold-text-green",
-	NODE_DEGRADED:  "scaffold-text-yellow",
-	NODE_UNHEALTHY: "scaffold-text-red",
-	NODE_UNKNOWN:   "scaffold-text-charcoal",
+	NODE_HEALTHY:   "ui-text-green",
+	NODE_DEGRADED:  "ui-text-yellow",
+	NODE_UNHEALTHY: "ui-text-red",
+	NODE_UNKNOWN:   "ui-text-charcoal",
 }
 
 var UI_HEALTH_TEXT = map[string]string{
@@ -93,5 +97,9 @@ var UI_COLORS = map[string]string{
 	NODE_ERROR:        "red",
 	NODE_DEPLOYING:    "grey",
 	NODE_UNKNOWN:      "orange",
+	NODE_KILLED:       "orange",
+	NODE_WAITING:      "yellow",
 	NODE_NOT_DEPLOYED: "grey",
+	NODE_RUNNING:      "blue",
+	NODE_SUCCESS:      "green",
 }

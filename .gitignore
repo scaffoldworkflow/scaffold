@@ -13,5 +13,4 @@ rendered.yaml
 cert.crt
 cert.key
 *.log
-src/server/ui.new
-.floorplan*
+bak

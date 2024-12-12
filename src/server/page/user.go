@@ -3,23 +3,24 @@ package page
 import (
 	"fmt"
 	"net/http"
-	"scaffold/server/ui"
-	"scaffold/server/ui/breadcrumb"
-	"scaffold/server/ui/button"
-	"scaffold/server/ui/card"
-	"scaffold/server/ui/elements/br"
-	"scaffold/server/ui/elements/div"
-	"scaffold/server/ui/elements/h1"
-	"scaffold/server/ui/elements/link"
-	"scaffold/server/ui/modal"
-	"scaffold/server/ui/page"
-	"scaffold/server/ui/sidebar"
-	"scaffold/server/ui/table"
-	"scaffold/server/ui/table/cell"
-	"scaffold/server/ui/table/header"
-	"scaffold/server/ui/topbar"
 	"scaffold/server/user"
 	"strings"
+
+	"github.com/jfcarter2358/ui"
+	"github.com/jfcarter2358/ui/breadcrumb"
+	"github.com/jfcarter2358/ui/button"
+	"github.com/jfcarter2358/ui/card"
+	"github.com/jfcarter2358/ui/elements/br"
+	"github.com/jfcarter2358/ui/elements/div"
+	"github.com/jfcarter2358/ui/elements/h1"
+	"github.com/jfcarter2358/ui/elements/link"
+	"github.com/jfcarter2358/ui/modal"
+	"github.com/jfcarter2358/ui/page"
+	"github.com/jfcarter2358/ui/sidebar"
+	"github.com/jfcarter2358/ui/table"
+	"github.com/jfcarter2358/ui/table/cell"
+	"github.com/jfcarter2358/ui/table/header"
+	"github.com/jfcarter2358/ui/topbar"
 
 	_ "embed"
 
@@ -69,7 +70,7 @@ func userBuildPage(ctx *gin.Context) []byte {
 		Components: []ui.Component{
 			topbar.Topbar{
 				Title:   "Scaffold",
-				Classes: "scaffold-green",
+				Classes: "ui-green",
 				Components: []ui.Component{
 					button.Button{
 						ID:      "generate_api_token_button",
@@ -99,7 +100,7 @@ func userBuildPage(ctx *gin.Context) []byte {
 				Classes: "theme-light rounded-md",
 				Components: []ui.Component{
 					div.Div{
-						Classes: "scaffold-green rounded-md",
+						Classes: "ui-green rounded-md",
 						Components: []ui.Component{
 							breadcrumb.Breadcrumb{
 								Components: []ui.Component{
@@ -166,7 +167,7 @@ func userBuildPage(ctx *gin.Context) []byte {
 						Contents: `
 						<h1 id="api-token-header" class="text-xl" style="float:left;padding-top:8px;padding-left:32px;">API Tokens</h1>
 						`,
-						Classes: "scaffold-green rounded-md",
+						Classes: "ui-green rounded-md",
 						Style:   "width:100%;",
 					},
 					br.BR{},
@@ -213,7 +214,7 @@ func userBuildPage(ctx *gin.Context) []byte {
 			br.BR{},
 			ui.Raw{
 				HTMLString: `
-				<script src="/static/js/jquery-ui.min.js"></script>
+				<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 				<script src="/static/js/user.js"></script>
 				<script src="https://malsup.github.io/jquery.form.js"></script> 
 				`,
@@ -225,7 +226,7 @@ func userBuildPage(ctx *gin.Context) []byte {
 						Contents: `
 						Generate API Token
 						`,
-						Classes: "scaffold-green rounded-md text-3xl",
+						Classes: "ui-green rounded-md text-3xl",
 						Style:   "width:100%;",
 					},
 					br.BR{},
@@ -239,7 +240,7 @@ func userBuildPage(ctx *gin.Context) []byte {
 					},
 					br.BR{},
 					card.Card{
-						Classes: "scaffold-green",
+						Classes: "ui-green",
 						Components: []ui.Component{
 							div.Div{
 								ID: "api-token-field",

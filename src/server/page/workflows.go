@@ -2,21 +2,22 @@ package page
 
 import (
 	"net/http"
-	"scaffold/server/ui"
-	"scaffold/server/ui/breadcrumb"
-	"scaffold/server/ui/elements/br"
-	"scaffold/server/ui/elements/div"
-	"scaffold/server/ui/elements/link"
-	"scaffold/server/ui/page"
-	"scaffold/server/ui/sidebar"
-	"scaffold/server/ui/table"
-	"scaffold/server/ui/table/cell"
-	"scaffold/server/ui/table/header"
-	"scaffold/server/ui/topbar"
 	"scaffold/server/user"
 	"scaffold/server/workflow"
 	"sort"
 	"strings"
+
+	"github.com/jfcarter2358/ui"
+	"github.com/jfcarter2358/ui/breadcrumb"
+	"github.com/jfcarter2358/ui/elements/br"
+	"github.com/jfcarter2358/ui/elements/div"
+	"github.com/jfcarter2358/ui/elements/link"
+	"github.com/jfcarter2358/ui/page"
+	"github.com/jfcarter2358/ui/sidebar"
+	"github.com/jfcarter2358/ui/table"
+	"github.com/jfcarter2358/ui/table/cell"
+	"github.com/jfcarter2358/ui/table/header"
+	"github.com/jfcarter2358/ui/topbar"
 
 	_ "embed"
 
@@ -94,7 +95,7 @@ func workflowsBuildPage(ctx *gin.Context) []byte {
 		Components: []ui.Component{
 			topbar.Topbar{
 				Title:   "Scaffold",
-				Classes: "scaffold-green",
+				Classes: "ui-green",
 				Buttons: []ui.Component{
 					link.Link{
 						Title:   "Logout",
@@ -109,7 +110,7 @@ func workflowsBuildPage(ctx *gin.Context) []byte {
 				Classes: "theme-light rounded-md",
 				Components: []ui.Component{
 					div.Div{
-						Classes: "scaffold-green rounded-md",
+						Classes: "ui-green rounded-md",
 						Components: []ui.Component{
 							breadcrumb.Breadcrumb{
 								Components: []ui.Component{
@@ -184,7 +185,7 @@ func workflowsBuildTable(ws []workflow.Workflow, ctx *gin.Context) []byte {
 		Rows:          make([][]cell.Cell, 0),
 		Classes:       "theme-light",
 		Style:         "width:100%;",
-		HeaderClasses: "rounded-md scaffold-green",
+		HeaderClasses: "rounded-md ui-green",
 	}
 
 	token, _ := ctx.Cookie("scaffold_token")

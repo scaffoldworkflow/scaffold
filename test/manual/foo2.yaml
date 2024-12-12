@@ -1,0 +1,89 @@
+version: v1
+name: foo
+groups:
+  - foo
+inputs:
+  - name: fooInput
+    description: foo
+    default: foo
+    type: text
+  - name: barInput
+    description: bar
+    default: bar
+    type: text
+  - name: bazInput
+    description: bar
+    default: bar
+    type: text
+tasks:
+- name: a
+  inputs:
+    fooInput: fooInput
+    barInput: barInput
+  run: |
+    export "foo=${fooInput}"
+    export "bar=${barInput}"
+  store:
+    env:
+      - foo
+      - bar
+  load:
+    env:
+      - foo
+      - bar
+- name: bb
+  run: |
+    export "foo=${fooInput}"
+    export "bar=${barInput}"
+  inputs:
+    fooInput: fooInput
+    barInput: barInput
+  store:
+    env:
+      - foo
+      - bar
+  load:
+    env:
+      - foo
+      - bar
+  depends_on:
+    success:
+      - a
+      - c
+- name: b
+  image: ubuntu:20.04
+  run: |
+    echo "foo=${foo}"
+    echo "bar=${bar}"
+    for i in $(seq 1 20);
+    do
+      echo $i
+      sleep 1
+    done
+  store:
+    env:
+      - foo
+      - bar
+  load:
+    env:
+      - foo
+      - bar
+  depends_on:
+    success:
+      - a
+  auto_execute: true
+- name: c
+  run: |
+    exit 1
+  store:
+    env:
+      - foo
+      - bar
+  load:
+    env:
+      - foo
+      - bar
+  depends_on:
+    success:
+      - b
+  auto_execute: true

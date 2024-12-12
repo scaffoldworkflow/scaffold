@@ -246,9 +246,9 @@ func UpdateInputByNames(ctx *gin.Context) {
 //	@tags						manager
 //	@tags						input
 //	@produce					json
-//	@success					200		{object}	object
-//	@failure					500		{object}	object
-//	@failure					401		{object}	object
+//	@success					200	{object}	object
+//	@failure					500	{object}	object
+//	@failure					401	{object}	object
 //	@securityDefinitions.apiKey	token
 //	@in							header
 //	@name						Authorization

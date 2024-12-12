@@ -1,8 +1,0 @@
-cascade: foo
-display: []
-finished: ''
-number: 0
-output: ''
-started: ''
-status: not_started
-task: write_file

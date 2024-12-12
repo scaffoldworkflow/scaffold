@@ -9,6 +9,7 @@
     ],
     "roles": [
         "read",
-        "write"
+        "write",
+        "admin"
     ]
 }

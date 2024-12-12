@@ -40,25 +40,6 @@ func DoApply(profile, object, context, fileName string) {
 	doApply(profile, fileName, context, uri, object)
 }
 
-func checkExists(p auth.ProfileObj, uri, name, object string) (bool, error) {
-	httpClient := &http.Client{}
-	requestURL := fmt.Sprintf("%s/api/v1/%s/%s", uri, object, name)
-	req, _ := http.NewRequest("GET", requestURL, nil)
-	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", p.APIToken))
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		logger.Errorf("", "Encountered error checking for %s existence: %s", object, err.Error())
-		return false, err
-	}
-	if resp.StatusCode == http.StatusNotFound {
-		logger.Debugf("", "Got status code %d, doesn't exist", resp.StatusCode)
-		return false, nil
-	}
-
-	return true, nil
-}
-
 func doUpdate(p auth.ProfileObj, uri, object, name string, data map[string]interface{}) {
 	postBody, _ := json.Marshal(data)
 	postBodyBuffer := bytes.NewBuffer(postBody)
@@ -74,24 +55,6 @@ func doUpdate(p auth.ProfileObj, uri, object, name string, data map[string]inter
 	}
 	if resp.StatusCode >= 400 {
 		logger.Fatalf("", "PUT request failed with status code %v", resp.StatusCode)
-	}
-}
-
-func doCreate(p auth.ProfileObj, uri, object string, data map[string]interface{}) {
-	postBody, _ := json.Marshal(data)
-	postBodyBuffer := bytes.NewBuffer(postBody)
-
-	httpClient := &http.Client{}
-	requestURL := fmt.Sprintf("%s/api/v1/%s", uri, object)
-	req, _ := http.NewRequest("POST", requestURL, postBodyBuffer)
-	req.Header.Set("Authorization", fmt.Sprintf("X-Scaffold-API %s", p.APIToken))
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		logger.Fatalf("", "POST request failed with error: %s", err.Error())
-	}
-	if resp.StatusCode >= 400 {
-		logger.Fatalf("", "POST request failed with status code %v", resp.StatusCode)
 	}
 }
 
@@ -117,16 +80,6 @@ func doApply(profile, fileName, context, uri, objType string) {
 		name = fmt.Sprintf("%s/%s", context, name)
 	}
 
-	exists, err := checkExists(p, uri, name, objType)
-	if err != nil {
-		logger.Fatalf("", "Unable to check existence of %s %s", objType, name)
-	}
-
-	if exists {
-		doUpdate(p, uri, objType, name, yamlData)
-		logger.Successf("", "%s %s successfully updated", cases.Title(language.AmericanEnglish, cases.Compact).String(objType), name)
-		return
-	}
-	doCreate(p, uri, objType, yamlData)
-	logger.Successf("", "Successfully created %s %s", objType, name)
+	doUpdate(p, uri, objType, name, yamlData)
+	logger.Successf("", "%s %s successfully applied", cases.Title(language.AmericanEnglish, cases.Compact).String(objType), name)
 }

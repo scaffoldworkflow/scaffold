@@ -47,6 +47,11 @@ tasks:
   run: |
     echo "foo=${foo}"
     echo "bar=${bar}"
+    for i in $(seq 1 20);
+    do
+      echo $i
+      sleep 1
+    done
   store:
     env:
       - foo
@@ -75,4 +80,11 @@ tasks:
   depends_on:
     success:
       - b
+  auto_execute: true
+- name: d
+  run: |
+    echo "d!"
+  depends_on:
+    error:
+      - c
   auto_execute: true

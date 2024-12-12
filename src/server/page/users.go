@@ -2,26 +2,27 @@ package page
 
 import (
 	"net/http"
-	"scaffold/server/ui"
-	"scaffold/server/ui/breadcrumb"
-	"scaffold/server/ui/button"
-	"scaffold/server/ui/elements/br"
-	"scaffold/server/ui/elements/div"
-	"scaffold/server/ui/elements/h1"
-	"scaffold/server/ui/elements/input"
-	"scaffold/server/ui/elements/label"
-	"scaffold/server/ui/elements/link"
-	"scaffold/server/ui/modal"
-	"scaffold/server/ui/page"
-	"scaffold/server/ui/sidebar"
-	"scaffold/server/ui/table"
-	"scaffold/server/ui/table/cell"
-	"scaffold/server/ui/table/header"
-	"scaffold/server/ui/topbar"
 	"scaffold/server/user"
 	"scaffold/server/utils"
 	"sort"
 	"strings"
+
+	"github.com/jfcarter2358/ui"
+	"github.com/jfcarter2358/ui/breadcrumb"
+	"github.com/jfcarter2358/ui/button"
+	"github.com/jfcarter2358/ui/elements/br"
+	"github.com/jfcarter2358/ui/elements/div"
+	"github.com/jfcarter2358/ui/elements/h1"
+	"github.com/jfcarter2358/ui/elements/input"
+	"github.com/jfcarter2358/ui/elements/label"
+	"github.com/jfcarter2358/ui/elements/link"
+	"github.com/jfcarter2358/ui/modal"
+	"github.com/jfcarter2358/ui/page"
+	"github.com/jfcarter2358/ui/sidebar"
+	"github.com/jfcarter2358/ui/table"
+	"github.com/jfcarter2358/ui/table/cell"
+	"github.com/jfcarter2358/ui/table/header"
+	"github.com/jfcarter2358/ui/topbar"
 
 	_ "embed"
 
@@ -109,7 +110,7 @@ func usersBuildPage(ctx *gin.Context) []byte {
 		Components: []ui.Component{
 			topbar.Topbar{
 				Title:   "Scaffold",
-				Classes: "scaffold-green",
+				Classes: "ui-green",
 				Buttons: []ui.Component{
 					link.Link{
 						Title:   "Logout",
@@ -124,7 +125,7 @@ func usersBuildPage(ctx *gin.Context) []byte {
 				Classes: "theme-light rounded-md",
 				Components: []ui.Component{
 					div.Div{
-						Classes: "scaffold-green rounded-md",
+						Classes: "ui-green rounded-md",
 						Style:   "height:64px;",
 						Components: []ui.Component{
 							breadcrumb.Breadcrumb{
@@ -165,7 +166,7 @@ func usersBuildPage(ctx *gin.Context) []byte {
 				Components: []ui.Component{
 					h1.H1{
 						Contents: `<h1 id="create-user-header" class="text-3xl" style="float:left;padding-top:8px;">Create User</h1>`,
-						Classes:  "scaffold-green rounded-md",
+						Classes:  "ui-green rounded-md",
 						Style:    "width:100%;",
 					},
 					br.BR{},
@@ -237,6 +238,7 @@ func usersBuildPage(ctx *gin.Context) []byte {
 			},
 			ui.Raw{
 				HTMLString: `
+					<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 					<script src="/static/js/users.js"></script>
 					`,
 			},
@@ -303,7 +305,7 @@ func usersBuildTable(us []user.User, ctx *gin.Context) []byte {
 		Rows:          make([][]cell.Cell, 0),
 		Classes:       "theme-light",
 		Style:         "width:100%;",
-		HeaderClasses: "rounded-md scaffold-green",
+		HeaderClasses: "rounded-md ui-green",
 	}
 
 	token, _ := ctx.Cookie("scaffold_token")

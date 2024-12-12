@@ -52,6 +52,11 @@ var Nodes = make(map[string]NodeObject)
 var LastScheduledIdx = 0
 var NodeLock = &sync.RWMutex{}
 
+// Do the actual login
+// This takes the following in a posted form:
+//   - username string
+//   - password string
+//   - remember_me boolean
 func PerformLogin(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
@@ -69,6 +74,7 @@ func PerformLogin(c *gin.Context) {
 
 			valid, _ := user.VerifyUser(username, password)
 			if valid {
+				// There's definitely better ways of doing this but it's fine for now
 				token := utils.GenerateToken(32)
 				c.SetCookie("scaffold_token", token, 3600, "", "", false, false)
 				u, _ := user.GetUserByUsername(username)
@@ -114,6 +120,7 @@ func PerformLogin(c *gin.Context) {
 	c.AbortWithStatus(http.StatusUnauthorized)
 }
 
+// Clear the cookie on logout and redirect to login page
 func PerformLogout(c *gin.Context) {
 	token, err := c.Cookie("scaffold_token")
 
@@ -129,6 +136,9 @@ func PerformLogout(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, "/")
 }
 
+// Send an email with a password reset link
+// This is probably broken, I just haven't gotten to fixing it yet
+//   but I also haven't tested it in a while so maybe it works
 func RequestPasswordReset(c *gin.Context) {
 	email := c.PostForm("email")
 
@@ -177,6 +187,8 @@ func RequestPasswordReset(c *gin.Context) {
 	}
 }
 
+// Send over the new password from the reset and save the salted/hashed password to the
+//   user
 func DoPasswordReset(c *gin.Context) {
 	r := PasswordResetObject{}
 
@@ -201,6 +213,7 @@ func DoPasswordReset(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
+// Do the hash and salt
 func HashAndSalt(pwd []byte) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword(pwd, bcrypt.MinCost)
 	if err != nil {
@@ -209,6 +222,7 @@ func HashAndSalt(pwd []byte) (string, error) {
 	return string(hash), nil
 }
 
+// Have a worker join the manager
 func JoinNode(ctx *gin.Context) {
 	var n NodeJoinObject
 	if err := ctx.ShouldBindJSON(&n); err != nil {
@@ -245,6 +259,7 @@ func JoinNode(ctx *gin.Context) {
 	ctx.Status(http.StatusUnauthorized)
 }
 
+// Get all the currently used groups
 func GetAllGroups() ([]string, error) {
 	groups := []string{}
 
@@ -276,6 +291,7 @@ func GetAllGroups() ([]string, error) {
 	return groups, nil
 }
 
+// Gather all allowed roles
 func GetAllRoles() []string {
 	return []string{"read", "write", "admin"}
 }

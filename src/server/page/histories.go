@@ -3,21 +3,22 @@ package page
 import (
 	"net/http"
 	"scaffold/server/history"
-	"scaffold/server/ui"
-	"scaffold/server/ui/breadcrumb"
-	"scaffold/server/ui/elements/br"
-	"scaffold/server/ui/elements/div"
-	"scaffold/server/ui/elements/link"
-	"scaffold/server/ui/page"
-	"scaffold/server/ui/sidebar"
-	"scaffold/server/ui/table"
-	"scaffold/server/ui/table/cell"
-	"scaffold/server/ui/table/header"
-	"scaffold/server/ui/topbar"
 	"scaffold/server/user"
 	"scaffold/server/workflow"
 	"sort"
 	"strings"
+
+	"github.com/jfcarter2358/ui"
+	"github.com/jfcarter2358/ui/breadcrumb"
+	"github.com/jfcarter2358/ui/elements/br"
+	"github.com/jfcarter2358/ui/elements/div"
+	"github.com/jfcarter2358/ui/elements/link"
+	"github.com/jfcarter2358/ui/page"
+	"github.com/jfcarter2358/ui/sidebar"
+	"github.com/jfcarter2358/ui/table"
+	"github.com/jfcarter2358/ui/table/cell"
+	"github.com/jfcarter2358/ui/table/header"
+	"github.com/jfcarter2358/ui/topbar"
 
 	_ "embed"
 
@@ -43,7 +44,7 @@ func HistoriesSearchEndpoint(ctx *gin.Context) {
 	filtered := []history.History{}
 
 	for _, h := range histories {
-		if strings.Contains(strings.ToLower(h.RunID), strings.ToLower(query)) {
+		if strings.Contains(strings.ToLower(h.RunID), strings.ToLower(query)) || strings.Contains(strings.ToLower(h.Workflow), strings.ToLower(query)) {
 			filtered = append(filtered, *h)
 		}
 	}
@@ -105,7 +106,7 @@ func historiesBuildPage(ctx *gin.Context) []byte {
 		Components: []ui.Component{
 			topbar.Topbar{
 				Title:   "Scaffold",
-				Classes: "scaffold-green",
+				Classes: "ui-green",
 				Buttons: []ui.Component{
 					link.Link{
 						Title:   "Logout",
@@ -120,7 +121,7 @@ func historiesBuildPage(ctx *gin.Context) []byte {
 				Classes: "theme-light rounded-md",
 				Components: []ui.Component{
 					div.Div{
-						Classes: "scaffold-green rounded-md",
+						Classes: "ui-green rounded-md",
 						Components: []ui.Component{
 							breadcrumb.Breadcrumb{
 								Components: []ui.Component{
@@ -137,7 +138,7 @@ func historiesBuildPage(ctx *gin.Context) []byte {
 						HTMLString: `<input id="search" class="w3-input w3-round search-bar theme-light" type="text"
                             name="search" placeholder="Search Runs"
                             style="margin-top:8px;margin-bottom:8px;margin-left:1%;width:98%" hx-get="/htmx/runs/search"
-                            hx-trigger="keyup changed delay:250ms" hx-target="#workflows-table-div" />`,
+                            hx-trigger="keyup changed delay:250ms" hx-target="#histories-table-div" />`,
 					},
 					div.Div{
 						ID:        "histories-table-div",
@@ -199,7 +200,7 @@ func historiesBuildTable(hs []history.History, ctx *gin.Context) []byte {
 		Rows:          make([][]cell.Cell, 0),
 		Classes:       "theme-light",
 		Style:         "width:100%;",
-		HeaderClasses: "rounded-md scaffold-green",
+		HeaderClasses: "rounded-md ui-green",
 	}
 
 	token, _ := ctx.Cookie("scaffold_token")

@@ -26,13 +26,6 @@ import (
 var runError error
 var killed = false
 
-// type CheckRun struct {
-// 	Enabled bool           `json:"disabled" yaml:"disabled"`
-// 	Name    string         `json:"name" yaml:"name"`
-// 	Task    task.TaskCheck `json:"task" yaml:"task"`
-// 	State   state.State    `json:"state" yaml:"state"`
-// }
-
 type Run struct {
 	Name    string            `json:"name" yaml:"name"`
 	Task    task.Task         `json:"task" yaml:"task"`
@@ -156,19 +149,11 @@ func setupEnvLoad(rc *RunContext) (bool, error) {
 		}
 		logger.Warnf("", "Input value missing for %s", val)
 	}
-	// for _, key := range rc.Run.Task.Load.Env {
 	for key, val := range rc.Run.Context {
-		// contextVal, ok := rc.Run.Context[key]
-		// var encoded string
-		// if ok {
-		// encoded = base64.StdEncoding.EncodeToString([]byte(contextVal))
 		encoded := base64.StdEncoding.EncodeToString([]byte(val))
 		envInput += fmt.Sprintf("%s;%s\n", key, encoded)
 		continue
-		// }
-		// logger.Warnf("", "ENV load value missing for %s", key)
 	}
-	// }
 	for key, val := range rc.Run.Task.Env {
 		encoded := base64.StdEncoding.EncodeToString([]byte(val))
 		envInput += fmt.Sprintf("%s;%s\n", key, encoded)

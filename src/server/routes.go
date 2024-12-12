@@ -80,7 +80,6 @@ func initializeRoutes() {
 					fileRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetAllFiles)
 					fileRoutes.GET("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("name"), api.GetFilesByWorkflow)
 					fileRoutes.GET("/:name/:file", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("name"), api.GetFileByNames)
-					// fileRoutes.GET("/:name/:file/view", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("name"), api.ViewFile)
 					fileRoutes.GET("/:name/:file/download", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("name"), api.DownloadFile)
 					fileRoutes.POST("/:name", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("name"), api.UploadFile)
 				}
@@ -128,6 +127,11 @@ func initializeRoutes() {
 				{
 					runRoutes.POST("/:workflow/:task", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("workflow"), api.CreateRun)
 					runRoutes.DELETE("/:workflow/:task", middleware.EnsureLoggedIn(), middleware.EnsureWorkflowGroup("workflow"), api.ManagerKillRun)
+					runRoutes.GET("/:runID", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetRunStatus)
+				}
+				historyRoutes := v1Routes.Group("/history")
+				{
+					historyRoutes.GET("/:runID", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetHistory)
 				}
 				webhookRoutes := v1Routes.Group("/webhook")
 				{
@@ -174,6 +178,15 @@ func initializeRoutes() {
 			// 	commonRoutes.GET("/success", common.ErrorEndpoint)
 			// 	commonRoutes.GET("/header", common.HeaderEndpoint)
 			// }
+			workflowRoutes := htmxRoutes.Group("/workflow")
+			{
+				workflowRoutes.GET("/:name/display/:task", page.WorkflowDisplayEndpoint)
+				workflowRoutes.GET("/:name/output/:task", page.WorkflowOutputEndpoint)
+				workflowRoutes.GET("/:name/started/:task", page.WorkflowStartedEndpoint)
+				workflowRoutes.GET("/:name/finished/:task", page.WorkflowFinishedEndpoint)
+				workflowRoutes.GET("/:name/status/:task", page.WorkflowStatusEndpoint)
+				workflowRoutes.GET("/:name/modal/:task", page.WorkflowModalEndpoint)
+			}
 			workflowsRoutes := htmxRoutes.Group("/workflows")
 			{
 				workflowsRoutes.GET("/table", page.WorkflowsTableEndpoint)

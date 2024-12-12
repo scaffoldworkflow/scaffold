@@ -67,41 +67,6 @@ func DownloadFile(ctx *gin.Context) {
 	ctx.Status(http.StatusOK)
 }
 
-// func ViewFile(ctx *gin.Context) {
-// 	name := ctx.Param("name")
-// 	fileName := ctx.Param("file")
-
-// 	c, err := workflow.GetWorkflowByName(name)
-// 	if err != nil {
-// 		utils.Error(err, ctx, http.StatusNotFound)
-// 	}
-// 	if c.Groups != nil {
-// 		if !validateUserGroup(ctx, c.Groups) {
-// 			utils.Error(errors.New("user is not part of required groups to access this resources"), ctx, http.StatusForbidden)
-// 			return
-// 		}
-// 	}
-
-// 	path := fmt.Sprintf("/tmp/%s", uuid.New().String())
-
-// 	err = filestore.GetFile(fmt.Sprintf("%s/%s", name, fileName), path)
-// 	if err != nil {
-// 		utils.Error(err, ctx, http.StatusInternalServerError)
-// 		return
-// 	}
-// 	data, err := os.ReadFile(path)
-// 	if err != nil {
-// 		utils.Error(err, ctx, http.StatusInternalServerError)
-// 		return
-// 	}
-// 	if err := os.Remove(path); err != nil {
-// 		utils.Error(err, ctx, http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	ctx.Data(http.StatusOK, "application/text/plain", []byte(data))
-// }
-
 //	@summary					Upload a file
 //	@description				Upload a file to a workflow
 //	@tags						manager
@@ -183,7 +148,7 @@ func UploadFile(ctx *gin.Context) {
 //	@tags						manager
 //	@tags						file
 //	@produce					json
-//	@success					200	{array}	filestore.ObjectMetadata
+//	@success					200	{array}		filestore.ObjectMetadata
 //	@failure					500	{object}	object
 //	@failure					401	{object}	object
 //	@securityDefinitions.apiKey	token
@@ -275,7 +240,7 @@ func GetFileByNames(ctx *gin.Context) {
 //	@tags						manager
 //	@tags						file
 //	@produce					json
-//	@success					200	{array}	filestore.ObjectMetadata
+//	@success					200	{array}		filestore.ObjectMetadata
 //	@failure					500	{object}	object
 //	@failure					401	{object}	object
 //	@securityDefinitions.apiKey	token

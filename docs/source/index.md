@@ -6,7 +6,11 @@ caption: Contents
 maxdepth: 1
 ---
 
-installation
+getting-started/getting-started
+setup/setup
+reference/reference
 ```
 
-- This is a list
+# About
+
+Scaffold is an infrastructure-first application deployment tool as well as providing for generalized workflow execution
