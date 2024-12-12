@@ -239,9 +239,9 @@ definitions:
     type: object
 info:
   contact:
-    email: jfcarter2358@gmail.com
-    name: John Carter
-    url: https://github.com/jfcarter2358/scaffold/issues
+    email: scaffoldworkflow@gmail.com
+    name: Scaffold
+    url: https://github.com/scaffoldworkflow/scaffold/issues
   description: Scaffold workflow tool
   license:
     name: MIT

@@ -83,9 +83,9 @@ func run(ctx context.Context, channel chan struct{}) {
 //	@description	Scaffold workflow tool
 //	@termsOfService	http://swagger.io/terms/
 
-//	@contact.name	John Carter
-//	@contact.url	https://github.com/jfcarter2358/scaffold/issues
-//	@contact.email	jfcarter2358@gmail.com
+//	@contact.name	Scaffold
+//	@contact.url	https://github.com/scaffoldworkflow/scaffold/issues
+//	@contact.email	scaffoldworkflow@gmail.com
 
 //	@license.name	MIT
 //	@license.url	https://opensource.org/license/mit/
