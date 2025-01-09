@@ -324,7 +324,9 @@ function updateStateStatus(force) {
 
                 // if (Checksums.has(state.task)) {
                 //     if (Checksums.get(state.task) != state.output_checksum) {
-                $("#state-output").text(state.output)
+                if ($("#state-output").text() != state.output) {
+                    $("#state-output").text(state.output)
+                }
                 $(`#state-context`).empty();
                 $(`#state-context`).append(buildContextTable(state.context, color, text_color))
                 buildDisplay(state.display, "current", color, text_color)
