@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.1
 	github.com/jfcarter2358/go-logger v0.0.0-20231208162231-b1afadc15efd
-	github.com/jfcarter2358/ui v0.0.0-20241022170920-3fab9397f8ff
+	github.com/jfcarter2358/ui v0.0.0-20250109224835-9633bc96909f
 	github.com/robfig/cron v1.2.0
 	github.com/streadway/amqp v1.1.0
 	github.com/swaggo/files v1.0.1

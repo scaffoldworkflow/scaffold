@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"scaffold/server/config"
+	"scaffold/server/runbook"
 	"scaffold/server/user"
 	"scaffold/server/utils"
 	"scaffold/server/workflow"
@@ -201,6 +202,79 @@ func EnsureWorkflowGroup(paramName string) gin.HandlerFunc {
 				return
 			}
 			for _, group := range cs.Groups {
+				if utils.Contains(usr.Groups, group) {
+					return
+				}
+			}
+			if isUI {
+				c.Redirect(http.StatusUnauthorized, "/ui/401")
+				return
+			}
+			c.AbortWithStatus(http.StatusUnauthorized)
+		}
+		if isUI {
+			c.Redirect(http.StatusUnauthorized, "/ui/401")
+			return
+		}
+		c.AbortWithStatus(http.StatusUnauthorized)
+	}
+}
+
+func EnsureRunbookGroup(paramName string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var token string
+		var err error
+		isUI := false
+		runbookID := c.Param(paramName)
+		rs, _ := runbook.GetRunbookByID(runbookID)
+		if err != nil {
+			c.AbortWithStatus(http.StatusUnauthorized)
+		}
+		if rs == nil {
+			return
+		}
+
+		authString := c.Request.Header.Get("Authorization")
+		if authString == "" {
+			token, err = c.Cookie("scaffold_token")
+			if err != nil {
+				c.Redirect(http.StatusUnauthorized, "/ui/401")
+				return
+			}
+			isUI = true
+		} else {
+			token = strings.Split(authString, " ")[1]
+		}
+		if token == config.Config.Node.PrimaryKey {
+			return
+		}
+
+		usr, _ := user.GetUserByAPIToken(token)
+		if usr != nil {
+			if utils.Contains(usr.Groups, "admin") {
+				return
+			}
+			if rs.Groups == nil {
+				return
+			}
+			for _, group := range rs.Groups {
+				if utils.Contains(usr.Groups, group) {
+					return
+				}
+			}
+			if isUI {
+				c.Redirect(http.StatusUnauthorized, "/ui/401")
+				return
+			}
+			c.AbortWithStatus(http.StatusUnauthorized)
+		}
+
+		usr, _ = user.GetUserByLoginToken(token)
+		if usr != nil {
+			if utils.Contains(usr.Groups, "admin") {
+				return
+			}
+			for _, group := range rs.Groups {
 				if utils.Contains(usr.Groups, group) {
 					return
 				}

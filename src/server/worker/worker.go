@@ -64,6 +64,7 @@ func JoinManager() error {
 	}
 	postBody, err := json.Marshal(obj)
 	if err != nil {
+		logger.Errorf("", "Unable to marshal join JSON object: %v", obj)
 		panic(err)
 	}
 	postBodyBuffer := bytes.NewBuffer(postBody)

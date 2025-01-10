@@ -94,6 +94,10 @@ func usersBuildPage(ctx *gin.Context) []byte {
 					HRef:  "/ui/dashboard",
 				},
 				link.Link{
+					Title: "Runbooks",
+					HRef:  "/ui/runbooks",
+				},
+				link.Link{
 					Title: "Runs",
 					HRef:  "/ui/runs",
 				},

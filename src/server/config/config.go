@@ -49,6 +49,8 @@ type ConfigObject struct {
 	RestartPeriod            int             `json:"restart_period" env:"RESTART_PERIOD"`
 	RunPruneCron             string          `json:"run_prune_cron" env:"RUN_PRUNE_CRON"`
 	RunPruneDuration         int             `json:"run_prune_duration" env:"RUN_PRUNE_DURATION"`
+	RunbookRunDir            string          `json:"runbook_run_dir" env:"RUNBOOK_RUN_DIR"`
+	RunbookVenvDir           string          `json:"runbook_venv_dir" env:"RUNBOOK_VENV_DIR"`
 }
 
 type FileStoreObject struct {
@@ -160,6 +162,8 @@ func LoadConfig() {
 		RestartPeriod:            86400,         // 24 hours
 		RunPruneCron:             "0 0 * * * *", // every day at midnight
 		RunPruneDuration:         24,            // 24 hour run lifetime
+		RunbookRunDir:            "/tmp/runbooks/runs",
+		RunbookVenvDir:           "/tmp/runbooks/venvs",
 	}
 
 	// Load JSON if exists

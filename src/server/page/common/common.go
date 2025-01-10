@@ -9,6 +9,8 @@ import (
 	"scaffold/server/manager"
 	"scaffold/server/user"
 
+	logger "github.com/jfcarter2358/go-logger"
+
 	"github.com/gin-gonic/gin"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -56,38 +58,47 @@ func Init() error {
 	if err != nil {
 		return err
 	}
+	logger.Debugf("", "Loaded status template")
 	sidebarTemplate, err = template.New("common__sidebar").Parse(sidebarHTML)
 	if err != nil {
 		return err
 	}
+	logger.Debugf("", "Loaded sidebar template")
 	errorTemplate, err = template.New("common__error").Parse(errorHTML)
 	if err != nil {
 		return err
 	}
+	logger.Debugf("", "Loaded error template")
 	successTemplate, err = template.New("common__success").Parse(successHTML)
 	if err != nil {
 		return err
 	}
+	logger.Debugf("", "Loaded success template")
 	headerTemplate, err = template.New("common__header").Parse(headerHTML)
 	if err != nil {
 		return err
 	}
+	logger.Debugf("", "Loaded header template")
 	code401Template, err = template.New("common__401").Parse(code401HTML)
 	if err != nil {
 		return err
 	}
+	logger.Debugf("", "Loaded 401 template")
 	code403Template, err = template.New("common__403").Parse(code403HTML)
 	if err != nil {
 		return err
 	}
+	logger.Debugf("", "Loaded 403 template")
 	code404Template, err = template.New("common__404").Parse(code404HTML)
 	if err != nil {
 		return err
 	}
+	logger.Debugf("", "Loaded 404 template")
 	code500Template, err = template.New("common__500").Parse(code500HTML)
 	if err != nil {
 		return err
 	}
+	logger.Debugf("", "Loaded 500 template")
 	return nil
 }
 
@@ -142,6 +153,7 @@ func Code403Endpoint(ctx *gin.Context) {
 func Code404Endpoint(ctx *gin.Context) {
 	var markdown bytes.Buffer
 	type Data struct{}
+	logger.Debugf("", "Code template: %v", code404Template)
 	code404Template.Execute(&markdown, Data{})
 	ctx.Data(http.StatusOK, "text/html; charset=utf-8", markdown.Bytes())
 }

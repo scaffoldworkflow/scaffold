@@ -28,6 +28,10 @@ func initializeRoutes() {
 
 	router.GET("/", page.RedirectIndexPage)
 
+	if err := common.Init(); err != nil {
+		panic(err)
+	}
+
 	router.NoRoute(func(c *gin.Context) {
 		common.Code404Endpoint(c)
 	})
@@ -129,6 +133,19 @@ func initializeRoutes() {
 					runRoutes.DELETE("/:workflow/:task", middleware.EnsureLoggedIn(), middleware.EnsureWorkflowGroup("workflow"), api.ManagerKillRun)
 					runRoutes.GET("/:runID", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetRunStatus)
 				}
+				runbookRoutes := v1Routes.Group("/runbook")
+				{
+					runbookRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetAllRunbooks)
+					runbookRoutes.GET("/:id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("id"), api.GetRunbookByID)
+					runbookRoutes.DELETE("/:id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("id"), api.DeleteRunbookByID)
+					runbookRoutes.POST("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.CreateRunbook)
+					runbookRoutes.PUT("/:id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("id"), api.UpdateRunbookByID)
+				}
+				kernelRoutes := v1Routes.Group("/kernel")
+				{
+					kernelRoutes.GET("/:kernel_id/:run_id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.GetKernelOutput)
+					kernelRoutes.POST("/:kernel_id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.ExecuteKernel)
+				}
 				historyRoutes := v1Routes.Group("/history")
 				{
 					historyRoutes.GET("/:runID", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetHistory)
@@ -152,6 +169,10 @@ func initializeRoutes() {
 
 			uiRoutes.GET("/workflows", middleware.EnsureLoggedIn(), page.WorkflowsPageEndpoint)
 			uiRoutes.GET("/workflows/:name", middleware.EnsureLoggedIn(), page.WorkflowPageEndpoint)
+
+			uiRoutes.GET("/runbooks", middleware.EnsureLoggedIn(), page.RunbooksPageEndpoint)
+			uiRoutes.GET("/runbooks/:runbook_id", middleware.EnsureLoggedIn(), api.RunbookKernelSetup)
+			uiRoutes.GET("/runbooks/:runbook_id/:kernel_id", middleware.EnsureLoggedIn(), page.RunbookPageEndpoint)
 
 			uiRoutes.GET("/runs", middleware.EnsureLoggedIn(), page.HistoriesPageEndpoint)
 			uiRoutes.GET("/runs/:run_id", middleware.EnsureLoggedIn(), page.HistoryPageEndpoint)
@@ -197,6 +218,11 @@ func initializeRoutes() {
 				dashboardRoutes.GET("/table", page.DashboardTableEndpoint)
 				dashboardRoutes.GET("/search", page.DashboardSearchEndpoint)
 			}
+			runbooksRoutes := htmxRoutes.Group("/runbooks")
+			{
+				runbooksRoutes.GET("/table", page.RunbooksTableEndpoint)
+				runbooksRoutes.GET("/search", page.RunbooksSearchEndpoint)
+			}
 			runsRoutes := htmxRoutes.Group("/runs")
 			{
 				runsRoutes.GET("/table", page.HistoriesTableEndpoint)
@@ -208,6 +234,11 @@ func initializeRoutes() {
 			{
 				usersRoutes.GET("/table", page.UsersTableEndpoint)
 				usersRoutes.GET("/search", page.UsersSearchEndpoint)
+			}
+			kernelRoutes := htmxRoutes.Group("/kernel")
+			{
+				kernelRoutes.POST("/execute", page.KernelExecute)
+				kernelRoutes.GET("/:kernel_id/:run_id/:block_idx", page.KernelBuildOutput)
 			}
 		}
 

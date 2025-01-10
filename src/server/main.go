@@ -36,7 +36,7 @@ func run(ctx context.Context, channel chan struct{}) {
 
 	router = gin.New()
 	router.Use(gin.LoggerWithFormatter(logger.ConsoleLogFormatter))
-	router.Use(gin.Recovery())
+	// router.Use(gin.Recovery())
 
 	logger.Infof("", "Running with port: %d", config.Config.Port)
 
