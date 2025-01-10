@@ -1,12 +1,12 @@
 services:
   scaffold-manager:
-    image: "scaffoldworkflow/scaffold"
+    image: "scaffold"
     restart: always
     ports:
       - "127.0.0.1:2997:2997"
     environment:
       SCAFFOLD_BASE_URL: http://scaffold-manager:2997
-      SCAFFOLD_LOG_LEVEL: "INFO"
+      SCAFFOLD_LOG_LEVEL: "TRACE"
       SCAFFOLD_LOG_FORMAT: "console"
       SCAFFOLD_SLEEP: "30"
       SCAFFOLD_ADMIN: |
