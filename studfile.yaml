@@ -13,8 +13,8 @@
     - linux/amd64
     - linux/arm64
     - linux/arm/v7
-  image_version: 0.3.0
-  cli_version: 0.3.0
+  image_version: 0.4.2.alpha1
+  cli_version: 0.4.2.alpha1
 set-server-version:
   help: Update server version constant from VERSION file
   cmd: |

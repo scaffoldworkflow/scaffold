@@ -32,12 +32,12 @@ Once you've downloaded the appropriate binary for your machine, rename it to `sc
 
 ```sh
 > scaffold version local
-Scaffold CLI Version: 0.4.1
+Scaffold CLI Version: 0.4.2
 ```
 
 ```sh
 > scaffold version remote
-Scaffold Remote Version: 0.4.1
+Scaffold Remote Version: 0.4.2
 ```
 
 Now configure access to Scaffold:
