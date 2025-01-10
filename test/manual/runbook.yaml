@@ -1,0 +1,54 @@
+id: "foobar3"
+name: "Runbook 3"
+category: "Group B"
+groups:
+- admin
+blocks:
+- contents: |
+    # This is a test
+    
+    I Want to see how this **markdown** is _rendered_
+
+    Here's some `inline code` to look at
+
+    And|Here's|A|Table
+    ---|---|---|---|
+    1|2|3|4
+    5|6|7|8
+
+  type: markdown
+- contents: |
+    from pprint import pprint
+    import json
+
+    output = {
+      "hello": "world",
+      "foo": "bar"
+    }
+
+    pprint(output)
+  type: code
+- contents: |
+    ## Here's some more Markdown!
+
+    - A
+    - B
+    - C
+
+    1. One
+    2. Two
+    3. Three
+
+    ```
+    import foobar
+
+    out = foo.to_the_bar()
+    
+    print(out)
+    ```
+  type: markdown
+- contents: |
+    name = "foobar"
+    message = f"Hello, {name}!"
+    print(message)
+  type: code
