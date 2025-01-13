@@ -14,6 +14,7 @@ import (
 	"scaffold/client/file"
 	"scaffold/client/get"
 	"scaffold/client/logger"
+	"scaffold/client/trigger"
 	"scaffold/client/version"
 
 	"github.com/akamensky/argparse"
@@ -96,6 +97,14 @@ func main() {
 	remoteProfile := remoteCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
 	remoteLogLevel := remoteCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
+	triggerCommand := parser.NewCommand("trigger", "Trigger a workflow task")
+	triggerProfile := triggerCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
+	triggerTask := triggerCommand.String("t", "task", &argparse.Options{Required: true, Help: "Task to trigger"})
+	triggerContext := triggerCommand.String("c", "context", &argparse.Options{Help: "Workflow context to use. If not set the value in your config file will be pulled", Default: ""})
+	triggerFollow := triggerCommand.Flag("f", "follow", &argparse.Options{Help: "Should the run status be tailed out"})
+	triggerData := triggerCommand.String("d", "data", &argparse.Options{Help: "JSON data to include with trigger", Default: ""})
+	triggerLogLevel := triggerCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "INFO"})
+
 	// Parse input
 	err := parser.Parse(os.Args)
 	if err != nil {
@@ -162,6 +171,12 @@ func main() {
 	if remoteCommand.Happened() {
 		logger.SetLevel(*remoteLogLevel)
 		version.DoRemote(*remoteProfile)
+		os.Exit(0)
+	}
+
+	if triggerCommand.Happened() {
+		logger.SetLevel(*triggerLogLevel)
+		trigger.DoTrigger(*triggerProfile, *triggerTask, *triggerData, *triggerContext, *triggerFollow)
 		os.Exit(0)
 	}
 }
