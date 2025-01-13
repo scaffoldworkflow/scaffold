@@ -20,7 +20,7 @@ func DoDelete(profile, object, context string) {
 	uri := fmt.Sprintf("%s://%s:%s", p.Protocol, p.Host, p.Port)
 
 	logger.Debugf("", "Checking if object is valid")
-	objects := []string{"workflow", "datastore", "state", "task", "file", "user", "input", "runbook"}
+	objects := []string{"workflow", "datastore", "state", "task", "file", "user", "input", "runbook", "monitor"}
 
 	parts := strings.Split(object, "/")
 
@@ -33,6 +33,7 @@ func DoDelete(profile, object, context string) {
 	}
 
 	if parts[0] != "workflow" && parts[0] != "datastore" && parts[0] != "user" && parts[0] != "runbook" {
+		logger.Debugf("", "Getting context")
 		if context == "" {
 			context = p.Workflow
 		}
@@ -60,5 +61,6 @@ func doDelete(p auth.ProfileObj, uri, object string) error {
 		logger.Fatalf("", "Got status code %d", resp.StatusCode)
 		return fmt.Errorf("got status code %d on %s delete", resp.StatusCode, object)
 	}
+	logger.Successf("", "%s successfully deleted", object)
 	return nil
 }

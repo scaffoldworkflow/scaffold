@@ -20,7 +20,7 @@ func DoGet(profile, object, context string) {
 	uri := fmt.Sprintf("%s://%s:%s", p.Protocol, p.Host, p.Port)
 
 	logger.Debugf("", "Checking if object is valid")
-	objects := []string{"workflow", "datastore", "state", "task", "file", "user", "input", "runbook"}
+	objects := []string{"workflow", "datastore", "state", "task", "file", "user", "input", "runbook", "monitor"}
 
 	parts := strings.Split(object, "/")
 
@@ -33,7 +33,7 @@ func DoGet(profile, object, context string) {
 		context = p.Workflow
 	}
 	if len(parts) == 2 {
-		if parts[0] != "workflow" && parts[0] != "datastore" && parts[0] != "user" && parts[0] != "runbook" {
+		if parts[0] != "workflow" && parts[0] != "datastore" && parts[0] != "user" && parts[0] != "runbook" && parts[0] != "monitor" {
 			object = fmt.Sprintf("%s/%s/%s", parts[0], context, parts[1])
 		}
 	}
@@ -60,6 +60,10 @@ func DoGet(profile, object, context string) {
 		listUsers(data)
 	case "input":
 		listInputs(data, context)
+	case "runbook":
+		listRunbooks(data, context)
+	case "monitor":
+		listMonitors(data, context)
 	}
 }
 
@@ -139,7 +143,7 @@ func listStates(data []byte, context string) {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
-	fmt.Fprintln(w, "TASK \tCASCADE \tSTATUS \tSTARTED \tFINISHED \t")
+	fmt.Fprintln(w, "TASK \tWORKFLOW \tSTATUS \tSTARTED \tFINISHED \t")
 	for _, s := range states {
 		workflow := s["workflow"].(string)
 		status := s["status"].(string)
@@ -165,7 +169,7 @@ func listTasks(data []byte, context string) {
 	logger.Debugf("", "Task data: %v", tasks)
 
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
-	fmt.Fprintln(w, "NAME \tCASCADE \tIMAGE \tRUN NUMBER \tUPDATED \t")
+	fmt.Fprintln(w, "NAME \tWORKFLOW \tIMAGE \tRUN NUMBER \tUPDATED \t")
 	for _, t := range tasks {
 		workflow := t["workflow"].(string)
 		name := t["name"].(string)
@@ -188,7 +192,7 @@ func listFiles(data []byte, context string) {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
-	fmt.Fprintln(w, "NAME \tCASCADE \tUPDATED \t")
+	fmt.Fprintln(w, "NAME \tWORKFLOW \tUPDATED \t")
 	for _, f := range files {
 		workflow := f["workflow"].(string)
 		name := f["name"].(string)
@@ -241,7 +245,7 @@ func listInputs(data []byte, context string) {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
-	fmt.Fprintln(w, "NAME \tCASCADE \tTYPE \tType \tDEFAULT \t")
+	fmt.Fprintln(w, "NAME \tWORKFLOW \tTYPE \tDEFAULT \t")
 	for _, i := range inputs {
 		workflow := i["workflow"].(string)
 		name := i["name"].(string)
@@ -250,6 +254,60 @@ func listInputs(data []byte, context string) {
 		if workflow == context || context == constants.ALL_CONTEXTS {
 			fmt.Fprintf(w, "%s \t%s \t%s \t%s \n", name, workflow, inputType, inputDefault)
 		}
+	}
+	w.Flush()
+}
+
+func listRunbooks(data []byte, context string) {
+	var runbooks []map[string]interface{}
+
+	err := json.Unmarshal(data, &runbooks)
+	if err != nil {
+		logger.Fatalf("", "Unable to marshal input JSON: %s", err.Error())
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
+	fmt.Fprintln(w, "NAME \tID \tCATEGORY \tGROUPS \tCREATED \tUPDATED \t")
+	for _, r := range runbooks {
+		name := r["name"].(string)
+		id := r["id"].(string)
+		category := r["category"].(string)
+		groupList := r["groups"].([]interface{})
+		groups := []string{}
+		for _, g := range groupList {
+			groups = append(groups, g.(string))
+		}
+		created := r["created"].(string)
+		updated := r["updated"].(string)
+		fmt.Fprintf(w, "%s \t%s \t%s \t%s \t%s \t%s \n", name, id, category, groups, created, updated)
+	}
+	w.Flush()
+}
+
+func listMonitors(data []byte, context string) {
+	var monitors []map[string]interface{}
+
+	err := json.Unmarshal(data, &monitors)
+	if err != nil {
+		logger.Fatalf("", "Unable to marshal input JSON: %s", err.Error())
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
+	fmt.Fprintln(w, "NAME \tID \tKIND \tSTATUS \tENABLED \tGROUPS \tCREATED \tUPDATED \t")
+	for _, m := range monitors {
+		name := m["name"].(string)
+		id := m["id"].(string)
+		kind := m["kind"].(string)
+		groupList := m["groups"].([]interface{})
+		groups := []string{}
+		for _, g := range groupList {
+			groups = append(groups, g.(string))
+		}
+		created := m["created"].(string)
+		updated := m["updated"].(string)
+		status := m["status"].(string)
+		enabled := m["enabled"].(bool)
+		fmt.Fprintf(w, "%s \t%s \t%s \t%s \t%v \t%s \t%s \t%s \n", name, id, kind, status, enabled, groups, created, updated)
 	}
 	w.Flush()
 }
