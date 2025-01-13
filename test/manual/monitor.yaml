@@ -1,0 +1,16 @@
+name: Tmp Log File Check 1
+id: foo_tmp_file_check_1
+workflow: foo
+enabled: false
+arguments:
+    file": /tmp/log_file.txt
+    window_size": 10
+    interval": 1
+    group": test
+    alert_regex":
+      ".*ERROR.*": error_log
+      ".*DEBUG.*": debug_log
+groups:
+  - admin
+kind: file
+

@@ -68,6 +68,8 @@ tasks:
   auto_execute: true
 - name: c
   run: |
+    echo "here's some error logs!"
+    echo "on multiple lines even!"
     exit 1
   store:
     env:
