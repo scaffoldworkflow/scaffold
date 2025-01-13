@@ -12,6 +12,7 @@ import (
 	"github.com/jfcarter2358/ui/breadcrumb"
 	"github.com/jfcarter2358/ui/elements/br"
 	"github.com/jfcarter2358/ui/elements/div"
+	"github.com/jfcarter2358/ui/elements/h1"
 	"github.com/jfcarter2358/ui/elements/link"
 	"github.com/jfcarter2358/ui/page"
 	"github.com/jfcarter2358/ui/sidebar"
@@ -85,9 +86,17 @@ func historiesBuildPage(ctx *gin.Context) []byte {
 			ID:      "sidebar",
 			Classes: "theme-light",
 			Components: []ui.Component{
+				h1.H1{
+					Contents: "Scaffold",
+					Classes:  "ui-green",
+				},
 				link.Link{
 					Title: "Dashboard",
 					HRef:  "/ui/dashboard",
+				},
+				link.Link{
+					Title: "Monitors",
+					HRef:  "/ui/monitors",
 				},
 				link.Link{
 					Title: "Runbooks",
@@ -115,7 +124,7 @@ func historiesBuildPage(ctx *gin.Context) []byte {
 					link.Link{
 						Title:   "Logout",
 						HRef:    "/auth/logout",
-						Style:   "passing:12px;",
+						Style:   "padding:12px;",
 						Classes: "theme-dark rounded-md",
 					},
 				},

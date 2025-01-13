@@ -18,6 +18,7 @@ const MONGODB_INPUT_COLLECTION_NAME = "input"
 const MONGODB_WEBHOOK_COLLECTION_NAME = "webhook"
 const MONGODB_HISTORY_COLLECTION_NAME = "history"
 const MONGODB_RUNBOOK_COLLECTION_NAME = "runbook"
+const MONGODB_MONITOR_COLLECTION_NAME = "monitor"
 
 const NODE_TYPE_WORKER = "worker"
 const NODE_TYPE_MANAGER = "manager"
@@ -61,6 +62,14 @@ const NODE_KILLED = "killed"
 const NODE_WAITING = "waiting"
 const NODE_SUCCESS = "success"
 const NODE_RUNNING = "running"
+
+const MONITOR_STATUS_RUNNING = "running"
+const MONITOR_STATUS_STOPPED = "stopped"
+const MONITOR_STATUS_ALERT = "alert"
+
+const MONITOR_KIND_K8S = "k8s"
+const MONITOR_KIND_FILE = "file"
+const MONITOR_KIND_CUSTOM = "custom"
 
 var UI_HEALTH_ICONS = map[string]string{
 	NODE_HEALTHY:   "fa-circle-check",

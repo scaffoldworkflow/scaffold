@@ -49,9 +49,17 @@ func userBuildPage(ctx *gin.Context) []byte {
 			ID:      "sidebar",
 			Classes: "theme-light",
 			Components: []ui.Component{
+				h1.H1{
+					Contents: "Scaffold",
+					Classes:  "ui-green",
+				},
 				link.Link{
 					Title: "Dashboard",
 					HRef:  "/ui/dashboard",
+				},
+				link.Link{
+					Title: "Monitors",
+					HRef:  "/ui/monitors",
 				},
 				link.Link{
 					Title: "Runbooks",

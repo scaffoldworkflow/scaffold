@@ -2,7 +2,8 @@ package page
 
 import (
 	"net/http"
-	"scaffold/server/runbook"
+	"scaffold/server/constants"
+	"scaffold/server/monitor"
 	"scaffold/server/user"
 	"sort"
 	"strings"
@@ -24,7 +25,7 @@ import (
 	logger "github.com/jfcarter2358/go-logger"
 )
 
-func RunbooksSearchEndpoint(ctx *gin.Context) {
+func MonitorsSearchEndpoint(ctx *gin.Context) {
 	searchTerm, ok := ctx.GetQuery("search")
 	if !ok {
 		ctx.Status(http.StatusBadRequest)
@@ -32,52 +33,54 @@ func RunbooksSearchEndpoint(ctx *gin.Context) {
 	}
 	query := strings.TrimSpace(searchTerm)
 
-	runbooks, err := runbook.GetAllRunbooks()
+	monitors, err := monitor.GetAllMonitors()
 	if err != nil {
-		logger.Errorf("", "Cannot render runbooks page: %s", err.Error())
+		logger.Errorf("", "Cannot render monitors page: %s", err.Error())
 		ctx.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	filtered := []runbook.Runbook{}
+	filtered := []monitor.Monitor{}
 
-	for _, r := range runbooks {
-		if strings.Contains(strings.ToLower(r.ID), strings.ToLower(query)) || strings.Contains(strings.ToLower(r.Name), strings.ToLower(query)) || strings.Contains(strings.ToLower(r.Category), strings.ToLower(query)) {
-			filtered = append(filtered, *r)
+	for _, m := range monitors {
+		if strings.Contains(strings.ToLower(m.ID), strings.ToLower(query)) {
+			filtered = append(filtered, *m)
 		}
 	}
 
-	markdown := runbooksBuildTable(filtered, ctx)
+	markdown := monitorsBuildTable(filtered, ctx)
 
 	ctx.Data(http.StatusOK, "text/html; charset=utf-8", markdown)
 }
 
-func RunbooksTableEndpoint(ctx *gin.Context) {
-	runbooks, err := runbook.GetAllRunbooks()
+func MonitorsTableEndpoint(ctx *gin.Context) {
+	monitors, err := monitor.GetAllMonitors()
 	if err != nil {
-		logger.Errorf("", "Cannot render runbooks page: %s", err.Error())
+		logger.Errorf("", "Cannot render monitors page: %s", err.Error())
 		ctx.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	filtered := []runbook.Runbook{}
+	filtered := []monitor.Monitor{}
 
-	logger.Tracef("", "Got runbooks: %v", runbooks)
+	logger.Tracef("", "Got monitors: %v", monitors)
 
-	for _, r := range runbooks {
-		filtered = append(filtered, *r)
+	for _, m := range monitors {
+		filtered = append(filtered, *m)
 	}
 
-	markdown := runbooksBuildTable(filtered, ctx)
+	logger.Tracef("", "Got filtered: %v", filtered)
+
+	markdown := monitorsBuildTable(filtered, ctx)
 
 	ctx.Data(http.StatusOK, "text/html; charset=utf-8", markdown)
 }
 
-func RunbooksPageEndpoint(ctx *gin.Context) {
-	markdown := runbooksBuildPage(ctx)
+func MonitorsPageEndpoint(ctx *gin.Context) {
+	markdown := monitorsBuildPage(ctx)
 	ctx.Data(http.StatusOK, "text/html; charset=utf-8", markdown)
 }
 
-func runbooksBuildPage(ctx *gin.Context) []byte {
+func monitorsBuildPage(ctx *gin.Context) []byte {
 	p := page.Page{
 		ID:             "page",
 		SidebarEnabled: true,
@@ -138,8 +141,8 @@ func runbooksBuildPage(ctx *gin.Context) []byte {
 							breadcrumb.Breadcrumb{
 								Components: []ui.Component{
 									link.Link{
-										Title: "Runbooks",
-										HRef:  "/ui/runbooks",
+										Title: "Monitors",
+										HRef:  "/ui/monitors",
 									},
 								},
 								Style: "margin-left:16px;",
@@ -148,14 +151,14 @@ func runbooksBuildPage(ctx *gin.Context) []byte {
 					},
 					ui.Raw{
 						HTMLString: `<input id="search" class="w3-input w3-round search-bar theme-light" type="text"
-                            name="search" placeholder="Search Runbooks"
-                            style="margin-top:8px;margin-bottom:8px;margin-left:1%;width:98%" hx-get="/htmx/runbooks/search"
-                            hx-trigger="keyup changed delay:250ms" hx-target="#runbooks-table-div" />`,
+                            name="search" placeholder="Search Monitors"
+                            style="margin-top:8px;margin-bottom:8px;margin-left:1%;width:98%" hx-get="/htmx/monitors/search"
+                            hx-trigger="keyup changed delay:250ms" hx-target="#monitors-table-div" />`,
 					},
 					div.Div{
-						ID:        "runbooks-table-div",
+						ID:        "monitors-table-div",
 						HXTrigger: "load",
-						HXGet:     "/htmx/runbooks/table",
+						HXGet:     "/htmx/monitors/table",
 						Style:     "padding:8px;",
 					},
 				},
@@ -166,30 +169,28 @@ func runbooksBuildPage(ctx *gin.Context) []byte {
 	}
 	html, err := p.Render()
 	if err != nil {
-		logger.Errorf("", "Cannot render runbooks page: %s", err.Error())
+		logger.Errorf("", "Cannot render monitors page: %s", err.Error())
 		ctx.AbortWithStatus(http.StatusInternalServerError)
 		return []byte{}
 	}
 	return []byte(html)
 }
 
-func runbooksBuildTable(rs []runbook.Runbook, ctx *gin.Context) []byte {
+func monitorsBuildTable(ms []monitor.Monitor, ctx *gin.Context) []byte {
 	token, _ := ctx.Cookie("scaffold_token")
 	u, _ := user.GetUserByLoginToken(token)
 
 	out := ""
 
-	categorized := map[string][]runbook.Runbook{}
+	categorized := map[string][]monitor.Monitor{}
 
-	for _, r := range rs {
-		if val, ok := categorized[r.Category]; ok {
-			categorized[r.Category] = append(val, r)
+	for _, m := range ms {
+		if val, ok := categorized[m.Workflow]; ok {
+			categorized[m.Workflow] = append(val, m)
 		} else {
-			categorized[r.Category] = []runbook.Runbook{r}
+			categorized[m.Workflow] = []monitor.Monitor{m}
 		}
 	}
-
-	logger.Debugf("", "Got categorized of %v", categorized)
 
 	for category, arr := range categorized {
 		sort.Slice(arr, func(i, j int) bool {
@@ -200,15 +201,16 @@ func runbooksBuildTable(rs []runbook.Runbook, ctx *gin.Context) []byte {
 
 		rows := []ui.Component{}
 
-		for _, r := range arr {
-			logger.Tracef("", "Checking %v against %v", u.Groups, r.Groups)
+		for _, m := range arr {
+			logger.Tracef("", "Got m of %v", m)
+			logger.Tracef("", "Checking %v against %v", u.Groups, m.Groups)
 			isInGroup := false
 			for _, ug := range u.Groups {
 				if ug == "admin" {
 					isInGroup = true
 					break
 				}
-				for _, rg := range r.Groups {
+				for _, rg := range m.Groups {
 					if ug == rg {
 						isInGroup = true
 						break
@@ -220,9 +222,22 @@ func runbooksBuildTable(rs []runbook.Runbook, ctx *gin.Context) []byte {
 			}
 			if isInGroup {
 				logger.Tracef("", "Auth confirmed")
+				status := m.Status
+				htmlString := ""
+				logger.Debugf("", "Monitor has status %s", m.Status)
+				switch status {
+				case constants.MONITOR_STATUS_RUNNING:
+					htmlString = `<a href="/ui/monitors/` + m.ID + `" class="dark theme-base shadow-xl theme-hover-light" style="width:100%;padding:8px;display:inline-block;"><i class="fa-solid fa-circle-check ui-text-green"></i>&nbsp;&nbsp;` + m.Name + `</a>`
+				case constants.MONITOR_STATUS_ALERT:
+					htmlString = `<a href="/ui/monitors/` + m.ID + `" class="dark theme-base shadow-xl theme-hover-light" style="width:100%;padding:8px;display:inline-block;"><i class="fa-solid fa-circle-exclamation ui-text-red"></i>&nbsp;&nbsp;` + m.Name + `</a>`
+				case constants.MONITOR_STATUS_STOPPED:
+					htmlString = `<a href="/ui/monitors/` + m.ID + `" class="dark theme-base shadow-xl theme-hover-light" style="width:100%;padding:16px;display:inline-block;"><i class="fa-solid fa-circle-pause ui-text-yellow"></i>&nbsp;&nbsp;` + m.Name + `</a>`
+				}
+				logger.Debugf("", "Adding HTML string: %s", htmlString)
 				rows = append(rows, ui.Raw{
-					HTMLString: `<a href="/ui/runbooks/` + r.ID + `" class="dark theme-base shadow-xl" style="width:100%;padding:8px;display:inline-block;">` + r.Name + `</a>`,
+					HTMLString: htmlString,
 				})
+				logger.Debugf("", "Rows: %v", rows)
 			}
 		}
 		a := accordion.Accordion{
@@ -239,7 +254,7 @@ func runbooksBuildTable(rs []runbook.Runbook, ctx *gin.Context) []byte {
 		}
 		html, err := a.Render()
 		if err != nil {
-			logger.Errorf("", "Cannot render runbooks card: %s", err.Error())
+			logger.Errorf("", "Cannot render monitors card: %s", err.Error())
 			ctx.AbortWithStatus(http.StatusInternalServerError)
 			return []byte{}
 		}

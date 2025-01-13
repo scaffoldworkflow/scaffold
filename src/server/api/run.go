@@ -184,7 +184,22 @@ func GetRunStatus(ctx *gin.Context) {
 	waiting := false
 	killed := false
 	success := false
+	notStarted := false
+	unknown := false
 
+	if len(h.States) == 0 {
+		ctx.JSON(http.StatusOK, gin.H{
+			"running":     false,
+			"errored":     false,
+			"waiting":     false,
+			"killed":      false,
+			"success":     false,
+			"not_started": true,
+			"unknown":     false,
+			"task":        "",
+		})
+		return
+	}
 	s := h.States[len(h.States)-1]
 	t := s.Task
 
@@ -199,20 +214,26 @@ func GetRunStatus(ctx *gin.Context) {
 		running = true
 	case constants.STATE_STATUS_ERROR:
 		errored = true
-	case constants.STATE_STATUS_WAITING, constants.STATE_STATUS_NOT_STARTED:
+	case constants.STATE_STATUS_WAITING:
 		waiting = true
 	case constants.STATE_STATUS_KILLED:
 		killed = true
 	case constants.STATE_STATUS_SUCCESS:
 		success = true
+	case constants.STATE_STATUS_NOT_STARTED:
+		notStarted = true
+	default:
+		unknown = true
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"running": running,
-		"errored": errored,
-		"waiting": waiting,
-		"killed":  killed,
-		"success": success,
-		"task":    t,
+		"running":     running,
+		"errored":     errored,
+		"waiting":     waiting,
+		"killed":      killed,
+		"success":     success,
+		"not_started": notStarted,
+		"unknown":     unknown,
+		"task":        t,
 	})
 }

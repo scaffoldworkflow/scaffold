@@ -36,6 +36,7 @@ func RunbookKernelSetup(ctx *gin.Context) {
 		time.Sleep(100 * time.Millisecond)
 		if iteration == max_iterations {
 			utils.Error(fmt.Errorf("kernel health check timed out with ID %s", k.ID), ctx, http.StatusInternalServerError)
+			return
 		}
 		iteration += 1
 	}

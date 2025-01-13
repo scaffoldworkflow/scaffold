@@ -22,6 +22,7 @@ var collectionNames = []string{
 	constants.MONGODB_WEBHOOK_COLLECTION_NAME,
 	constants.MONGODB_HISTORY_COLLECTION_NAME,
 	constants.MONGODB_RUNBOOK_COLLECTION_NAME,
+	constants.MONGODB_MONITOR_COLLECTION_NAME,
 }
 var Collections map[string]*mongo.Collection
 var Ctx = context.TODO()

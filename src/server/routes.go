@@ -146,6 +146,19 @@ func initializeRoutes() {
 					kernelRoutes.GET("/:kernel_id/:run_id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.GetKernelOutput)
 					kernelRoutes.POST("/:kernel_id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.ExecuteKernel)
 				}
+				monitorRoutes := v1Routes.Group("/monitor")
+				{
+					monitorRoutes.GET("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetAllMonitors)
+					monitorRoutes.GET("/:id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("id"), api.GetMonitorByID)
+					monitorRoutes.GET("/:id/workflow", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), middleware.EnsureWorkflowGroup("id"), api.GetMonitorsByWorkflow)
+					monitorRoutes.DELETE("/:id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("id"), api.DeleteMonitorByID)
+					monitorRoutes.DELETE("/:id/workflow", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("id"), api.DeleteMonitorsByWorkflow)
+					monitorRoutes.POST("", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.CreateMonitor)
+					monitorRoutes.PUT("/:id", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), middleware.EnsureWorkflowGroup("id"), api.UpdateMonitorByID)
+					monitorRoutes.POST(":id/kernel", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.StartMonitor)
+					monitorRoutes.PUT("/:id/kernel", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.ToggleMonitor)
+					monitorRoutes.DELETE("/:id/kernel", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write"}), api.StopMonitor)
+				}
 				historyRoutes := v1Routes.Group("/history")
 				{
 					historyRoutes.GET("/:runID", middleware.EnsureLoggedIn(), middleware.EnsureRolesAllowed([]string{"admin", "write", "read"}), api.GetHistory)
@@ -173,6 +186,10 @@ func initializeRoutes() {
 			uiRoutes.GET("/runbooks", middleware.EnsureLoggedIn(), page.RunbooksPageEndpoint)
 			uiRoutes.GET("/runbooks/:runbook_id", middleware.EnsureLoggedIn(), api.RunbookKernelSetup)
 			uiRoutes.GET("/runbooks/:runbook_id/:kernel_id", middleware.EnsureLoggedIn(), page.RunbookPageEndpoint)
+
+			uiRoutes.GET("/monitors", middleware.EnsureLoggedIn(), page.MonitorsPageEndpoint)
+
+			uiRoutes.GET("/monitors/:id", middleware.EnsureLoggedIn(), page.MonitorPageEndpoint)
 
 			uiRoutes.GET("/runs", middleware.EnsureLoggedIn(), page.HistoriesPageEndpoint)
 			uiRoutes.GET("/runs/:run_id", middleware.EnsureLoggedIn(), page.HistoryPageEndpoint)
@@ -222,6 +239,20 @@ func initializeRoutes() {
 			{
 				runbooksRoutes.GET("/table", page.RunbooksTableEndpoint)
 				runbooksRoutes.GET("/search", page.RunbooksSearchEndpoint)
+			}
+			monitorsRoutes := htmxRoutes.Group("/monitors")
+			{
+				monitorsRoutes.GET("/table", page.MonitorsTableEndpoint)
+				monitorsRoutes.GET("/search", page.MonitorsSearchEndpoint)
+			}
+			monitorRoutes := htmxRoutes.Group("/monitor")
+			{
+				monitorRoutes.GET("/metadata/:id", page.MonitorMetadataEndpoint)
+				monitorRoutes.GET("/requirements/:id", page.MonitorRequirementsEndpoint)
+				monitorRoutes.GET("/contents/:id", page.MonitorContentsEndpoint)
+				monitorRoutes.GET("/enabled/:id", page.MonitorEnabledEndpoint)
+				monitorRoutes.GET("/status/:id", page.MonitorStatusEndpoint)
+				monitorRoutes.GET("/alerts/:id", page.MonitorAlertsEndpoint)
 			}
 			runsRoutes := htmxRoutes.Group("/runs")
 			{

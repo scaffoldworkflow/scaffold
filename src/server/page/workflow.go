@@ -59,6 +59,10 @@ func workflowBuildPage(workflowName string, ctx *gin.Context) []byte {
 					HRef:  "/ui/dashboard",
 				},
 				link.Link{
+					Title: "Monitors",
+					HRef:  "/ui/monitors",
+				},
+				link.Link{
 					Title: "Runbooks",
 					HRef:  "/ui/runbooks",
 				},
@@ -84,7 +88,7 @@ func workflowBuildPage(workflowName string, ctx *gin.Context) []byte {
 					link.Link{
 						Title:   "Logout",
 						HRef:    "/auth/logout",
-						Style:   "passing:12px;",
+						Style:   "padding:12px;",
 						Classes: "theme-dark rounded-md",
 					},
 				},
