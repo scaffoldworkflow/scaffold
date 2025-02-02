@@ -36,19 +36,6 @@ func StartRun(ctx *gin.Context) {
 	sName := ctx.Param("step")
 	svcName := ctx.Param("service")
 	runID := uuid.New().String()
-	h := &history.History{
-		RunID:       runID,
-		States:      make([]history.State, 0),
-		Project:     pName,
-		Team:        tName,
-		Environment: eName,
-		Service:     svcName,
-	}
-	if err := history.CreateHistory(h); err != nil {
-		logger.Errorf("", "Cannot create history: %s", err.Error())
-		utils.Error(err, ctx, http.StatusInternalServerError)
-		return
-	}
 
 	ps, err := project.GetProjects(bson.M{"name": pName, "team": tName})
 	if err != nil {
@@ -58,7 +45,7 @@ func StartRun(ctx *gin.Context) {
 	}
 
 	if len(ps) == 0 {
-		logger.Errorf("", "Could not get project at %s/%s for run %s", h.Team, h.Project, runID)
+		logger.Errorf("", "Could not get project at %s/%s for run %s", tName, pName, runID)
 		utils.Error(err, ctx, http.StatusInternalServerError)
 		return
 	}
@@ -75,7 +62,23 @@ func StartRun(ctx *gin.Context) {
 		utils.Error(err, ctx, http.StatusNotFound)
 		return
 	}
+
 	w := p.Environments[eName].Services[svcName].Workflow
+	h := &history.History{
+		RunID:       runID,
+		States:      make([]history.State, 0),
+		Project:     pName,
+		Team:        tName,
+		Environment: eName,
+		Service:     svcName,
+		Workflow:    w,
+	}
+	if err := history.CreateHistory(h); err != nil {
+		logger.Errorf("", "Cannot create history: %s", err.Error())
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
 	if err := run.StartRun(runID, w, 0, "", sName, w.Steps[sName].Language); err != nil {
 		logger.Errorf("", "Unable to start run: %s", runID)
 		utils.Error(err, ctx, http.StatusInternalServerError)

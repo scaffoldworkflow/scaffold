@@ -3,6 +3,7 @@ package history
 import (
 	"fmt"
 	"scaffold/manager/constants"
+	"scaffold/manager/project"
 	"sync"
 	"time"
 
@@ -23,6 +24,7 @@ type History struct {
 	Updated     string                 `json:"updated" bson:"updated" yaml:"updated"`
 	Context     map[string]interface{} `json:"context" bson:"context" yaml:"context"`
 	Team        string                 `json:"team" bson:"team" yaml:"team"`
+	Workflow    project.Workflow       `json:"workflow" bson:"workflow" yaml:"workflow"`
 }
 
 var locks = map[string]*sync.RWMutex{}
