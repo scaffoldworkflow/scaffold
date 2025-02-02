@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: scaffold-worker-{{ .RunID }}-{{ .Step }}
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: scaffold-worker
+        image: {{ .WorkerImage }}
+        imagePullPolicy: {{ .ImagePullPolicy }}
+        env:
+          - name: SCAFFOLD_LANGUAGE
+            value: '{{ .Language }}'
+          - name: SCAFFOLD_RESOURCE_TYPES
+            value: '{{ .ResourceTypes }}'
+          - name: SCAFFOLD_RESOURCES
+            value: '{{ .Resources }}'
+          - name: SCAFFOLD_INPUTS
+            value: '{{ .Inputs }}'
+          - name: SCAFFOLD_OUTPUTS
+            value: '{{ .Outputs }}'
+          - name: SCAFFOLD_SCRIPT
+            value: '{{ .Script }}'
+          - name: SCAFFOLD_CONTEXT_b64
+            value: '{{ .Context }}'
+          - name: SCAFFOLD_PYTHON_REQUIREMENTS
+            value: '{{ .PythonRequirements }}'
+          - name: LOG_LEVEL
+            value: '{{ .LogLevel }}'
+  backoffLimit: 1

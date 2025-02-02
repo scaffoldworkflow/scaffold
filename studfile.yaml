@@ -13,55 +13,58 @@
     - linux/amd64
     - linux/arm64
     - linux/arm/v7
-  image_version: 0.4.2.alpha1
-  cli_version: 0.4.2.alpha1
-set-server-version:
-  help: Update server version constant from VERSION file
+set-version:
+  help: Update version constants from VERSION file
   cmd: |
-    version = ?(cat src/server/VERSION).strip()
-    sed -i 's/const VERSION = ".*"/const VERSION = "{version}"/' src/server/constants/constants.go
-set-cli-version:
-  help: Update server version constant from VERSION file
-  cmd: |
-    version = ?(cat src/client/VERSION).strip()
-    sed -i 's/const VERSION = ".*"/const VERSION = "{version}"/' src/client/constants/constants.go
+    version = ?(cat VERSION).strip()
+    sed -i 's/const VERSION = ".*"/const VERSION = "{version}"/' src/manager/constants/constants.go
 build-docker-helpers:
   help: Build Helper Scaffold Docker image
   cmd: |
-    stud set-server-version
-
+    stud set-version
     docker build -t scaffold:build -f helpers/Dockerfile.build .
     docker build -t scaffold:run --no-cache -f helpers/Dockerfile.run .
 build-docker:
   help: Build Scaffold Docker image
   cmd: |
-    stud set-server-version
-    docker build -t scaffold --no-cache -f src/server/Dockerfile .
+    stud set-version
+    docker build -t scaffold-manager --no-cache -f src/manager/Dockerfile .
+    docker build -t scaffold-worker --no-cache -f src/worker/Dockerfile .
+build-docker-worker:
+  help: Build Scaffold worker Docker image
+  cmd: |
+    stud set-version
+    docker build -t scaffold-worker --no-cache -f src/worker/Dockerfile .
+build-docker-manager:
+  help: Build Scaffold manager Docker image
+  cmd: |
+    stud set-version
+    docker build -t scaffold-manager --no-cache -f src/manager/Dockerfile .
 push-docker:
   help: Build Scaffold Docker image
   cmd: |
-    version = ?(cat src/server/VERSION).strip()
-    docker tag scaffold {docker_org}/scaffold:{version}
-    docker push {docker_org}/scaffold:{version}
-    docker tag scaffold {docker_org}/scaffold:latest
-    docker push {docker_org}/scaffold:latest
+    version = ?(cat VERSION).strip()
+    docker tag scaffold-manager {docker_org}/scaffold-manager:{version}
+    docker push {docker_org}/scaffold-manager:{version}
+    docker tag scaffold-worker {docker_org}/scaffold-worker:latest
+    docker push {docker_org}/scaffold-worker:latest
 build-docker-test:
   help: Build Scaffold test Docker image
   cmd: |
-    stud set-server-version
-    docker build -t scaffold:test -f src/server/test.Dockerfile .
+    stud set-version
+    docker build -t scaffold:test -f src/manager/test.Dockerfile .
 publish:
   help: Publish Scaffold image
   cmd: |
-    stud set-server-version
-    
+    stud set-version
     platform_string = ','.join(platforms)
-    version = ?(cat src/server/VERSION).strip()
-
-    print(f"Running build command: docker buildx build --platform {platform_string} -t {docker_org}/scaffold:{version} -f src/server/Dockerfile --push .")
-    docker buildx build --platform {platform_string} -t {docker_org}/scaffold:{version} -f src/server/Dockerfile --push .
-    docker buildx build --platform {platform_string} -t {docker_org}/scaffold:latest -f src/server/Dockerfile --push .
-
+    version = ?(cat VERSION).strip()
+    print(f"Running build command: docker buildx build --platform {platform_string} -t {docker_org}/scaffold:{version} -f src/manager/Dockerfile --push .")
+    docker buildx build --platform {platform_string} -t {docker_org}/scaffold-manager:{version} -f src/manager/Dockerfile --push .
+    docker buildx build --platform {platform_string} -t {docker_org}/scaffold-manager:latest -f src/manager/Dockerfile --push .
+    print(f"Running build command: docker buildx build --platform {platform_string} -t {docker_org}/scaffold:{version} -f src/worker/Dockerfile --push .")
+    docker buildx build --platform {platform_string} -t {docker_org}/scaffold-worker:{version} -f src/worker/Dockerfile --push .
+    docker buildx build --platform {platform_string} -t {docker_org}/scaffold-worker:latest -f src/worker/Dockerfile --push .
     print('Done!')
 build-cli:
   help: Build Scaffold CLI
@@ -69,12 +72,9 @@ build-cli:
     # Clean up environment
     stud clean
     mkdir -p dist
-
-    stud set-cli-version
-
+    stud set-version
     # Enter source directory for CLI
     cd src/client
-    
     # Build CLI for below oses and architectures and drop the binary into dist directories
     for arch_name in architectures:
       for os_name in oses:
@@ -145,15 +145,12 @@ gen-certs:
     $(openssl genrsa -out temp/rootCA.key 4096)
     $(openssl req -x509 -new -nodes -key temp/rootCA.key -subj "/C=US/ST=IL/O=Scaffold/CN=scaffold" -sha256 -days 1024 -out temp/rootCA.crt)
     echo "Done!"
-
     for idx, node_type in enumerate(['manager', 'worker']):
-
       echo "Generating {node_type} certs..."
       $(openssl genrsa -out temp/cert.{node_type}.key 2048)
       $(openssl req -new -sha256 -key temp/cert.{node_type}.key -subj "/C=US/ST=IL/O=Scaffold/CN=scaffold-{node_type}" -out temp/cert.{node_type}.csr)
       $(openssl x509 -req -extfile <(printf "subjectAltName=DNS:scaffold-{node_type},DNS:localhost") -in temp/cert.{node_type}.csr -CA temp/rootCA.crt -CAkey temp/rootCA.key -CAcreateserial -out temp/cert.{node_type}.crt -days 500 -sha256)
       echo "Done!"
-
       for cert_type in ['crt', 'key']:
         key_name = f'SCAFFOLD_TLS_CERT_{cert_type.upper()}'
         encoded = ?(cat temp/cert.{node_type}.{cert_type} | base64 -w 0)
@@ -163,7 +160,7 @@ gen-certs:
 docs:
   help: Generate Scaffold documentation
   cmd: |
-    cd src/server
+    cd src/manager
     swag init
     cd ../../docs
     make html

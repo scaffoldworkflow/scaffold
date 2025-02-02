@@ -1,0 +1,16 @@
+// import MUI colors
+@import "bower_components/mui/src/sass/mui/colors";
+
+// customize MUI variables
+$mui-primary-color:       #A3BE8C;
+$mui-primary-color-dark:  #819C6A;
+$mui-primary-color-light: #C5DFAE;
+
+$mui-accent-color:        #5E81AC;
+$mui-accent-color-dark:   #3C608A;
+$mui-accent-color-light:  #7FA3CE;
+
+$mui-danger-color:        #BF616A;
+
+// import MUI SASS
+@import "bower_components/mui/src/sass/mui";

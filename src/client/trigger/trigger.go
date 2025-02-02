@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"scaffold/client/auth"
 	"scaffold/client/logger"
-	"scaffold/server/state"
 	"time"
 )
 
@@ -91,7 +90,7 @@ func getRunStatus(p auth.ProfileObj, context, runID string) Status {
 }
 
 type History struct {
-	States []state.State `json:"states" bson:"states" yaml:"states"`
+	States []State `json:"states" bson:"states" yaml:"states"`
 }
 
 type State struct {

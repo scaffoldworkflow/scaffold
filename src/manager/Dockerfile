@@ -1,0 +1,31 @@
+FROM scaffoldworkflow/scaffold:build
+
+# Copy in manager source
+COPY src/manager /scaffold-build
+
+# Build binary
+RUN env GOOS=linux CGO_ENABLED=0 go build -v -o scaffold
+
+# **************************************************************** #
+
+FROM scaffoldworkflow/scaffold:run
+
+# Copy built binary
+COPY --from=0 /scaffold-build/scaffold ./
+
+USER root
+
+# Add start script and make it executable
+ADD src/manager/start-scaffold.sh /home/scaffold/start-scaffold.sh
+RUN chmod +x /home/scaffold/start-scaffold.sh
+
+# Copy over built UI files
+# COPY src/manager/page/static /home/scaffold/static
+
+# Own the entire scaffold home user
+RUN chown -R scaffold:scaffold /home/scaffold
+
+# Add scaffold to sudoers
+RUN echo "scaffold     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+USER scaffold

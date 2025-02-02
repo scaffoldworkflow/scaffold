@@ -1,5 +1,5 @@
-id: "foobar3"
-name: "Runbook 3"
+id: "foobar"
+name: "Runbook"
 category: "Group B"
 groups:
 - admin
@@ -28,6 +28,7 @@ blocks:
 
     pprint(output)
   type: code
+  language: python
 - contents: |
     ## Here's some more Markdown!
 
@@ -48,7 +49,7 @@ blocks:
     ```
   type: markdown
 - contents: |
-    name = "foobar"
-    message = f"Hello, {name}!"
-    print(message)
+    name="foobar"
+    echo "hello ${name}!"
   type: code
+  language: bash

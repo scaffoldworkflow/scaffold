@@ -1,5 +1,5 @@
 dist
-src/server/ui/dist
+src/manager/ui/dist
 .python-version
 temp
 test/\.*\.yaml

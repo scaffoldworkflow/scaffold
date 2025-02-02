@@ -93,7 +93,7 @@ func main() {
 	localCommand := versionCommand.NewCommand("local", "Get local Scaffold CLI version")
 	localLogLevel := localCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 
-	remoteCommand := versionCommand.NewCommand("remote", "Get remote Scaffold server version")
+	remoteCommand := versionCommand.NewCommand("remote", "Get remote Scaffold manager version")
 	remoteProfile := remoteCommand.String("p", "profile", &argparse.Options{Help: "Profile to use to connect to Scaffold instance", Default: "default"})
 	remoteLogLevel := remoteCommand.Selector("l", "log-level", []string{"NONE", "FATAL", "SUCCESS", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"}, &argparse.Options{Help: "Log level to use. Valid options are 'NONE', 'FATAL', 'SUCCESS', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'. Defaults to 'ERROR'", Default: "ERROR"})
 

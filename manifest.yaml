@@ -1,0 +1,154 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scaffold
+  namespace: scaffold
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: scaffold
+  name: scaffold
+rules:
+- apiGroups: ["batch", ""]
+  resources: ["pods", "jobs", "pods/log"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: scaffold
+  name: scaffold
+subjects:
+- kind: ServiceAccount
+  name: scaffold
+  namespace: scaffold
+roleRef:
+  kind: Role
+  name: scaffold
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scaffold-config
+  namespace: scaffold
+data:
+  SCAFFOLD_BASE_URL: http://scaffold-manager:2997
+  SCAFFOLD_LOG_LEVEL: "TRACE"
+  SCAFFOLD_LOG_FORMAT: "console"
+  SCAFFOLD_ADMIN: |
+    {
+      "username": "admin",
+      "password": "admin"
+    }
+  SCAFFOLD_DB_CONNECTION_STRING: "mongodb://MyCoolMongoDBUsername:MyCoolMongoDBPassword@mongodb:27017/scaffold"
+  SCAFFOLD_NODE: |
+    {
+      "type": "manager",
+      "manager_host": "scaffold-manager",
+      "manager_port": 2997,
+      "join_key": "MyCoolJoinKey12345",
+      "primary_key": "MyCoolPrimaryKey12345",
+      "manager_protocol": "http"
+    }
+  RUN_PRUNE_CRON: "*/5 * * * * *"
+  RUN_PRUNE_DURATION: "1"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scaffold-manager
+  labels:
+    app: scaffold
+  namespace: scaffold
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scaffold
+  template:
+    metadata:
+      labels:
+        app: scaffold
+    spec:
+      serviceAccountName: scaffold
+      containers:
+      - name: scaffold-manager
+        image: scaffold-manager
+        imagePullPolicy: Never
+        envFrom:
+        - configMapRef:
+            name: scaffold-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: scaffold
+  name: scaffold
+  namespace: scaffold
+spec:
+  selector:
+    app: scaffold
+  ports:
+  - name: http
+    port: 2997
+    protocol: TCP
+    targetPort: 2997
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mongodb
+  name: mongodb
+  namespace: scaffold
+spec:
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+      name: mongodb
+    spec:
+      containers:
+      - env:
+        - name: MONGODB_ADMIN_PASSWORD
+          value: MyCoolMongoDBPassword
+        - name: MONGODB_USER
+          value: MyCoolMongoDBUsername
+        - name: MONGODB_PASSWORD
+          value: MyCoolMongoDBPassword
+        - name: MONGODB_DATABASE
+          value: scaffold
+        image: centos/mongodb-36-centos7:1
+        imagePullPolicy: Always
+        name: mongodb
+        ports:
+        - containerPort: 27017
+          name: mongodb
+          protocol: TCP
+        stdin: true
+        tty: true
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mongodb
+  name: mongodb
+  namespace: scaffold
+spec:
+  ports:
+  - name: mongodb
+    port: 27017
+    protocol: TCP
+    targetPort: 27017
+  selector:
+    app: mongodb
+  type: ClusterIP

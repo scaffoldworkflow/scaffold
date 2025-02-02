@@ -20,7 +20,7 @@ func DoGet(profile, object, context string) {
 	uri := fmt.Sprintf("%s://%s:%s", p.Protocol, p.Host, p.Port)
 
 	logger.Debugf("", "Checking if object is valid")
-	objects := []string{"workflow", "datastore", "state", "task", "file", "user", "input", "runbook", "monitor"}
+	objects := []string{"workflow", "datastore", "state", "task", "file", "user", "input", "runbook", "monitor", "alert"}
 
 	parts := strings.Split(object, "/")
 
@@ -33,7 +33,7 @@ func DoGet(profile, object, context string) {
 		context = p.Workflow
 	}
 	if len(parts) == 2 {
-		if parts[0] != "workflow" && parts[0] != "datastore" && parts[0] != "user" && parts[0] != "runbook" && parts[0] != "monitor" {
+		if parts[0] != "workflow" && parts[0] != "datastore" && parts[0] != "user" && parts[0] != "runbook" && parts[0] != "monitor" && parts[0] != "alert" {
 			object = fmt.Sprintf("%s/%s/%s", parts[0], context, parts[1])
 		}
 	}
@@ -64,6 +64,8 @@ func DoGet(profile, object, context string) {
 		listRunbooks(data, context)
 	case "monitor":
 		listMonitors(data, context)
+	case "alert":
+		listAlerts(data, context)
 	}
 }
 
@@ -308,6 +310,28 @@ func listMonitors(data []byte, context string) {
 		status := m["status"].(string)
 		enabled := m["enabled"].(bool)
 		fmt.Fprintf(w, "%s \t%s \t%s \t%s \t%v \t%s \t%s \t%s \n", name, id, kind, status, enabled, groups, created, updated)
+	}
+	w.Flush()
+}
+
+func listAlerts(data []byte, context string) {
+	var alerts []map[string]interface{}
+
+	err := json.Unmarshal(data, &alerts)
+	if err != nil {
+		logger.Fatalf("", "Unable to marshal input JSON: %s", err.Error())
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 8, 1, 1, ' ', 0)
+	fmt.Fprintln(w, "NAME \tID \tWORKFLOW \tLANGUAGE \tCREATED \tUPDATED \t")
+	for _, a := range alerts {
+		name := a["name"].(string)
+		id := a["id"].(string)
+		workflow := a["workflow"].(string)
+		language := a["language"].(string)
+		created := a["created"].(string)
+		updated := a["updated"].(string)
+		fmt.Fprintf(w, "%s \t%s \t%s \t%s \t%s \t%s \n", name, id, workflow, language, created, updated)
 	}
 	w.Flush()
 }

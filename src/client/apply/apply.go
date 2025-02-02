@@ -26,7 +26,7 @@ func DoApply(profile, object, context, fileName string) {
 	uri := fmt.Sprintf("%s://%s:%s", p.Protocol, p.Host, p.Port)
 
 	logger.Debugf("", "Checking if object is valid")
-	objects := []string{"workflow", "datastore", "state", "task", "file", "user", "input", "runbook", "monitor"}
+	objects := []string{"workflow", "datastore", "state", "task", "file", "user", "input", "runbook", "monitor", "alert"}
 
 	if !utils.Contains(objects, object) {
 		logger.Fatalf("", "Invalid object type passed: '%s'. Valid object types are %v", object, objects)
@@ -75,11 +75,11 @@ func doApply(profile, fileName, context, uri, objType string) {
 
 	name := yamlData["name"].(string)
 
-	if objType == "runbook" || objType == "monitor" {
+	if objType == "runbook" || objType == "monitor" || objType == "alert" {
 		name = yamlData["id"].(string)
 	}
 
-	if objType != "workflow" && objType != "datastore" && objType != "user" && objType != "runbook" && objType != "monitor" {
+	if objType != "workflow" && objType != "datastore" && objType != "user" && objType != "runbook" && objType != "monitor" && objType != "alert" {
 		yamlData["workflow"] = context
 		name = fmt.Sprintf("%s/%s", context, name)
 	}

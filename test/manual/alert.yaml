@@ -1,0 +1,7 @@
+id: test_alert
+name: Test Alert
+workflow: foo
+script: |
+  print('Hello world!')
+language: python
+enabled: true
