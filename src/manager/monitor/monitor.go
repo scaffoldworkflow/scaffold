@@ -17,6 +17,8 @@ import (
 
 var Finished = make([]history.State, 0)
 var FinishedLock = &sync.RWMutex{}
+var PromoteFinished = make([]history.State, 0)
+var PromoteFinishedLock = &sync.Mutex{}
 
 type Metadata struct {
 	Labels map[string]string `json:"labels"`
@@ -147,7 +149,7 @@ func Run(runID, step string, runIdx int) {
 
 		logOut, logErr := exec.Command("/bin/sh", "-c", fmt.Sprintf("kubectl logs -n %s %s", config.Config.K8sNamespace, podName)).CombinedOutput()
 		if logErr != nil {
-			logger.Errorf("", "Error getting pod logs for %s job: %s", runID, logErr.Error())
+			logger.Errorf("", "Error getting pod logs for job %s: %s", runID, logErr.Error())
 			logger.Debugf("", "%s", string(logOut))
 			count += 1
 			continue
@@ -196,6 +198,149 @@ func Run(runID, step string, runIdx int) {
 		FinishedLock.Lock()
 		Finished = append(Finished, *s)
 		FinishedLock.Unlock()
+		history.UpdateState(runID, runIdx, *s)
+	}
+}
+
+// TODO: Update this so we pass in the finished slice and the lock maybe to remove code duplication?
+func PromoteRun(runID, step string, runIdx int) {
+	previousCount := 0
+	errorRetry := 10
+	waitRetry := 10
+	count := 0
+	s := &history.State{
+		Step:     step,
+		Status:   "",
+		Started:  "",
+		Finished: "",
+		Output:   "",
+		Idx:      runIdx,
+		RunID:    runID,
+	}
+	if err := history.UpdateState(runID, runIdx, *s); err != nil {
+		logger.Errorf("", "Unable to add state to history %s: %s", runID, err.Error())
+		return
+	}
+	podName := ""
+	for {
+		// TODO: Make this sleep configurable
+		time.Sleep(1 * time.Second)
+		if count == errorRetry {
+			logger.Errorf("", "Error retry limit reached, killing monitor %s", runID)
+			return
+		}
+		logger.Debugf("", "Getting job status for monitor %s", runID)
+		jobOut, jobErr := exec.Command("/bin/sh", "-c", fmt.Sprintf("kubectl get job -n %s scaffold-worker-%s-%s -o json", config.Config.K8sNamespace, runID, step)).CombinedOutput()
+		if jobErr != nil {
+			logger.Errorf("", "Error getting job status for %s: %s", runID, jobErr.Error())
+			logger.Debugf("", "%s", string(jobOut))
+			count += 1
+			continue
+		}
+		var j Job
+		if err := json.Unmarshal(jobOut, &j); err != nil {
+			logger.Errorf("", "Error loading job JSON: %s", err.Error())
+			count += 1
+			continue
+		}
+
+		if podName == "" {
+			waiting := true
+			waitCount := 0
+			var ps Pods
+			for waiting {
+				if count == waitRetry {
+					logger.Errorf("", "Wait retry limit reached, killing monitor %s", runID)
+					return
+				}
+				podOut, podErr := exec.Command("/bin/sh", "-c", fmt.Sprintf("kubectl get pod -n %s -l controller-uid=%s -o json", config.Config.K8sNamespace, j.Metadata.Labels["controller-uid"])).CombinedOutput()
+				if podErr != nil {
+					logger.Errorf("", "Error getting pods for %s job: %s", runID, podErr.Error())
+					logger.Debugf("", "%s", string(podOut))
+					waitCount += 1
+					continue
+				}
+				if err := json.Unmarshal(podOut, &ps); err != nil {
+					logger.Errorf("", "Error loading pods JSON: %s", err.Error())
+					waitCount += 1
+					continue
+				}
+				if len(ps.Pods) == 0 {
+					logger.Errorf("", "No pods found for job %s", runID)
+					s.Status = constants.STATE_STATUS_ERROR
+					s.Finished = j.Status.CompletionTime
+					PromoteFinishedLock.Lock()
+					PromoteFinished = append(Finished, *s)
+					PromoteFinishedLock.Unlock()
+					history.UpdateState(runID, runIdx, *s)
+					return
+				}
+				podName = ps.Pods[0].Metadata.Name
+				if utils.Contains([]string{"Running", "Succeeded", "Failed", "Completed"}, ps.Pods[0].Status.Phase) {
+					logger.Infof("", "Pod %s has transitioned phase to %s", podName, ps.Pods[0].Status.Phase)
+					waiting = false
+					continue
+				}
+				if ps.Pods[0].Status.Phase != "Running" {
+					logger.Debugf("", "Waiting for pod %s to be in Running state", podName)
+					logger.Tracef("", "Got pod information: %v", ps.Pods[0])
+					waitCount += 1
+					time.Sleep(1 * time.Second)
+				}
+			}
+		}
+
+		logOut, logErr := exec.Command("/bin/sh", "-c", fmt.Sprintf("kubectl logs -n %s %s", config.Config.K8sNamespace, podName)).CombinedOutput()
+		if logErr != nil {
+			logger.Errorf("", "Error getting pod logs for job %s: %s", runID, logErr.Error())
+			logger.Debugf("", "%s", string(logOut))
+			count += 1
+			continue
+		}
+		count = 0
+		lines := strings.Split(string(logOut), "\n")
+		context := s.ParseLogs(lines, previousCount)
+		history.UpdateContext(runID, context)
+		s.Status = constants.STATE_STATUS_RUNNING
+		s.Started = j.Status.StartTime
+		previousCount = len(lines)
+
+		logger.Tracef("", "Got job status %v", j)
+		logger.Tracef("", "Got job conditions %v", j.Status.Conditions)
+		if j.Spec.Suspend {
+			logger.Tracef("", "Job killed")
+			s.Status = constants.STATE_STATUS_KILLED
+			s.Finished = j.Status.CompletionTime
+			PromoteFinishedLock.Lock()
+			PromoteFinished = append(Finished, *s)
+			PromoteFinishedLock.Unlock()
+			history.UpdateState(runID, runIdx, *s)
+			return
+		}
+		if len(j.Status.Conditions) > 0 {
+			logger.Tracef("", "Got condition %s", j.Status.Conditions[0].Type)
+			if j.Status.Conditions[0].Type == "Failed" {
+				s.Status = constants.STATE_STATUS_ERROR
+				s.Finished = j.Status.CompletionTime
+				PromoteFinishedLock.Lock()
+				PromoteFinished = append(Finished, *s)
+				PromoteFinishedLock.Unlock()
+				history.UpdateState(runID, runIdx, *s)
+				return
+			} else if j.Status.Conditions[0].Type == "Complete" {
+				s.Status = constants.STATE_STATUS_SUCCESS
+				s.Finished = j.Status.CompletionTime
+				PromoteFinishedLock.Lock()
+				PromoteFinished = append(Finished, *s)
+				PromoteFinishedLock.Unlock()
+				history.UpdateState(runID, runIdx, *s)
+				return
+			}
+		}
+
+		PromoteFinishedLock.Lock()
+		PromoteFinished = append(Finished, *s)
+		PromoteFinishedLock.Unlock()
 		history.UpdateState(runID, runIdx, *s)
 	}
 }

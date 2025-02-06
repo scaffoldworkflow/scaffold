@@ -63,7 +63,7 @@ func (p *Project) Create() error {
 
 	ps, err := GetProjects(bson.M{"name": p.Name, "team": p.Team})
 	if err != nil {
-		logger.Errorf("Error getting projects: %s", err.Error())
+		logger.Errorf("", "Error getting projects: %s", err)
 		return err
 	}
 	if ps != nil {

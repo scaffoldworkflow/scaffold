@@ -7,14 +7,9 @@ import (
 	"scaffold/manager/auth"
 	"scaffold/manager/config"
 	"scaffold/manager/constants"
-	"scaffold/manager/docs"
 	"scaffold/manager/middleware"
 	"scaffold/manager/page"
-
 	// "scaffold/manager/page/common"
-
-	swaggerfiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func initializeRoutes() {
@@ -23,8 +18,8 @@ func initializeRoutes() {
 	router.Static("/static/js", "./static/js")
 
 	// Swagger docs
-	docs.SwaggerInfo.BasePath = "/api/v1"
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	// docs.SwaggerInfo.BasePath = "/api/v1"
+	// router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// router.GET("/", page.RedirectIndexPage)
 
@@ -63,11 +58,10 @@ func initializeRoutes() {
 		{
 			projectRoutes := v1Routes.Group("/project")
 			{
-				projectRoutes.GET("", middleware.EnsureLoggedIn(), api.GetAllProjects)
-				projectRoutes.GET("/:id", middleware.EnsureLoggedIn(), api.GetProjectByID)
-				projectRoutes.DELETE("/:id", middleware.EnsureLoggedIn(), api.DeleteProjectByID)
+				projectRoutes.GET("", middleware.EnsureLoggedIn(), api.GetProjects)
+				projectRoutes.DELETE("", middleware.EnsureLoggedIn(), api.DeleteProjects)
 				projectRoutes.POST("", middleware.EnsureLoggedIn(), api.CreateProject)
-				projectRoutes.PUT("/:id", middleware.EnsureLoggedIn(), api.UpdateProjectByID)
+				projectRoutes.PUT("", middleware.EnsureLoggedIn(), api.UpdateProject)
 			}
 			userRoutes := v1Routes.Group("/user")
 			{
@@ -113,6 +107,14 @@ func initializeRoutes() {
 			{
 				historyRoutes.GET("/:runID", middleware.EnsureLoggedIn(), api.GetHistory)
 				historyRoutes.GET("", middleware.EnsureLoggedIn(), api.GetAllHistories)
+			}
+			releaseRoutes := v1Routes.Group("/release")
+			{
+				releaseRoutes.GET("", middleware.EnsureLoggedIn(), api.GetReleases)
+				releaseRoutes.DELETE("", middleware.EnsureLoggedIn(), api.DeleteReleases)
+				releaseRoutes.POST("", middleware.EnsureLoggedIn(), api.CreateRelease)
+				releaseRoutes.PUT("", middleware.EnsureLoggedIn(), api.UpdateRelease)
+				releaseRoutes.POST("/release_id", middleware.EnsureLoggedIn(), api.PromoteRelease)
 			}
 		}
 	}

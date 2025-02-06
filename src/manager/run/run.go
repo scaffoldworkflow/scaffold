@@ -145,6 +145,52 @@ func StartRun(runID string, w project.Workflow, runIdx int, context string, step
 	return nil
 }
 
+func StartPromoteRun(runID string, context string, scriptB64 string, language string) error {
+	var r RunConfig
+	if err := json.Unmarshal([]byte(config.Config.WorkerConfig), &r); err != nil {
+		logger.Errorf("", "Unable to load worker config: %s", err.Error())
+		return err
+	}
+
+	r.RunID = runID
+	r.Context = base64.StdEncoding.EncodeToString([]byte(context))
+	r.Language = language
+
+	r.ResourceTypes = "{}"
+	r.Inputs = "[]"
+	r.Outputs = "[]"
+	r.Script = scriptB64
+	// TODO: Make this configurable
+	r.LogLevel = logger.LOG_LEVEL_DEBUG
+
+	tmpl, err := template.New(fmt.Sprintf("k8s_job_template_%s", r.RunID)).Parse(project.DefaultJobTemplate)
+	if err != nil {
+		logger.Errorf("", "Cannot load job template: %s", err.Error())
+		return err
+	}
+	var doc bytes.Buffer
+	if err := tmpl.Execute(&doc, r); err != nil {
+		logger.Errorf("", "Cannot render job template: %s", err.Error())
+		return err
+	}
+
+	jobPath := fmt.Sprintf("/tmp/%s.yaml", r.RunID)
+	logger.Debugf("", "Writing job file to %s", jobPath)
+	if err := os.WriteFile(jobPath, doc.Bytes(), 0644); err != nil {
+		logger.Errorf("", "Cannot write out job manifest: %s", err.Error())
+		return err
+	}
+
+	out, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("kubectl apply -f %s", jobPath)).CombinedOutput()
+	if err != nil {
+		logger.Errorf("", "Error starting run %s: %s", r.RunID, err.Error())
+		logger.Debugf("", "%s", string(out))
+		return err
+	}
+	logger.Infof("", "Run %s successfully started", r.RunID)
+	return nil
+}
+
 func KillRun(runID, step string) error {
 	h, err := history.GetHistoryByRunID(runID)
 	if err != nil {

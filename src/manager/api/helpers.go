@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"scaffold/manager/config"
 	"scaffold/manager/user"
@@ -68,4 +69,22 @@ func validateUserGroup(ctx *gin.Context, groups []string) bool {
 	}
 
 	return false
+}
+
+func buildQuery(ctx *gin.Context) bson.M {
+	filterConditions := []bson.M{}
+	params := ctx.Request.URL.Query()
+	for key, val := range params {
+		if len(val) > 0 {
+			conditions := make([]bson.M, len(val))
+			for _, v := range val {
+				conditions = append(conditions, bson.M{key: v})
+			}
+			filterConditions = append(filterConditions, bson.M{"$or": conditions})
+			continue
+		}
+		filterConditions = append(filterConditions, bson.M{key: val})
+	}
+	filter := bson.M{"$and": filterConditions}
+	return filter
 }

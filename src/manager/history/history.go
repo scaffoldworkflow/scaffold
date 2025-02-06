@@ -25,6 +25,7 @@ type History struct {
 	Context     map[string]interface{} `json:"context" bson:"context" yaml:"context"`
 	Team        string                 `json:"team" bson:"team" yaml:"team"`
 	Workflow    project.Workflow       `json:"workflow" bson:"workflow" yaml:"workflow"`
+	ReleaseID   string                 `json:"release_id" bson:"release_id" yaml:"release_id"`
 }
 
 var locks = map[string]*sync.RWMutex{}

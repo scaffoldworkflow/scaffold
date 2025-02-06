@@ -8,7 +8,7 @@ import (
 )
 
 //go:embed default_job_template.yaml
-var defaultJobTemplate string
+var DefaultJobTemplate string
 
 type Workflow struct {
 	Version       string                           `json:"version" bson:"version" yaml:"version"`
@@ -37,7 +37,7 @@ func (w *Workflow) Load() error {
 
 	// Fill empty fields with defaults
 	if w.JobTemplate == "" {
-		w.JobTemplate = defaultJobTemplate
+		w.JobTemplate = DefaultJobTemplate
 	}
 
 	w.Created = currentTime.Format("2006-01-02T15:04:05Z")
@@ -62,7 +62,7 @@ func (w *Workflow) Update() error {
 
 	// Fill empty fields with defaults
 	if w.JobTemplate == "" {
-		w.JobTemplate = defaultJobTemplate
+		w.JobTemplate = DefaultJobTemplate
 	}
 
 	w.Updated = currentTime.Format("2006-01-02T15:04:05Z")
