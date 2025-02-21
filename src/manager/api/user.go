@@ -10,21 +10,23 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-//	@summary					Create a user
-//	@description				Create a user from a JSON object
-//	@tags						manager
-//	@tags						user
-//	@accept						json
-//	@produce					json
-//	@Param						user	body		user.User	true	"User Data"
-//	@success					201		{object}	object
-//	@failure					500		{object}	object
-//	@failure					401		{object}	object
-//	@securityDefinitions.apiKey	token
-//	@in							header
-//	@name						Authorization
-//	@security					X-Scaffold-API
-//	@router						/api/v1/user [post]
+// TODO: Update user API to follow new query param standards
+
+// @summary					Create a user
+// @description				Create a user from a JSON object
+// @tags						manager
+// @tags						user
+// @accept						json
+// @produce					json
+// @Param						user	body		user.User	true	"User Data"
+// @success					201		{object}	object
+// @failure					500		{object}	object
+// @failure					401		{object}	object
+// @securityDefinitions.apiKey	token
+// @in							header
+// @name						Authorization
+// @security					X-Scaffold-API
+// @router						/api/v1/user [post]
 func CreateUser(ctx *gin.Context) {
 	var u user.User
 	if err := ctx.ShouldBindJSON(&u); err != nil {
@@ -42,19 +44,19 @@ func CreateUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Created"})
 }
 
-//	@summary					Delete a user
-//	@description				Delete a user by its username
-//	@tags						manager
-//	@tags						user
-//	@produce					json
-//	@success					200	{object}	object
-//	@failure					500	{object}	object
-//	@failure					401	{object}	object
-//	@securityDefinitions.apiKey	token
-//	@in							header
-//	@name						Authorization
-//	@security					X-Scaffold-API
-//	@router						/api/v1/user/{username} [delete]
+// @summary					Delete a user
+// @description				Delete a user by its username
+// @tags						manager
+// @tags						user
+// @produce					json
+// @success					200	{object}	object
+// @failure					500	{object}	object
+// @failure					401	{object}	object
+// @securityDefinitions.apiKey	token
+// @in							header
+// @name						Authorization
+// @security					X-Scaffold-API
+// @router						/api/v1/user/{username} [delete]
 func DeleteUserByUsername(ctx *gin.Context) {
 	username := ctx.Param("username")
 
@@ -68,19 +70,19 @@ func DeleteUserByUsername(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
 }
 
-//	@summary					Get all users
-//	@description				Get all users
-//	@tags						manager
-//	@tags						user
-//	@produce					json
-//	@success					200	{array}		user.User
-//	@failure					500	{object}	object
-//	@failure					401	{object}	object
-//	@securityDefinitions.apiKey	token
-//	@in							header
-//	@name						Authorization
-//	@security					X-Scaffold-API
-//	@router						/api/v1/user [get]
+// @summary					Get all users
+// @description				Get all users
+// @tags						manager
+// @tags						user
+// @produce					json
+// @success					200	{array}		user.User
+// @failure					500	{object}	object
+// @failure					401	{object}	object
+// @securityDefinitions.apiKey	token
+// @in							header
+// @name						Authorization
+// @security					X-Scaffold-API
+// @router						/api/v1/user [get]
 func GetAllUsers(ctx *gin.Context) {
 	users, err := user.GetAllUsers()
 
@@ -101,19 +103,19 @@ func GetAllUsers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, usersOut)
 }
 
-//	@summary					Get a user
-//	@description				Get a user by its username
-//	@tags						manager
-//	@tags						user
-//	@produce					json
-//	@success					200	{array}		user.User
-//	@failure					500	{object}	object
-//	@failure					401	{object}	object
-//	@securityDefinitions.apiKey	token
-//	@in							header
-//	@name						Authorization
-//	@security					X-Scaffold-API
-//	@router						/api/v1/user/{username} [get]
+// @summary					Get a user
+// @description				Get a user by its username
+// @tags						manager
+// @tags						user
+// @produce					json
+// @success					200	{array}		user.User
+// @failure					500	{object}	object
+// @failure					401	{object}	object
+// @securityDefinitions.apiKey	token
+// @in							header
+// @name						Authorization
+// @security					X-Scaffold-API
+// @router						/api/v1/user/{username} [get]
 func GetUserByUsername(ctx *gin.Context) {
 	username := ctx.Param("username")
 
@@ -132,21 +134,21 @@ func GetUserByUsername(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, *u)
 }
 
-//	@summary					Update a user
-//	@description				Update a user from a JSON object
-//	@tags						manager
-//	@tags						user
-//	@accept						json
-//	@produce					json
-//	@Param						user	body		user.User	true	"User Data"
-//	@success					201		{object}	object
-//	@failure					500		{object}	object
-//	@failure					401		{object}	object
-//	@securityDefinitions.apiKey	token
-//	@in							header
-//	@name						Authorization
-//	@security					X-Scaffold-API
-//	@router						/api/v1/user/{user_name} [put]
+// @summary					Update a user
+// @description				Update a user from a JSON object
+// @tags						manager
+// @tags						user
+// @accept						json
+// @produce					json
+// @Param						user	body		user.User	true	"User Data"
+// @success					201		{object}	object
+// @failure					500		{object}	object
+// @failure					401		{object}	object
+// @securityDefinitions.apiKey	token
+// @in							header
+// @name						Authorization
+// @security					X-Scaffold-API
+// @router						/api/v1/user/{user_name} [put]
 func UpdateUserByUsername(ctx *gin.Context) {
 	username := ctx.Param("username")
 

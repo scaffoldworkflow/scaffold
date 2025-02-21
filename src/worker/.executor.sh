@@ -102,7 +102,16 @@ function _log {
 
 _set_log_level
 
-export SCAFFOLD_CONTEXT="$( echo "${SCAFFOLD_CONTEXT_B64}" | base64 -d")"
+# _log "INFO" "Checking for jq installation..."
+# if ! command -v jq 2>&1 >/dev/null
+# then
+#     _log "INFO" "jq not installed, installing now..."
+#     curl -s https://webinstall.dev/jq | bash
+#     export PATH="${PATH}:${HOME}/.local/bin"
+#     _log "INFO" "Done!"
+# fi
+
+export SCAFFOLD_CONTEXT="$( echo "${SCAFFOLD_CONTEXT_B64}" | base64 -d)"
 
 _log "INFO" "Setting up run directories..."
 
@@ -236,19 +245,27 @@ _log "SUCCESS" "Done!"
 case "${SCAFFOLD_LANGUAGE}" in
     "bash")
         cat .header.sh > .run.sh
-        echo "${SCAFFOLD_SCRIPT}" | base64 -d >> .run.sh
+        if [[ "${SCAFFOLD_SCRIPT}" == "" ]]; then
+            cat "${SCAFFOLD_PATH}" >> .run.sh
+        else
+            echo "${SCAFFOLD_SCRIPT}" | base64 -d >> .run.sh
+        fi
         chmod +x .run.sh
         . .run.sh
         ;;
     "python")
         cat .header.py > .run.py
-        echo "${SCAFFOLD_SCRIPT}" | base64 -d >> .run.py
+        if [[ "${SCAFFOLD_SCRIPT}" == "" ]]; then
+            cat "${SCAFFOLD_PATH}" >> .run.py
+        else
+            echo "${SCAFFOLD_SCRIPT}" | base64 -d >> .run.py
+        fi
         python -m venv .venv
         source .venv/bin/activate
         if [[ -z "${SCAFFOLD_PYTHON_REQUIREMENTS}" ]]; then
-            echo "[WARN] :: No python requirements defined"
+            _log "WARN" "No python requirements defined"
         else
-            echo "[INFO] :: Installing Python requirements"
+            _log "INFO" "Installing Python requirements"
             echo "${SCAFFOLD_PYTHON_REQUIREMENTS}" > .requirements.txt
             pip install -r .requirements.txt
         fi
@@ -287,4 +304,8 @@ popd > /dev/null
 
 _log "SUCCESS" "Done!"
 
-echo "kernel::resource::context::${SCAFFOLD_CONTEXT}"
+if [[ "${SCAFFOLD_CONTEXT}" == "" ]]; then 
+    echo "kernel::resource::context::{}"
+else
+    echo "kernel::resource::context::${SCAFFOLD_CONTEXT}"
+fi

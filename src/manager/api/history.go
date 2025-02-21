@@ -6,6 +6,7 @@ import (
 	"scaffold/manager/utils"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // @summary					Get a history
@@ -47,27 +48,65 @@ func GetAllHistories(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, &historiesOut)
 }
 
-// func GetHistories(ctx *gin.Context) {
-// 	filter := buildQuery(ctx)
-
-// 	histories, err := history.GetHistories(filter)
-
-// 	if err != nil {
-// 		if err == mongo.ErrNoDocuments {
-// 			ctx.JSON(http.StatusNoContent, []interface{}{})
-// 			return
-// 		}
-// 		logger.Errorf("", "Got error trying to get histories with filter %s: %s", filter, err)
-// 		ctx.AbortWithError(http.StatusInternalServerError, err)
+// func CreateHistory(ctx *gin.Context) {
+// 	var h history.History
+// 	if err := ctx.ShouldBindJSON(&h); err != nil {
+// 		utils.Error(err, ctx, http.StatusInternalServerError)
 // 		return
 // 	}
 
-// 	// Need to copy each history from pointer to value since pointers are returned
-// 	// weirdly (I think at least)
-// 	releasesOut := make([]history.History, len(histories))
-// 	for _, h := range histories {
-// 		historiesOut = append(releasesOut, *r)
+// 	if err := (&h).Create(); err != nil {
+// 		utils.Error(err, ctx, http.StatusInternalServerError)
+// 		return
 // 	}
 
-// 	ctx.JSON(http.StatusOK, releasesOut)
+// 	ctx.JSON(http.StatusCreated, gin.H{"message": "Created"})
+// }
+
+// func DeleteHistories(ctx *gin.Context) {
+// 	filter := buildQuery(ctx)
+
+// 	if err := history.DeleteHistories(filter); err != nil {
+// 		utils.Error(err, ctx, http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
+// }
+
+func GetHistories(ctx *gin.Context) {
+	filter := buildQuery(ctx)
+
+	histories, err := history.GetHistories(filter)
+
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			ctx.JSON(http.StatusNoContent, []interface{}{})
+			return
+		}
+		utils.Error(err, ctx, http.StatusInternalServerError)
+		return
+	}
+
+	historiesOut := make([]history.History, 0)
+	for _, h := range histories {
+		historiesOut = append(historiesOut, *h)
+	}
+
+	ctx.JSON(http.StatusOK, historiesOut)
+}
+
+// func UpdateHistory(ctx *gin.Context) {
+// 	var h history.History
+// 	if err := ctx.ShouldBindJSON(&h); err != nil {
+// 		utils.Error(err, ctx, http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	if err := (&h).Update(); err != nil {
+// 		utils.Error(err, ctx, http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	ctx.JSON(http.StatusOK, gin.H{"message": "OK"})
 // }

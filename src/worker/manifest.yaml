@@ -1,0 +1,139 @@
+apiVersion: v1
+data:
+  .executor.sh: "#! /usr/bin/env bash\n\nset -eo pipefail\n\nif [[ \"${SCAFFOLD_DEBUG}\"
+    == \"true\" ]]; then\n    set -x\nfi\n\n# ======== COLORS ======== #\n\nRED='\\033[0;31m'\nYELLOW='\\033[0;33m'\nGREEN='\\033[0;32m'\nCYAN='\\033[0;36m'\nBLUE='\\033[0;34m'\nNO_COLOR='\\033[0m'\n\n#
+    ======== LOGGING ======== #\n\n# Set log level to INFO if it doesn't exist\nif
+    [[ -z \"${LOG_LEVEL}\" ]]; then\n    export LOG_LEVEL=\"INFO\"\nfi\n\n# Setup
+    variable for log level comparison\nfunction _set_log_level {\n    case ${LOG_LEVEL}
+    in\n        FATAL)\n            export LOG_LEVEL_INT=0\n            ;;\n        SUCCESS)\n
+    \           export LOG_LEVEL_INT=1\n            ;;\n        ERROR)\n            export
+    LOG_LEVEL_INT=2\n            ;;\n        WARN)\n            export LOG_LEVEL_INT=3\n
+    \           ;;\n        INFO)\n            export LOG_LEVEL_INT=4\n            ;;\n
+    \       DEBUG)\n            export LOG_LEVEL_INT=5\n            ;;\n        TRACE)\n
+    \           export LOG_LEVEL_INT=6\n            ;;\n        *)\n            echo
+    \"[${YELLOW}WARN${NO_COLOR}] :: Invalid log level '${LOG_LEVEL}' -- setting level
+    to 'INFO'\"\n            export LOG_LEVEL='INFO'\n            export LOG_LEVEL_INT=4\n
+    \           ;;\n    esac\n}\n\n# Print out log statement depending on level\nfunction
+    _log {\n    LEVEL=$1\n    MESSAGE=$2\n    case ${LEVEL} in\n        FATAL)\n            if
+    [[ ${LOG_LEVEL_INT} -ge 0 ]]; then\n                echo -e \"[${RED}FATAL${NO_COLOR}]
+    :: ${MESSAGE}\"\n                exit 1\n            fi\n            ;;\n        SUCCESS)\n
+    \           if [[ ${LOG_LEVEL_INT} -ge 1 ]]; then\n                echo -e \"[${GREEN}SUCCESS${NO_COLOR}]
+    :: ${MESSAGE}\"\n            fi\n            ;;\n        ERROR)\n            if
+    [[ ${LOG_LEVEL_INT} -ge 2 ]]; then\n                echo -e \"[${RED}ERROR${NO_COLOR}]
+    :: ${MESSAGE}\"\n            fi\n            ;;\n        WARN)\n            if
+    [[ ${LOG_LEVEL_INT} -ge 3 ]]; then\n                echo -e \"[${YELLOW}WARN${NO_COLOR}]
+    :: ${MESSAGE}\"\n            fi\n            ;;\n        INFO)\n            if
+    [[ ${LOG_LEVEL_INT} -ge 4 ]]; then\n                echo -e \"[${GREEN}INFO${NO_COLOR}]
+    :: ${MESSAGE}\"\n            fi\n            ;;\n        DEBUG)\n            if
+    [[ ${LOG_LEVEL_INT} -ge 5 ]]; then\n                echo -e \"[${CYAN}DEBUG${NO_COLOR}]
+    :: ${MESSAGE}\"\n            fi\n            ;;\n        TRACE)\n            if
+    [[ ${LOG_LEVEL_INT} -ge 6 ]]; then\n                echo -e \"[${BLUE}TRACE${NO_COLOR}]
+    :: ${MESSAGE}\"\n            fi\n            ;;\n        *)\n            echo
+    \"Invalid log level: ${LEVEL}\"\n    esac\n}\n\n_set_log_level\n\n# _log \"INFO\"
+    \"Checking for jq installation...\"\n# if ! command -v jq 2>&1 >/dev/null\n# then\n#
+    \    _log \"INFO\" \"jq not installed, installing now...\"\n#     curl -s https://webinstall.dev/jq
+    | bash\n#     export PATH=\"${PATH}:${HOME}/.local/bin\"\n#     _log \"INFO\"
+    \"Done!\"\n# fi\n\nexport SCAFFOLD_CONTEXT=\"$( echo \"${SCAFFOLD_CONTEXT_B64}\"
+    | base64 -d)\"\n\n_log \"INFO\" \"Setting up run directories...\"\n\n# Shouldn't
+    need these in the k8s job but helpful for local testing\nrm -rf resources || true\nrm
+    -rf inputs || true\nrm -rf outputs || true\n\nmkdir -p resources\nmkdir -p inputs\nmkdir
+    -p outputs\n_log \"SUCCESS\" \"Done!\"\n\n_log \"INFO\" \"Loading resource types...\"\n\npushd
+    resources > /dev/null\necho \"${SCAFFOLD_RESOURCE_TYPES}\" > .resource_types.json\nwhile
+    read resource_type\ndo\n    name=$(echo \"$resource_type\" | jq -r .name)\n    script=$(echo
+    \"$resource_type\" | jq -r .script)\n    language=$(echo \"$resource_type\" |
+    jq -r .language)\n    requirements=$(echo \"$resource_type\" | jq -r .requirements)\n
+    \   \n    mkdir -p \"${name}\"\n    pushd \"${name}\" > /dev/null\n\n    _log
+    \"DEBUG\" \"Loading resource ${name}...\"\n    _log \"TRACE\" \"Got language ${language}
+    for resource ${name}\"\n\n    case \"${language}\" in\n        bash)\n            echo
+    \"${script}\" | base64 -d > .main.sh\ncat << EOF > .run.sh\n    #! /usr/bin/env
+    bash\n\n    set -eo pipefail\n\n    here=\\$( cd -- \"\\$( dirname -- \"\\${BASH_SOURCE[0]}\"
+    )\" &> /dev/null && pwd )\n\n    chmod +x \"\\${here}/.main.sh\"\n\n    \"\\${here}/.main.sh\"
+    \"\\$1\" \"\\$2\"\n\n    deactivate\n\nEOF\n            chmod +x .run.sh\n            ;;\n
+    \       python)\n            python -m venv .venv\n            source .venv/bin/activate\n
+    \           if [[ \"${requirements}\" != \"\" ]]; then\n                _log \"DEBUG\"
+    \"Installing requirements for resource ${name}\"\n                echo \"${requirements}\"
+    > requirements.txt\n                pip install -r requirements.txt\n            fi\n
+    \           echo \"${script}\" | base64 -d > .main.py\ncat << EOF > .run.sh\n
+    \   #! /usr/bin/env bash\n\n    set -eo pipefail\n\n    here=\\$( cd -- \"\\$(
+    dirname -- \"\\${BASH_SOURCE[0]}\" )\" &> /dev/null && pwd )\n\n    source \"\\${here}/.venv/bin/activate\"\n\n
+    \   python \"\\${here}/.main.py\" \"\\$1\" \"\\$2\"\n\n    deactivate\n\nEOF\n
+    \           chmod +x .run.sh\n            deactivate\n            ;;\n        *)\n
+    \           _log \"FATAL\" \"Resource language ${language} is invalid, valid languages
+    are 'bash' and 'python'\"\n            ;;\n    esac\n    popd > /dev/null\n    _log
+    \"INFO\" \"Loaded resource ${name}\"\n    \ndone < <(cat .resource_types.json
+    | jq -c '.[]')\npopd > /dev/null\n\n_log \"SUCCESS\" \"Done!\"\n\n# ================================\n#
+    RESOURCES\n# ================================\n\n_log \"INFO\" \"Loading resources...\"\n\npushd
+    resources > /dev/null\necho \"${SCAFFOLD_RESOURCES}\" > .resources.json\npopd
+    > /dev/null\n\n# ================================\n# INPUTS\n# ================================\n\n_log
+    \"INFO\" \"Getting inputs...\"\n\npushd inputs > /dev/null\necho \"${SCAFFOLD_INPUTS}\"
+    > .input_resources.json\nwhile read input_resource\ndo\n    name=\"${input_resource}\"\n
+    \   resource_json=\"$(cat \"../resources/.resources.json\")\"\n    resource=\"$(echo
+    \"${resource_json}\" | jq -r \".${name}\")\"\n    kind=\"$(echo \"${resource}\"
+    | jq -r '.kind')\"\n    args=\"$(echo \"${resource}\" | jq -c '.args')\"\n\n    _log
+    \"DEBUG\" \"Getting input ${name}...\"\n    _log \"TRACE\" \"Got resource ${resource}\"\n\n
+    \   \"./../resources/${kind}/.run.sh\" \"in\" \"${args}\"\n\n    _log \"INFO\"
+    \"Got input ${name}\"\n\ndone < <(cat .input_resources.json | jq -r '.[]')\n\npopd
+    > /dev/null\n\n_log \"SUCCESS\" \"Done!\"\n\n# ================================\n#
+    SCRIPT EXECUTION\n# ================================\n\ncase \"${SCAFFOLD_LANGUAGE}\"
+    in\n    \"bash\")\n        cat .header.sh > .run.sh\n        if [[ \"${SCAFFOLD_SCRIPT}\"
+    == \"\" ]]; then\n            cat \"${SCAFFOLD_PATH}\" >> .run.sh\n        else\n
+    \           echo \"${SCAFFOLD_SCRIPT}\" | base64 -d >> .run.sh\n        fi\n        chmod
+    +x .run.sh\n        . .run.sh\n        ;;\n    \"python\")\n        cat .header.py
+    > .run.py\n        if [[ \"${SCAFFOLD_SCRIPT}\" == \"\" ]]; then\n            cat
+    \"${SCAFFOLD_PATH}\" >> .run.py\n        else\n            echo \"${SCAFFOLD_SCRIPT}\"
+    | base64 -d >> .run.py\n        fi\n        python -m venv .venv\n        source
+    .venv/bin/activate\n        if [[ -z \"${SCAFFOLD_PYTHON_REQUIREMENTS}\" ]]; then\n
+    \           _log \"WARN\" \"No python requirements defined\"\n        else\n            _log
+    \"INFO\" \"Installing Python requirements\"\n            echo \"${SCAFFOLD_PYTHON_REQUIREMENTS}\"
+    > .requirements.txt\n            pip install -r .requirements.txt\n        fi\n
+    \       touch .context.json\n        python .run.py\n        export SCAFFOLD_CONTEXT=$(cat
+    .context.json)\n        ;;\nesac\n\n# ================================\n# INPUTS\n#
+    ================================\n\n_log \"INFO\" \"Putting outputs...\"\n\npushd
+    outputs > /dev/null\necho \"${SCAFFOLD_OUTPUTS}\" > .output_resources.json\nwhile
+    read output_resource\ndo\n    name=\"${output_resource}\"\n    resource_json=\"$(cat
+    \"../resources/.resources.json\")\"\n    resource=\"$(echo \"${resource_json}\"
+    | jq -r \".${name}\")\"\n    kind=\"$(echo \"${resource}\" | jq -r '.kind')\"\n
+    \   args=\"$(echo \"${resource}\" | jq -c '.args')\"\n\n    _log \"DEBUG\" \"Putting
+    output ${name}...\"\n    _log \"TRACE\" \"Got resource ${resource}\"\n\n    \"./../resources/${kind}/.run.sh\"
+    \"out\" \"${args}\"\n\n    _log \"INFO\" \"Put output ${name}\"\n\ndone < <(cat
+    .output_resources.json | jq -r '.[]')\n\npopd > /dev/null\n\n_log \"SUCCESS\"
+    \"Done!\"\n\nif [[ \"${SCAFFOLD_CONTEXT}\" == \"\" ]]; then \n    echo \"kernel::resource::context::{}\"\nelse\n
+    \   echo \"kernel::resource::context::${SCAFFOLD_CONTEXT}\"\nfi\n"
+  .header.py: |
+    #======== SCAFFOLD WORKER HEADER FILE ========#
+    import os
+    import json
+
+    CONTEXT = {}
+
+    def init_context() -> None:
+        global CONTEXT
+        context_string = os.getenv('SCAFFOLD_CONTEXT')
+        if context_string:
+            CONTEXT = json.loads(context_string)
+
+    def set_context(key: str, val: str) -> None:
+        global CONTEXT
+        CONTEXT[key] = val
+        with open('.context.json', 'w', encoding='utf-8') as context_file:
+            json.dump(CONTEXT, context_file)
+
+    def get_context(key: str) -> str:
+        global CONTEXT
+        if key in CONTEXT:
+            return CONTEXT[key]
+        return ""
+
+    init_context()
+  .header.sh: "#! /usr/bin/env bash\n\n#======== SCAFFOLD WORKER HEADER FILE ========#\n\nfunction
+    set_context {\n    key=\"$1\"\n    val=\"$2\"\n    \n    SCAFFOLD_CONTEXT=\"$(echo
+    \"${SCAFFOLD_CONTEXT}\" | jq -c \".${key} = \\\"${val}\\\"\")\"\n}\n\nfunction
+    get_context {\n    key=\"$1\"\n    \n    echo \"${SCAFFOLD_CONTEXT}\" | jq -r
+    \".${key}\"\n}\n"
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2025-02-18T21:35:25Z"
+  name: scaffold-scripts
+  namespace: scaffold
+  resourceVersion: "1327330"
+  uid: 0e7414f5-c3e0-4bed-b038-d82e8ab72a44

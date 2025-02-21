@@ -18,6 +18,7 @@ type Environment struct {
 	Services    map[string]Service `json:"services" bson:"services" yaml:"services"`
 	Created     string             `json:"created" bson:"created" yaml:"created"`
 	Updated     string             `json:"updated" bson:"updated" yaml:"updated"`
+	// Promote     Step               `json:"promote" bson:"promote" yaml:"promote"`
 }
 
 func (e *Environment) Load(tName, pName, name string) error {
@@ -45,6 +46,10 @@ func (e *Environment) Load(tName, pName, name string) error {
 			logger.Errorf("", "Unable to load service at %s/%s/%s/%s: %s", e.Team, e.Project, e.Name, name, err.Error())
 			return err
 		}
+		if err := serv.Create(); err != nil {
+			logger.Errorf("", "Unable to create environment at %s/%s/%s/%s: %s", e.Team, e.Name, e.Name, name, err)
+			return err
+		}
 	}
 	return nil
 }
@@ -57,7 +62,7 @@ func (e *Environment) Create() error {
 
 	es, err := GetEnvironments(bson.M{"name": e.Name, "project": e.Project, "team": e.Team})
 	if err != nil {
-		logger.Errorf("Error getting environments: %s", err.Error())
+		logger.Errorf("", "Error getting environments: %s", err.Error())
 		return err
 	}
 	if es != nil {
@@ -82,25 +87,34 @@ func (e *Environment) Update() error {
 
 	filter := bson.M{"name": e.Name, "project": e.Project, "team": e.Team}
 
+	envs, err := GetEnvironments(filter)
+	if err != nil {
+		logger.Errorf("", "Could not get environments with filter %v: %s", filter, err)
+		return err
+	}
+
+	if len(envs) == 0 {
+		logger.Debug("", "Environment does not exist, creating...")
+		if err := e.Create(); err != nil {
+			logger.Errorf("", "Could not create environment: %s", err)
+			return err
+		}
+		return nil
+	}
+
+	e.Created = envs[0].Created
+
 	currentTime := time.Now().UTC()
 	e.Updated = currentTime.Format("2006-01-02T15:04:05Z")
 
 	collection := mongodb.Collections[constants.MONGODB_ENVIRONMENT_COLLECTION_NAME]
 	ctx := mongodb.Ctx
 
-	result, err := collection.ReplaceOne(ctx, filter, e)
+	_, err = collection.ReplaceOne(ctx, filter, e)
 
 	if err != nil {
 		logger.Errorf("", "Could not update environment at %s/%s/%s: %s", e.Team, e.Project, e.Name, err.Error())
 		return err
-	}
-
-	if result.ModifiedCount == 0 {
-		logger.Debug("", "Environment does not exist, creating...")
-		if err := e.Create(); err != nil {
-			logger.Errorf("", "Could not create environment")
-			return err
-		}
 	}
 
 	return nil

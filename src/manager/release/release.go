@@ -3,7 +3,6 @@ package release
 import (
 	"encoding/json"
 	"fmt"
-	"scaffold/client/logger"
 	"scaffold/manager/constants"
 	"scaffold/manager/history"
 	"scaffold/manager/mongodb"
@@ -12,18 +11,21 @@ import (
 	"scaffold/manager/run"
 	"time"
 
+	logger "github.com/jfcarter2358/go-logger"
+
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Asset struct {
-	Contents string
-	URL      string
-	Name     string
+	Contents string `json:"contents"`
+	URL      string `json:"url"`
+	Name     string `json:"name"`
 }
 
 type Release struct {
 	ID               string                     `json:"id" bson:"id"`
+	Name             string                     `json:"name" bson:"name"`
 	Runs             []string                   `json:"runs" bson:"runs"`
 	Histories        map[string]history.History `json:"histories"`
 	Status           string                     `json:"status" bson:"status"`
@@ -87,6 +89,7 @@ type PromoteMessage struct {
 }
 
 func (r *Release) Promote(pm PromoteMessage) (string, error) {
+
 	runID := uuid.NewString()
 	h := &history.History{
 		RunID:       runID,
@@ -94,6 +97,8 @@ func (r *Release) Promote(pm PromoteMessage) (string, error) {
 		Project:     pm.Project,
 		Team:        pm.Team,
 		Environment: pm.Environment,
+		ReleaseID:   r.ID,
+		Service:     "promote",
 	}
 	if err := history.CreateHistory(h); err != nil {
 		logger.Errorf("", "Cannot create history: %s", err.Error())
@@ -116,12 +121,13 @@ func (r *Release) Promote(pm PromoteMessage) (string, error) {
 	return runID, nil
 }
 
-// TODO: Better handle errors here, should probabl remove them from the slice so we don't keep trying to process them over and over
+// TODO: Better handle errors here, should probably remove them from the slice so we don't keep trying to process them over and over
 func PromoteAutoTrigger() {
 	for {
 		for len(monitor.PromoteFinished) > 0 {
 			monitor.PromoteFinishedLock.Lock()
 			s := monitor.PromoteFinished[0]
+			monitor.PromoteFinished = monitor.PromoteFinished[1:]
 			logger.Debugf("", "Doing promote auto trigger for step %s in run %s with status %s", s.Step, s.RunID, s.Status)
 			h, err := history.GetHistoryByRunID(s.RunID)
 			if err != nil {
@@ -154,6 +160,16 @@ func PromoteAutoTrigger() {
 			}
 
 			r := rs[0]
+			r.Status = s.Status
+			if err := r.Update(); err != nil {
+				logger.Errorf("", "Cannot update release %s/%s/%s: %s", r.Team, r.Project, r.ID, err)
+				continue
+			}
+
+			if r.Status != constants.STATE_STATUS_SUCCESS {
+				logger.Warnf("", "Release %s/%s/%s reported status %s, skipping", r.Team, r.Project, r.ID, r.Status)
+				continue
+			}
 
 			logger.Infof("", "Triggering new run for environment %s", h.Environment)
 			if _, ok := p.Environments[h.Environment]; !ok {
@@ -167,25 +183,34 @@ func PromoteAutoTrigger() {
 				}
 
 				w := p.Environments[h.Environment].Services[svc].Workflow
-				sName := ""
-				for k, _ := range w.Steps {
-					sName = k
-					break
-				}
 				contextBytes, _ := json.Marshal(h.Context)
-				if err := run.StartRun(s.RunID, w, 0, string(contextBytes), sName, w.Steps[sName].Language); err != nil {
+				runID := uuid.NewString()
+				hh := &history.History{
+					RunID:       runID,
+					States:      make([]history.State, 0),
+					Project:     h.Project,
+					Team:        h.Team,
+					Environment: h.Environment,
+					Service:     svc,
+					Workflow:    w,
+					ReleaseID:   r.ID,
+				}
+				if err := history.CreateHistory(hh); err != nil {
+					logger.Errorf("", "Cannot create history: %s", err.Error())
+					continue
+				}
+				if err := run.StartRun(runID, w, 0, string(contextBytes), w.EntryPoint, w.Steps[w.EntryPoint].Language); err != nil {
 					logger.Errorf("", "Unable to start run %s idx %d: %s", s.RunID, 0, err.Error())
 					continue
 				}
 				logger.Tracef("", "Run %s idx %d is starting", s.RunID, 0)
-				go monitor.Run(s.RunID, sName, len(h.States))
-				r.Runs = append(r.Runs, s.RunID)
+				go monitor.Run(runID, w.EntryPoint, len(h.States))
+				r.Runs = append(r.Runs, runID)
 				if err := r.Update(); err != nil {
 					logger.Errorf("", "Unable to update release %s: %s", r.ID, err)
 					continue
 				}
 			}
-			monitor.PromoteFinished = monitor.PromoteFinished[1:]
 			monitor.PromoteFinishedLock.Unlock()
 		}
 		time.Sleep(1 * time.Second)
@@ -197,6 +222,11 @@ CRUD OPERATIONS
 */
 
 func (r *Release) Create() error {
+	if err := r.Load(); err != nil {
+		logger.Errorf("", "Error on release load: %s", err)
+		return err
+	}
+
 	currentTime := time.Now().UTC()
 	r.Updated = currentTime.Format("2007-01-02T15:04:05Z")
 

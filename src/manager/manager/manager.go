@@ -1,12 +1,16 @@
 package manager
 
 import (
-	"log"
+	"encoding/json"
+	"fmt"
 	"net"
+	"os/exec"
 	"scaffold/manager/auth"
 	"scaffold/manager/config"
 	"scaffold/manager/constants"
 	"scaffold/manager/health"
+	"scaffold/manager/monitor"
+	"scaffold/manager/release"
 	"scaffold/manager/run"
 	"scaffold/manager/user"
 	"time"
@@ -38,6 +42,8 @@ func Run() {
 
 	go healthCheck()
 	go run.AutoTrigger()
+	go release.PromoteAutoTrigger()
+	go PruneJobs()
 }
 
 func healthCheck() {
@@ -69,7 +75,7 @@ func healthCheck() {
 func GetStatus() (bool, []UINode) {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatalf("", "Got error getting DNS: %s", err)
 	}
 	defer conn.Close()
 	localAddress := conn.LocalAddr().(*net.UDPAddr)
@@ -146,4 +152,77 @@ func GetStatus() (bool, []UINode) {
 	auth.NodeLock.Unlock()
 
 	return downCount == 0, nodes
+}
+
+func PruneJobs() {
+	for {
+		// TODO: Make this sleep configurable
+		time.Sleep(1 * time.Second)
+		logger.Debugf("", "Getting jobs in namespace %s", config.Config.K8sNamespace)
+		jobOut, jobErr := exec.Command("/bin/sh", "-c", fmt.Sprintf("kubectl get job -n %s -o json", config.Config.K8sNamespace)).CombinedOutput()
+		if jobErr != nil {
+			logger.Errorf("", "Error getting jobs: %s", jobErr.Error())
+			logger.Debugf("", "%s", string(jobOut))
+			continue
+		}
+		var js monitor.Jobs
+		if err := json.Unmarshal(jobOut, &js); err != nil {
+			logger.Errorf("", "Error loading job JSON: %s", err.Error())
+			logger.Debugf("", "%s", jobOut)
+			continue
+		}
+
+		now := time.Now()
+
+		for _, j := range js.Items {
+			logger.Tracef("", "Completion time for job %s: %s", j.Metadata.Name, j.Status.CompletionTime)
+			if j.Status.CompletionTime != "" {
+				finished, err := time.Parse(time.RFC3339, j.Status.CompletionTime)
+				if err != nil {
+					logger.Errorf("", "Cannot parse job completion time %s: %s", j.Status.CompletionTime, err)
+				}
+				diff := now.Sub(finished)
+				if diff.Seconds() > float64(config.Config.RunPruneDuration) {
+					logger.Debugf("", "Deleting job %s in namespace %s", j.Metadata.Name, config.Config.K8sNamespace)
+					deleteOut, deleteErr := exec.Command("/bin/sh", "-c", fmt.Sprintf("kubectl delete job -n %s %s", config.Config.K8sNamespace, j.Metadata.Name)).CombinedOutput()
+					if deleteErr != nil {
+						logger.Errorf("", "Error deleting job %s: %s", j.Metadata.Name, deleteErr)
+						logger.Debugf("", "%s", string(deleteOut))
+						continue
+					}
+				}
+				continue
+			}
+			if len(j.Status.Conditions) > 0 {
+				removed := false
+				for _, c := range j.Status.Conditions {
+					if c.Type == "Failed" {
+
+						logger.Debugf("", "Found failed job %s", j.Metadata.Name)
+						finished, err := time.Parse(time.RFC3339, c.LastTransitionTime)
+						if err != nil {
+							logger.Errorf("", "Cannot parse job last transition time %s: %s", c.LastTransitionTime, err)
+						}
+
+						diff := now.Sub(finished)
+						if diff.Seconds() > float64(config.Config.RunPruneDuration) {
+							logger.Debugf("", "Deleting job %s in namespace %s", j.Metadata.Name, config.Config.K8sNamespace)
+							deleteOut, deleteErr := exec.Command("/bin/sh", "-c", fmt.Sprintf("kubectl delete job -n %s %s", config.Config.K8sNamespace, j.Metadata.Name)).CombinedOutput()
+							if deleteErr != nil {
+								logger.Errorf("", "Error deleting job %s: %s", j.Metadata.Name, deleteErr)
+								logger.Debugf("", "%s", string(deleteOut))
+								continue
+							}
+							removed = true
+						}
+						break
+					}
+				}
+				if removed {
+					continue
+				}
+			}
+			logger.Debugf("", "Job %s has not yet completed", j.Metadata.Name)
+		}
+	}
 }

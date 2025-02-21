@@ -7,7 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"scaffold/client/auth"
-	"scaffold/client/logger"
+
+	logger "github.com/jfcarter2358/go-logger"
 )
 
 var Token = ""

@@ -1,8 +1,7 @@
-id: "foobar"
+version: v1/runbook
 name: "Runbook"
-category: "Group B"
-groups:
-- admin
+project: foo
+team: foobar
 blocks:
 - contents: |
     # This is a test

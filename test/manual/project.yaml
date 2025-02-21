@@ -1,0 +1,78 @@
+version: v1/project
+name: foo
+# id: foo
+team: foobar
+# links:
+#   a: http://a:1
+# permissions:
+#   - foo:read
+#   - bar:write
+#   - baz:admin
+envs:
+  dev:
+    # links:
+    #   a: http://a:1
+    # permissions:
+    #   - foo:read
+    #   - bar:write
+    #   - baz:admin
+    services:
+      foo:
+        # permissions:
+        #   - foo:read
+        #   - bar:write
+        #   - baz:admin
+        # links:
+        #   a: http://a:1
+        github_repo: github.com/scaffoldworkflow/scaffold
+        workflow:
+          version: v0.5.0
+          entrypoint: a
+          resource_types:
+            file:
+              source: file
+              language: python
+          resources:
+            resource_a:
+              kind: file
+              args:
+                path: foo.txt
+            resource_b:
+              kind: file
+              args:
+                path: bar.txt
+          steps:
+            a:
+              run: |
+                with open('inputs/foo.txt', 'r') as f:
+                  foo = f.read()
+                set_context("foo", foo)
+              language: python
+              inputs:
+                - resource_a
+            b:
+              depends_on:
+                success:
+                  - a
+              run: |
+                echo "${SCAFFOLD_CONTEXT}" > outputs/bar.txt
+              language: bash
+              auto_execute: true
+              outputs:
+                - resource_b
+            c:
+              depends_on:
+                success:
+                  - b
+              run: |
+                exit 1
+              language: bash
+              auto_execute: true
+            d:
+              depends_on:
+                error:
+                  - c
+              run: |
+                echo "Step c had failed"
+              language: bash
+              auto_execute: true

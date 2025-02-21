@@ -26,12 +26,13 @@ type Metadata struct {
 }
 
 type Condition struct {
-	Type string `json:"type"`
+	Type               string `json:"type"`
+	LastTransitionTime string `json:"lastTransitionTime"`
 }
 
 type Status struct {
-	CompletionTime string      `json:"completion_time"`
-	StartTime      string      `json:"start_time"`
+	CompletionTime string      `json:"completionTime"`
+	StartTime      string      `json:"startTime"`
 	Ready          int         `json:"ready"`
 	Succeeded      int         `json:"succeeded"`
 	Failed         int         `json:"failed"`
@@ -50,6 +51,10 @@ type Job struct {
 	Metadata Metadata `json:"metadata"`
 }
 
+type Jobs struct {
+	Items []Job `json:"items"`
+}
+
 type Pod struct {
 	Metadata Metadata `json:"metadata"`
 	Status   Status   `json:"status"`
@@ -57,6 +62,27 @@ type Pod struct {
 
 type Pods struct {
 	Pods []Pod `json:"items"`
+}
+
+func MonitorDrift() error {
+	hs, err := history.GetAllHistories()
+	if err != nil {
+		logger.Errorf("", "Unable to get histories to reconcile monitor drift: %s", err)
+		return err
+	}
+
+	for _, h := range hs {
+		for _, s := range h.States {
+			if s.Status == constants.STATE_STATUS_RUNNING || s.Status == constants.STATE_STATUS_WAITING {
+				if s.Step == "promote" {
+					go PromoteRun(h.RunID, "promote", s.Idx)
+				} else {
+					go Run(h.RunID, s.Step, s.Idx)
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func Run(runID, step string, runIdx int) {
@@ -126,10 +152,10 @@ func Run(runID, step string, runIdx int) {
 					logger.Errorf("", "No pods found for job %s", runID)
 					s.Status = constants.STATE_STATUS_ERROR
 					s.Finished = j.Status.CompletionTime
+					history.UpdateState(runID, runIdx, *s)
 					FinishedLock.Lock()
 					Finished = append(Finished, *s)
 					FinishedLock.Unlock()
-					history.UpdateState(runID, runIdx, *s)
 					return
 				}
 				podName = ps.Pods[0].Metadata.Name
@@ -175,29 +201,31 @@ func Run(runID, step string, runIdx int) {
 			return
 		}
 		if len(j.Status.Conditions) > 0 {
-			logger.Tracef("", "Got condition %s", j.Status.Conditions[0].Type)
-			if j.Status.Conditions[0].Type == "Failed" {
+			logger.Tracef("", "Got condition '%s'", j.Status.Conditions[0].Type)
+			switch j.Status.Conditions[0].Type {
+			case "Failed":
+				logger.Tracef("", "Dropped into failed")
 				s.Status = constants.STATE_STATUS_ERROR
 				s.Finished = j.Status.CompletionTime
+				history.UpdateState(runID, runIdx, *s)
 				FinishedLock.Lock()
 				Finished = append(Finished, *s)
 				FinishedLock.Unlock()
-				history.UpdateState(runID, runIdx, *s)
 				return
-			} else if j.Status.Conditions[0].Type == "Complete" {
+			case "Complete":
+				logger.Tracef("", "Dropped into complete")
 				s.Status = constants.STATE_STATUS_SUCCESS
 				s.Finished = j.Status.CompletionTime
+				logger.Tracef("", "Updating state with %v", s)
+				history.UpdateState(runID, runIdx, *s)
 				FinishedLock.Lock()
 				Finished = append(Finished, *s)
 				FinishedLock.Unlock()
-				history.UpdateState(runID, runIdx, *s)
 				return
+			default:
+				logger.Warnf("", "Invalid state status of %s", j.Status.Conditions[0].Type)
 			}
 		}
-
-		FinishedLock.Lock()
-		Finished = append(Finished, *s)
-		FinishedLock.Unlock()
 		history.UpdateState(runID, runIdx, *s)
 	}
 }
@@ -311,36 +339,40 @@ func PromoteRun(runID, step string, runIdx int) {
 			logger.Tracef("", "Job killed")
 			s.Status = constants.STATE_STATUS_KILLED
 			s.Finished = j.Status.CompletionTime
-			PromoteFinishedLock.Lock()
-			PromoteFinished = append(Finished, *s)
-			PromoteFinishedLock.Unlock()
 			history.UpdateState(runID, runIdx, *s)
+			PromoteFinishedLock.Lock()
+			PromoteFinished = append(PromoteFinished, *s)
+			PromoteFinishedLock.Unlock()
 			return
 		}
 		if len(j.Status.Conditions) > 0 {
-			logger.Tracef("", "Got condition %s", j.Status.Conditions[0].Type)
-			if j.Status.Conditions[0].Type == "Failed" {
+			logger.Tracef("", "Got condition '%s'", j.Status.Conditions[0].Type)
+			switch j.Status.Conditions[0].Type {
+			case "Failed":
+				logger.Tracef("", "Dropped into failed")
 				s.Status = constants.STATE_STATUS_ERROR
 				s.Finished = j.Status.CompletionTime
-				PromoteFinishedLock.Lock()
-				PromoteFinished = append(Finished, *s)
-				PromoteFinishedLock.Unlock()
 				history.UpdateState(runID, runIdx, *s)
+				PromoteFinishedLock.Lock()
+				PromoteFinished = append(PromoteFinished, *s)
+				PromoteFinishedLock.Unlock()
 				return
-			} else if j.Status.Conditions[0].Type == "Complete" {
+			case "Complete":
+				logger.Tracef("", "Dropped into complete")
 				s.Status = constants.STATE_STATUS_SUCCESS
 				s.Finished = j.Status.CompletionTime
-				PromoteFinishedLock.Lock()
-				PromoteFinished = append(Finished, *s)
-				PromoteFinishedLock.Unlock()
+				logger.Tracef("", "Updating state with %v", s)
 				history.UpdateState(runID, runIdx, *s)
+				PromoteFinishedLock.Lock()
+				PromoteFinished = append(PromoteFinished, *s)
+				PromoteFinishedLock.Unlock()
 				return
+			default:
+				logger.Warnf("", "Invalid state status of %s", j.Status.Conditions[0].Type)
 			}
 		}
 
-		PromoteFinishedLock.Lock()
-		PromoteFinished = append(Finished, *s)
-		PromoteFinishedLock.Unlock()
+		logger.Tracef("", "No conditions found")
 		history.UpdateState(runID, runIdx, *s)
 	}
 }

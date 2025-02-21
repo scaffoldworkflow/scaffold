@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"scaffold/manager/constants"
 	"scaffold/manager/release"
 	"scaffold/manager/utils"
 
@@ -16,6 +17,9 @@ type ReleaseDef struct {
 	Services []string               `json:"services"`
 	Context  map[string]interface{} `json:"context"`
 	Assets   []release.Asset        `json:"assets"`
+	Name     string                 `json:"name"`
+	Team     string                 `json:"team"`
+	Project  string                 `json:"project"`
 }
 
 func CreateRelease(ctx *gin.Context) {
@@ -26,17 +30,18 @@ func CreateRelease(ctx *gin.Context) {
 		return
 	}
 
-	t := ctx.Param("team")
-	p := ctx.Param("project")
+	logger.Debugf("", "Got release def of %v", data)
 
 	r := &release.Release{
 		Assets:   data.Assets,
-		Project:  p,
-		Team:     t,
+		Project:  data.Project,
+		Team:     data.Team,
 		Services: data.Services,
+		Status:   constants.STATE_STATUS_NOT_STARTED,
+		Name:     data.Name,
 	}
 	if err := r.Create(); err != nil {
-		logger.Errorf("", "Could not create release for %s/%s", t, p)
+		logger.Errorf("", "Could not create release for %s/%s", data.Team, data.Project)
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
@@ -108,6 +113,7 @@ func PromoteRelease(ctx *gin.Context) {
 	if len(rs) == 0 {
 		logger.Warnf("", "Could not get release for ID %s: not found", rID)
 		ctx.AbortWithError(http.StatusNotFound, fmt.Errorf("not found"))
+		return
 	}
 	r := rs[0]
 

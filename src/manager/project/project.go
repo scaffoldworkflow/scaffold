@@ -48,7 +48,11 @@ func (p *Project) Load() error {
 	// Extract environment ids
 	for name, env := range p.Environments {
 		if err := env.Load(p.Team, p.Name, name); err != nil {
-			logger.Errorf("", "Unable to load environment at %s/%s/%s: %s", p.Team, p.Name, name, err.Error())
+			logger.Errorf("", "Unable to load environment at %s/%s/%s: %s", p.Team, p.Name, name, err)
+			return err
+		}
+		if err := env.Create(); err != nil {
+			logger.Errorf("", "Unable to create environment at %s/%s/%s: %s", p.Team, p.Name, name, err)
 			return err
 		}
 	}
@@ -71,6 +75,18 @@ func (p *Project) Create() error {
 		return fmt.Errorf("project already exists at %s/%s", p.Team, p.Name)
 	}
 
+	if err := DeleteEnvironments(bson.M{"project": p.Name, "team": p.Team}); err != nil {
+		logger.Warnf("", "Error nuking environments for %s/%s", p.Team, p.Name)
+	}
+	if err := DeleteServices(bson.M{"project": p.Name, "team": p.Team}); err != nil {
+		logger.Warnf("", "Error nuking services for %s/%s", p.Team, p.Name)
+	}
+
+	if err := p.Load(); err != nil {
+		logger.Errorf("", "Unable to load project %s/%s: %s", p.Team, p.Name, err)
+		return err
+	}
+
 	_, err = mongodb.Collections[constants.MONGODB_PROJECT_COLLECTION_NAME].InsertOne(mongodb.Ctx, p)
 	return err
 }
@@ -84,7 +100,25 @@ func (p *Project) Update() error {
 			return err
 		}
 	}
+
 	filter := bson.M{"name": p.Name, "team": p.Team}
+
+	projs, err := GetProjects(filter)
+	if err != nil {
+		logger.Errorf("", "Could not get projects with filter %v: %s", filter, err)
+		return err
+	}
+
+	if len(projs) == 0 {
+		logger.Debug("", "Project does not exist, creating...")
+		if err := p.Create(); err != nil {
+			logger.Errorf("", "Could not create project: %s", err)
+			return err
+		}
+		return nil
+	}
+
+	p.Created = projs[0].Created
 
 	currentTime := time.Now().UTC()
 	p.Updated = currentTime.Format("2006-01-02T15:04:05Z")
@@ -92,19 +126,11 @@ func (p *Project) Update() error {
 	collection := mongodb.Collections[constants.MONGODB_PROJECT_COLLECTION_NAME]
 	ctx := mongodb.Ctx
 
-	result, err := collection.ReplaceOne(ctx, filter, p)
+	_, err = collection.ReplaceOne(ctx, filter, p)
 
 	if err != nil {
 		logger.Errorf("", "Could not update project at %s/%s: %s", p.Team, p.Name, err.Error())
 		return err
-	}
-
-	if result.ModifiedCount == 0 {
-		logger.Debug("", "Project does not exist, creating...")
-		if err := p.Create(); err != nil {
-			logger.Errorf("", "Could not create project")
-			return err
-		}
 	}
 
 	return nil
@@ -112,7 +138,7 @@ func (p *Project) Update() error {
 
 func (p *Project) Delete(cascade bool) error {
 	if cascade {
-		cascadeFilter := bson.M{"project": p.Name, "team": p.Team}
+		cascadeFilter := bson.M{"name": p.Name, "team": p.Team}
 		DeleteServices(cascadeFilter)
 		DeleteEnvironments(cascadeFilter)
 	}

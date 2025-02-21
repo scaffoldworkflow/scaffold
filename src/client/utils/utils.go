@@ -8,7 +8,8 @@ import (
 	"net/http"
 	"scaffold/client/auth"
 	"scaffold/client/config"
-	"scaffold/client/logger"
+
+	logger "github.com/jfcarter2358/go-logger"
 )
 
 func SendPost(uri, path string, data map[string]interface{}, p auth.ProfileObj) (map[string]interface{}, error) {

@@ -76,15 +76,24 @@ func buildQuery(ctx *gin.Context) bson.M {
 	params := ctx.Request.URL.Query()
 	for key, val := range params {
 		if len(val) > 0 {
-			conditions := make([]bson.M, len(val))
-			for _, v := range val {
-				conditions = append(conditions, bson.M{key: v})
+			if len(val) > 1 {
+				conditions := make([]bson.M, len(val))
+				logger.Tracef("", "Got condition val of %v", val)
+				for _, v := range val {
+					conditions = append(conditions, bson.M{key: v})
+				}
+				filterConditions = append(filterConditions, bson.M{"$or": conditions})
+			} else {
+				filterConditions = append(filterConditions, bson.M{key: val[0]})
 			}
-			filterConditions = append(filterConditions, bson.M{"$or": conditions})
 			continue
 		}
-		filterConditions = append(filterConditions, bson.M{key: val})
+		// filterConditions = append(filterConditions, bson.M{key: val})
 	}
-	filter := bson.M{"$and": filterConditions}
+	filter := bson.M{}
+	if len(filterConditions) > 0 {
+		filter = bson.M{"$and": filterConditions}
+	}
+	logger.Tracef("", "Using filter %v", filter)
 	return filter
 }

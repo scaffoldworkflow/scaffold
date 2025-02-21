@@ -20,7 +20,8 @@ import (
 )
 
 type Alert struct {
-	Workflow     string                `json:"workflow" bson:"workflow" yaml:"workflow"`
+	Project      string                `json:"project" bson:"project" yaml:"project"`
+	Team         string                `json:"team" bson:"team" yaml:"team"`
 	Created      string                `json:"created" bson:"created" yaml:"created"`
 	Updated      string                `json:"updated" bson:"updated" yaml:"updated"`
 	ID           string                `json:"id" bson:"id" yaml:"id"`
@@ -51,7 +52,7 @@ func CreateAlert(a *Alert) error {
 
 	a.Kernels = make(map[string]KernelInfo)
 
-	logger.Debugf("", "Creating alert %s for workflow %s", a.ID, a.Workflow)
+	logger.Debugf("", "Creating alert %s for %s/%s", a.ID, a.Team, a.Project)
 
 	_, err := mongodb.Collections[constants.MONGODB_ALERT_COLLECTION_NAME].InsertOne(mongodb.Ctx, a)
 	return err

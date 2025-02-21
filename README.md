@@ -2,11 +2,11 @@
 
 ## About
 
-Scaffold is an infrastructure management tool that takes a waterfall approach to management. This works by tracking the state of each workflow (waterfall workflow DAG) task and triggering the next task as all its parents are in a success state. Workflows are manually triggered and report their state to the UI so engineers can track deployment and upgrade processes to ensure that they work as expected. Additionally, Scaffold allows for input and file storage and loading to make task execution easier. Finally, tasks are executed within container images to enable dependencies to be brought along to the task execution.
+// TODO: Fill this out
 
 ## Rationale
 
-Infrastructure management is an interesting problem to tackle. Many organization use CI/CD pipelines to handle deployment and upgrades (e.g. Jenkins, Concourse) which allows for an automated approach to management, however execution status and state can be hard to track. Additionally, changes that may be inside the middle of an upgrade pipeline may need to be re-run without running the whole pipeline and may change the required state of subsequent tasks. The waterfall approach allows for independent execution of tasks with their state changes propagating down to dependent tasks.
+// TODO: Fill this out
 
 ## Getting Started
 
@@ -19,3 +19,39 @@ If you have any questions or concerns please reach out at scaffoldworkflow@gmail
 ## License
 
 Scaffold is licensed under the MIT license
+
+# TODO
+
+## 0.4.2
+
+- [x] Auto prune old jobs
+- [x] On start check for any runs in progress and start a monitor for them
+- [ ] Single project UI page
+- [x] Script path for run contents
+- [x] Mount worker scripts instead of worker pod
+- [ ] Update CLI to apply resources
+- [ ] Update CLI to trigger release promotion
+- [ ] Add promote step page that shows output and status instead of directing to the workflow page
+
+## 0.4.3
+
+- [ ] Telemetry functionality
+- [ ] Unify endpoints with query params
+- [ ] Move kernel execution to k8s job
+- [ ] Integrate project resources into runbooks
+- [ ] Integrate project resources into alerts
+- [ ] Proper permission management
+- [ ] Helm chart
+
+## 0.4.4
+
+- [ ] Update Python client to match new setup
+- [ ] Fix tests
+- [ ] Move resource type and resource definitions to be global in project?
+
+## 0.5.0
+
+- [ ] Use regular step definition for promote jobs
+- [ ] Ability to re-run step with shell
+- [ ] Auto-setup jq on images where not present
+- [ ] Okta integration

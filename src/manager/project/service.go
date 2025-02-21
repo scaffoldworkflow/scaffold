@@ -76,6 +76,23 @@ func (s *Service) Update() error {
 
 	filter := bson.M{"name": s.Name, "project": s.Project, "team": s.Team, "environment": s.Environment}
 
+	servs, err := GetServices(filter)
+	if err != nil {
+		logger.Errorf("", "Could not get services with filter %v: %s", filter, err)
+		return err
+	}
+
+	if len(servs) == 0 {
+		logger.Debug("", "Service does not exist, creating...")
+		if err := s.Create(); err != nil {
+			logger.Errorf("", "Could not create service: %s", err)
+			return err
+		}
+		return nil
+	}
+
+	s.Created = servs[0].Created
+
 	currentTime := time.Now().UTC()
 	s.Updated = currentTime.Format("2006-01-02T15:04:05Z")
 

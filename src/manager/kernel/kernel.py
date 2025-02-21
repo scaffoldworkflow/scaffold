@@ -157,6 +157,7 @@ def shell(
     get_rc: bool = False,
     get_stdout: bool = False,
     silent: bool = False,
+    format_dict: dict = None,
 ) -> Union[None, str, int]:
     """Perform a shell call and update the environment with any env variable changes
 
@@ -187,7 +188,8 @@ def shell(
     decoded_bytes = base64.b64decode(cmd_bytes)
 
     decoded = decoded_bytes.decode("utf-8")
-    # decoded = decoded.format(**format_dict)
+    if format_dict:
+        decoded = decoded.format(**format_dict)
 
     decoded = f"{shellopts.bash_string()}\n{decoded}\necho ~~~~START_ENVIRONMENT_HERE~~~~ && printenv && echo ~~~~START_CWD_HERE~~~~ && pwd"
 
@@ -267,7 +269,9 @@ while True:
             line = input()
         try:
             if language == "bash":
-                shell(command, format_dict={**globals(), **locals()})
+                # shell(command, format_dict={**globals(), **locals()})
+                shell(command)
+                print('marathon::execute_done')
             elif language == "python":
                 exec(command, globals(), locals())
             else:

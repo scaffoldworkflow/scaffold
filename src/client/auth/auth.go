@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 	"os/user"
-	"scaffold/client/logger"
 
+	logger "github.com/jfcarter2358/go-logger"
 	"gopkg.in/yaml.v3"
 )
 

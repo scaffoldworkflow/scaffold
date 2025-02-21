@@ -68,17 +68,17 @@ func AddStateToHistory(runID string, s State) error {
 	collection := mongodb.Collections[constants.MONGODB_HISTORY_COLLECTION_NAME]
 	ctx := mongodb.Ctx
 
-	result, err := collection.UpdateOne(ctx, filter, update)
+	_, err = collection.UpdateOne(ctx, filter, update)
 
 	if err != nil {
 		logger.Errorf("", "Could not update history %s: %s", runID, err.Error())
 		return err
 	}
 
-	if result.UpsertedCount != 1 {
-		logger.Errorf("", "No history updated with run ID %s: got upserted count %d", runID, result.UpsertedCount)
-		return fmt.Errorf("no history updated with run ID %s", runID)
-	}
+	// if result.UpsertedCount != 1 {
+	// 	logger.Errorf("", "No history updated with run ID %s: got upserted count %d", runID, result.UpsertedCount)
+	// 	return fmt.Errorf("no history updated with run ID %s", runID)
+	// }
 
 	return nil
 }
@@ -105,16 +105,16 @@ func UpdateContext(runID string, newContext map[string]interface{}) error {
 	collection := mongodb.Collections[constants.MONGODB_HISTORY_COLLECTION_NAME]
 	ctx := mongodb.Ctx
 
-	result, err := collection.UpdateOne(ctx, filter, update)
+	_, err = collection.UpdateOne(ctx, filter, update)
 
 	if err != nil {
 		return err
 	}
 
-	if result.UpsertedCount != 1 {
-		logger.Errorf("", "No history updated with run ID %s: got upserted count %d", runID, result.UpsertedCount)
-		return fmt.Errorf("no history updated with run ID %s", runID)
-	}
+	// if result.UpsertedCount != 1 {
+	// 	logger.Errorf("", "No history updated with run ID %s: got upserted count %d", runID, result.UpsertedCount)
+	// 	return fmt.Errorf("no history updated with run ID %s", runID)
+	// }
 
 	return nil
 }
@@ -174,6 +174,18 @@ func UpdateState(runID string, idx int, s State) error {
 	// }
 
 	return nil
+}
+
+func GetHistories(filter bson.M) ([]*History, error) {
+
+	histories, err := FilterHistories(filter)
+
+	if err != nil {
+		logger.Errorf("", "Could not get histories with filter %v: %s", filter, err.Error())
+		return nil, err
+	}
+
+	return histories, nil
 }
 
 func CreateHistory(h *History) error {

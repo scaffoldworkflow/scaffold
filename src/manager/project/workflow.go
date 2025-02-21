@@ -19,6 +19,7 @@ type Workflow struct {
 	Created       string                           `json:"created" bson:"created" yaml:"created"`
 	Updated       string                           `json:"updated" bson:"updated" yaml:"updated"`
 	JobTemplate   string                           `json:"job_template" bson:"job_template" yaml:"job_template"`
+	EntryPoint    string                           `json:"entrypoint" bson:"entrypoint" yaml:"entrypoint"`
 }
 
 func (w *Workflow) Load() error {

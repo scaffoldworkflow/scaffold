@@ -14,3 +14,8 @@ cert.crt
 cert.key
 *.log
 bak
+tmp
+src/manager/page/new
+src/manager/scaffold
+bower_components
+.venv

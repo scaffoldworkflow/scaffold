@@ -106,13 +106,14 @@ func LoadConfig() {
 	}
 
 	// Default configuration
+	// TODO: Cleanup this configuration removing unused values/fields
 	Config = ConfigObject{
 		Host:              "",
 		Port:              -1,
 		Protocol:          "",
 		BaseURL:           "http://localhost:2997",
 		WSPort:            8080,
-		LogLevel:          logger.LOG_LEVEL_INFO,
+		LogLevel:          logger.LOG_LEVEL_TRACE,
 		LogFormat:         logger.LOG_FORMAT_CONSOLE,
 		HeartbeatInterval: 1000,
 		HeartbeatBackoff:  10,
@@ -125,7 +126,7 @@ func LoadConfig() {
 			Username: "admin",
 			Password: "admin",
 		},
-		DBConnectionString: "mongodb://MyCoolMongoDBUsername:MyCoolMongoDBPassword@mongodb:27017/scaffold",
+		DBConnectionString: "mongodb://MyCoolMongoDBUsername:MyCoolMongoDBPassword@localhost:27017/scaffold",
 		DB:                 DBObject{},
 		Reset: ResetObject{
 			Email:    "",
@@ -159,7 +160,7 @@ func LoadConfig() {
 		CheckInterval:            2000,
 		RestartPeriod:            86400,         // 24 hours
 		RunPruneCron:             "0 0 * * * *", // every day at midnight
-		RunPruneDuration:         24,            // 24 hour run lifetime
+		RunPruneDuration:         60,            // TODO: Change this to a reasonable value, not `60` for testing
 		RunbookRunDir:            "/tmp/runbooks/runs",
 		RunbookVenvDir:           "/tmp/runbooks/venvs",
 		WorkerConfig:             `{"image_pull_policy": "IfNotPresent", "log_level": "TRACE","log_format": "console","manager_url": "http://scaffold-manager:2997","run_dir": "/tmp/run","restart_on_killed": false, "worker_image": "scaffold-worker"}`,

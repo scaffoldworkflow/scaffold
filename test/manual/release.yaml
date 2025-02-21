@@ -1,0 +1,11 @@
+version: v1/release
+services: 
+  - foo
+context":
+  foo: bar
+assets:
+  - name: asset_1
+    url: http://localhost:1234/asset_1
+name: release_test_foo123
+team: foobar
+project: foo

@@ -34,12 +34,13 @@ type RunConfig struct {
 	ResourceTypes      string
 	Resources          string
 	Script             string
+	Path               string
 	Inputs             string
 	Outputs            string
 	PythonRequirements string
 }
 
-func StartRun(runID string, w project.Workflow, runIdx int, context string, step string, language string) error {
+func StartRun(runID string, w project.Workflow, runIdx int, context, step, language string) error {
 	var r RunConfig
 	if err := json.Unmarshal([]byte(config.Config.WorkerConfig), &r); err != nil {
 		logger.Errorf("", "Unable to load worker config: %s", err.Error())
@@ -115,9 +116,16 @@ func StartRun(runID string, w project.Workflow, runIdx int, context string, step
 		r.Outputs = "[]"
 	}
 	r.Script = base64.StdEncoding.EncodeToString([]byte(w.Steps[step].Run))
+	r.Path = w.Steps[step].Path
 	r.LogLevel = w.Steps[step].LogLevel
 
-	tmpl, err := template.New(fmt.Sprintf("k8s_job_template_%s", r.RunID)).Parse(w.JobTemplate)
+	var err error
+	var tmpl *template.Template
+	if w.JobTemplate == "" {
+		tmpl, err = template.New(fmt.Sprintf("k8s_job_template_%s", r.RunID)).Parse(project.DefaultJobTemplate)
+	} else {
+		tmpl, err = template.New(fmt.Sprintf("k8s_job_template_%s", r.RunID)).Parse(w.JobTemplate)
+	}
 	if err != nil {
 		logger.Errorf("", "Cannot load job template: %s", err.Error())
 		return err
@@ -162,6 +170,7 @@ func StartPromoteRun(runID string, context string, scriptB64 string, language st
 	r.Script = scriptB64
 	// TODO: Make this configurable
 	r.LogLevel = logger.LOG_LEVEL_DEBUG
+	r.Step = "promote"
 
 	tmpl, err := template.New(fmt.Sprintf("k8s_job_template_%s", r.RunID)).Parse(project.DefaultJobTemplate)
 	if err != nil {
@@ -212,152 +221,6 @@ func KillRun(runID, step string) error {
 	return nil
 }
 
-// func StateChange(runID, status, stepName string) error {
-// 	h, err := history.GetHistoryByRunID(runID)
-// 	if err != nil {
-// 		logger.Errorf("", "Could not get history corresponding to run %s", runID)
-// 		return err
-// 	}
-// 	p, err := project.GetProjectByID(h.Project)
-// 	if err != nil {
-// 		logger.Errorf("", "Could not get project %s corresponding to run %s", h.Project, runID)
-// 		return err
-// 	}
-// 	switch status {
-// 	case constants.STATE_STATUS_SUCCESS:
-// 		for _, st := range p.Environments[h.Environment].Services[h.Service].Workflow.Steps {
-// 			shouldExecute := false
-// 			for _, n := range st.DependsOn.Always {
-// 				if n == stepName {
-// 					if st.AutoExecute {
-// 						shouldExecute = true
-// 						continue
-// 					}
-// 				}
-// 				s := h.GetHistoryStateByStepName(n)
-// 				if s == nil {
-// 					logger.Warnf("", "Could not get state for step %s in history %s", n, runID)
-// 					continue
-// 				}
-// 				if s.Status != constants.STATE_STATUS_ERROR && s.Status != constants.STATE_STATUS_SUCCESS {
-// 					continue
-// 				}
-// 			}
-// 			for _, n := range st.DependsOn.Success {
-// 				if n == st.Name {
-// 					if st.AutoExecute {
-// 						shouldExecute = true
-// 						continue
-// 					}
-// 				}
-// 				s := h.GetHistoryStateByStepName(n)
-// 				if s == nil {
-// 					logger.Warnf("", "Could not get state for step %s in history %s", n, runID)
-// 					continue
-// 				}
-// 				if s.Status != constants.STATE_STATUS_SUCCESS {
-// 					continue
-// 				}
-// 			}
-// 			if shouldExecute {
-// 				if err := StateChange(runID, constants.STATE_STATUS_NOT_STARTED, st.Name); err != nil {
-// 					return err
-// 				}
-// 			}
-// 		}
-// 	case constants.STATE_STATUS_ERROR:
-// 		for _, st := range p.Environments[h.Environment].Services[h.Service].Workflow.Steps {
-// 			shouldExecute := false
-// 			for _, n := range st.DependsOn.Always {
-// 				if n == stepName {
-// 					if st.AutoExecute {
-// 						shouldExecute = true
-// 						continue
-// 					}
-// 				}
-// 				s := h.GetHistoryStateByStepName(n)
-// 				if s == nil {
-// 					logger.Warnf("", "Could not get state for step %s in history %s", n, runID)
-// 					continue
-// 				}
-// 				if s.Status != constants.STATE_STATUS_ERROR && s.Status != constants.STATE_STATUS_SUCCESS {
-// 					continue
-// 				}
-// 			}
-// 			for _, n := range st.DependsOn.Success {
-// 				if n == st.Name {
-// 					if st.AutoExecute {
-// 						shouldExecute = true
-// 						continue
-// 					}
-// 				}
-// 				s := h.GetHistoryStateByStepName(n)
-// 				if s == nil {
-// 					logger.Warnf("", "Could not get state for step %s in history %s", n, runID)
-// 					continue
-// 				}
-// 				if s.Status != constants.STATE_STATUS_ERROR {
-// 					continue
-// 				}
-// 			}
-// 			if shouldExecute {
-// 				if err := StateChange(runID, constants.STATE_STATUS_NOT_STARTED, st.Name); err != nil {
-// 					return err
-// 				}
-// 			}
-// 		}
-// 	case constants.STATE_STATUS_NOT_STARTED:
-// 		for _, st := range p.Environments[h.Environment].Services[h.Service].Workflow.Steps {
-// 			for _, n := range st.DependsOn.Always {
-// 				if n == st.Name {
-// 					s, err := state.GetStateByNames(cn, t.Name)
-// 					if err != nil {
-// 						return err
-// 					}
-// 					s.Status = constants.STATE_STATUS_NOT_STARTED
-// 					if err := state.UpdateStateByNames(cn, t.Name, s); err != nil {
-// 						return err
-// 					}
-// 					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context, runID); err != nil {
-// 						return err
-// 					}
-// 				}
-// 			}
-// 			for _, n := range t.DependsOn.Error {
-// 				if n == tn {
-// 					s, err := state.GetStateByNames(cn, t.Name)
-// 					if err != nil {
-// 						return err
-// 					}
-// 					s.Status = constants.STATE_STATUS_NOT_STARTED
-// 					if err := state.UpdateStateByNames(cn, t.Name, s); err != nil {
-// 						return err
-// 					}
-// 					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context, runID); err != nil {
-// 						return err
-// 					}
-// 				}
-// 			}
-// 			for _, n := range t.DependsOn.Success {
-// 				if n == tn {
-// 					s, err := state.GetStateByNames(cn, t.Name)
-// 					if err != nil {
-// 						return err
-// 					}
-// 					s.Status = constants.STATE_STATUS_NOT_STARTED
-// 					if err := state.UpdateStateByNames(cn, t.Name, s); err != nil {
-// 						return err
-// 					}
-// 					if err := stateChange(cn, t.Name, constants.STATE_STATUS_NOT_STARTED, context, runID); err != nil {
-// 						return err
-// 					}
-// 				}
-// 			}
-// 		}
-// 	}
-// 	return nil
-// }
-
 func killChildren(runID, sName string) error {
 	h, err := history.GetHistoryByRunID(runID)
 	if err != nil {
@@ -370,7 +233,7 @@ func killChildren(runID, sName string) error {
 		return err
 	}
 
-	if ps == nil || len(ps) == 0 {
+	if len(ps) == 0 {
 		logger.Errorf("", "Could not get project at %s/%s for run %s", h.Team, h.Project, runID)
 		return err
 	}
@@ -450,7 +313,7 @@ func AutoTrigger() {
 				continue
 			}
 
-			if ps == nil || len(ps) == 0 {
+			if len(ps) == 0 {
 				logger.Errorf("", "Could not get project at %s/%s for run %s", h.Team, h.Project, s.RunID)
 				continue
 			}

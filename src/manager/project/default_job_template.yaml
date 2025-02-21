@@ -10,6 +10,8 @@ spec:
       - name: scaffold-worker
         image: {{ .WorkerImage }}
         imagePullPolicy: {{ .ImagePullPolicy }}
+        command: ["/bin/sh"]
+        args: ["-c", "cd /tmp && cp /tmp/scaffold/.executor.sh .executor.sh && cp /tmp/scaffold/.header.py .header.py && cp /tmp/scaffold/.header.sh .header.sh && chmod +x .executor.sh && ./.executor.sh"]
         env:
           - name: SCAFFOLD_LANGUAGE
             value: '{{ .Language }}'
@@ -23,10 +25,19 @@ spec:
             value: '{{ .Outputs }}'
           - name: SCAFFOLD_SCRIPT
             value: '{{ .Script }}'
+          - name: SCAFFOLD_PATH
+            value: '{{ .Path }}'
           - name: SCAFFOLD_CONTEXT_b64
             value: '{{ .Context }}'
           - name: SCAFFOLD_PYTHON_REQUIREMENTS
             value: '{{ .PythonRequirements }}'
           - name: LOG_LEVEL
             value: '{{ .LogLevel }}'
-  backoffLimit: 1
+        volumeMounts:
+        - name: scaffold-volume
+          mountPath: /tmp/scaffold
+      volumes:
+        - name: scaffold-volume
+          configMap:
+            name: scaffold-scripts
+  backoffLimit: 0
